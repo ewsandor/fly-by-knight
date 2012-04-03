@@ -1,3 +1,7 @@
+//game.hpp
+//flyByKnight - Chess Engine
+//Created by Edward Sandor 2011-2012.
+
 #ifndef _GAME_INCLUDED_
 #define _GAME_INCLUDED_
 #define WHITE 0

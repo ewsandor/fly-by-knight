@@ -1,3 +1,7 @@
+//board.cpp
+//flyByKnight - Chess Engine
+//Created by Edward Sandor 2011-2012.
+
 #include <iostream>
 #include <stdlib.h>
 #include <string>

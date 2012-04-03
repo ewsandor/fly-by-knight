@@ -1,3 +1,7 @@
+//piece.hpp
+//flyByKnight - Chess Engine
+//Created by Edward Sandor 2011-2012.
+
 #ifndef _PIECE_INCLUDED_
 #define _PIECE_INCLUDED_
 

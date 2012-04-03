@@ -1,3 +1,7 @@
+//main.hpp
+//flyByKnight - Chess Engine
+//Created by Edward Sandor 2011-2012.
+
 #ifndef _MAIN_INCLUDED_
 #define _MAIN_INCLUDED_
 
