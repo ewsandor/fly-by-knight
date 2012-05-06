@@ -1,7 +1,7 @@
 all: sandrich
 
-sandrich: main.o board.o game.o piece.o
-	g++ -Wall -g board.o game.o piece.o main.o -o flyByKnight
+sandrich: main.o board.o game.o piece.o moveTree.o
+	g++ -Wall -g board.o game.o piece.o main.o moveTree.o -o flyByKnight
 
 main.o: main.cpp
 	g++ -Wall -g -c main.cpp
@@ -14,6 +14,9 @@ game.o: game.cpp
 
 piece.o: piece.cpp
 	g++ -Wall -g -c piece.cpp
+
+moveTree.o: moveTree.cpp
+	g++ -Wall -g -c moveTree.cpp
 
 clean:
 	rm -rf *o flyByKnight

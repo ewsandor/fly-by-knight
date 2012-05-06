@@ -1,5 +1,5 @@
 //piece.hpp
-//flyByKnight - Chess Engine
+//Fly By Knight - Chess Engine
 //Created by Edward Sandor 2011-2012.
 //Read the README for more.
 
