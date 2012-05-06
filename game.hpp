@@ -12,7 +12,7 @@
 
 class Board;
 class Piece;
-
+struct change_t;
 
 
 class Game{

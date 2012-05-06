@@ -12,6 +12,7 @@
 #include "game.hpp"
 #include "board.hpp"
 #include "piece.hpp"
+#include "moveTree.hpp"
 using namespace std;
 
 Game::Game(){

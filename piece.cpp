@@ -14,6 +14,7 @@
 #include "piece.hpp"
 #include "game.hpp"
 #include "board.hpp"
+#include "moveTree.hpp"
 
 using namespace std;
 

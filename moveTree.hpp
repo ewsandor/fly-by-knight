@@ -15,6 +15,20 @@ struct change_t{
 };
 
 class moveTree{
-private: 
-}
+	public: 
+		class Move{
+			public:
+				int turn;
+				double score;
+				Move * parent;
+				std::vector<change_t> changes;
+				std::vector<Move *> choices;
+
+				Move(Move * p);
+				~Move();
+				void deleteChildren();
+		};
+
+		Move root;
+};
 #endif

@@ -10,6 +10,7 @@
 #include "game.hpp"
 #include "main.hpp"
 #include "board.hpp"
+#include "moveTree.hpp"
 
 using namespace std;
 
