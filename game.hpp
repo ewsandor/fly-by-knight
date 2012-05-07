@@ -1,27 +1,19 @@
 //game.hpp
-//flyByKnight - Chess Engine
+//Fly By Knight - Chess Engine
 //Created by Edward Sandor 2011-2012.
-//Read the README for more.
 
 #ifndef _GAME_INCLUDED_
 #define _GAME_INCLUDED_
 #define WHITE 0
 #define BLACK 1
-#define NONE  2
+#define NONE -1 
 #include <stdlib.h>
 #include <vector>
 
 class Board;
 class Piece;
+struct change_t;
 
-struct change_t{
-  Piece * moded;
-  int oldLoc;
-  int newLoc;
-  bool captured;
-  bool firstMove;
-  bool ep;
-};
 
 class Game{
 private:  

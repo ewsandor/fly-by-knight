@@ -1,5 +1,5 @@
 //game.cpp
-//flyByKnight - Chess Engine
+//Fly By Knight - Chess Engine
 //Created by Edward Sandor 2011-2012.
 //Read the README for more.
 
@@ -12,7 +12,7 @@
 #include "game.hpp"
 #include "board.hpp"
 #include "piece.hpp"
-
+#include "moveTree.hpp"
 using namespace std;
 
 Game::Game(){
@@ -244,15 +244,16 @@ bool Game::modSquare(string mod, int color){
 			break;
 	}
 	if(board->pieces[x][y] != NULL){
-
-		bool add = true;
-		for(int i = 0; i < changes[place].size(); i++){
-			if(changes[place][i].moded = board->pieces[x][y]){
+		
+		//is this where the bug was?
+		/*bool add = true;
+		for(unsigned int i = 0; i < changes[place].size(); i++){
+			if(changes[place][i].moded == board->pieces[x][y]){
 				add = false;
 			}
 		}
 
-		if(add){
+		if(add){*/
 			change_t c;
 			c.moded = board->pieces[x][y];
 			c.oldLoc =x*10 + y;
@@ -262,7 +263,7 @@ bool Game::modSquare(string mod, int color){
 			c.ep = false;
 
 			addChange(c);
-		}
+		//}
 	}
 	if(nPiece != NULL){
 		nPiece->setLocation(x, y);

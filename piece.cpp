@@ -1,5 +1,5 @@
 //piece.cpp
-//flyByKnight - Chess Engine
+//Fly By Knight - Chess Engine
 //Created by Edward Sandor 2011-2012.
 //Read the README for more.
 
@@ -14,6 +14,7 @@
 #include "piece.hpp"
 #include "game.hpp"
 #include "board.hpp"
+#include "moveTree.hpp"
 
 using namespace std;
 
