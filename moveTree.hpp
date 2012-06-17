@@ -5,6 +5,11 @@
 #ifndef _MOVETREE_INCLUDED_
 #define _MOVETREE_INCLUDED_
 
+#include <stdlib.h>
+#include <vector>
+
+class Piece;
+
 struct change_t{
 	Piece * moded;
 	int oldLoc;
@@ -14,9 +19,11 @@ struct change_t{
 	bool ep;
 };
 
-class moveTree{
+class MoveTree{
 	public: 
 		class Move{
+			private:
+				bool foundChoices;
 			public:
 				int turn;
 				double score;
@@ -26,7 +33,7 @@ class moveTree{
 
 				Move(Move * p);
 				~Move();
-				void deleteChildren();
+				void findChoices();
 		};
 
 		Move root;

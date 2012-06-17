@@ -9,6 +9,7 @@
 #define NONE -1 
 #include <stdlib.h>
 #include <vector>
+#include <string>
 
 class Board;
 class Piece;
