@@ -25,7 +25,7 @@ private:
   Board * board;
 
 public:
-  std::vector<std::vector<change_t> > changes;
+  std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
   Piece * enpasantable;
   int playAs;
 

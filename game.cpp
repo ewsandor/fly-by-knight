@@ -330,16 +330,18 @@ void Game::removeTurn(){
 	changes.pop_back();
 }
 void Game::addChange(change_t change){
+	//add to move tree's changes instaed of game's
 	changes[place-1].push_back(change);
 }
 void Game::clearEnd(){  
+	//replaced in moveTree with clearChildren() or deconstructor?
 	while(changes.size() > place){
 		changes.pop_back();
 	}
 	if(place == 0 && turn == BLACK) changeTurn();
 }
 bool Game::moveBack(){
-
+	//fix to use moveTrees changes
 	if(place <= 0) return false;  
 
 	changeTurn();
@@ -368,15 +370,17 @@ bool Game::moveBack(){
 			}
 	}
 	if(place == 0 && turn == BLACK) changeTurn();
-	return true;
+	return true; //return if did move back
 }
 bool Game::moveBack(int steps){
 	for(int i = 0; i < steps; i++){
 		if(!moveBack()) return false;
 	}
-	return true;
+	return true; //return if all moved back
 }
 bool Game::moveForeward(){
+	//fix to use moveTrees changes
+	//stop if multiple options...
 	if(place >= changes.size()) return false;
 
 	changeTurn();
@@ -399,13 +403,13 @@ bool Game::moveForeward(){
 	}
 
 	place++;
-	return true;
+	return true; //return if successfully moved forward
 }
 bool Game::moveForeward(int steps){
 	for(int i = 0; i < steps; i++){
 		if(!moveForeward()) return false;
 	}
-	return true;
+	return true; //return if all successfully moved forward
 }
 
 double Game::evaluateBoard(){
