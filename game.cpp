@@ -137,6 +137,7 @@ bool Game::move(Move * mov){
 		chain.push(mov);
 		mov = mov->parent;
 	}
+	//write moveForward(Move * mov).  Move to move in choices or add to choices.
 	return true;
 }
 bool Game::inCheck(Piece * checkie)
