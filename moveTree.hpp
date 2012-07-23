@@ -9,6 +9,7 @@
 #include <vector>
 
 class Piece;
+class Game;
 
 struct change_t{
 	Piece * moded;
@@ -18,10 +19,7 @@ struct change_t{
 	bool firstMove;
 	bool ep;
 };
-
-class MoveTree{
-	public: 
-		class Move{
+class Move{
 			private:
 				bool foundChoices;
 			public:
@@ -34,8 +32,14 @@ class MoveTree{
 				Move(Move * p);
 				~Move();
 				void findChoices();
-		};
+};
 
-		Move root;
+class MoveTree{
+	public: 
+				MoveTree(Game * g);
+
+		Move * root;
+		Move * current;
+		Game * gm;
 };
 #endif

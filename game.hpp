@@ -13,6 +13,8 @@
 
 class Board;
 class Piece;
+class MoveTree;
+class Move;
 struct change_t;
 
 
@@ -23,6 +25,7 @@ private:
   int turn;
   unsigned int place;
   Board * board;
+	MoveTree * moveTree;
 
 public:
   std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
@@ -57,6 +60,7 @@ public:
   bool moveBack(int steps);
   bool moveForeward();
   bool moveForeward(int steps);
+	bool move(Move * mov);
   
 private:
   bool inMate(Piece * matey);

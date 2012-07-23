@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <time.h>
+#include <stack>
 #include "main.hpp"
 #include "game.hpp"
 #include "board.hpp"
@@ -19,6 +20,7 @@ Game::Game(){
 	board = new Board(this);
 	resetGame();
 	place = 0;
+	moveTree = new MoveTree(this);
 }
 
 void Game::clear(){
@@ -40,11 +42,12 @@ void Game::clear(){
 }
 
 void Game::resetGame(){
+	//reverse tree to move 0
 	enpasantable = NULL;
 	turn = WHITE;
 	playAs = BLACK;  
 	setupBoard();
-	place = 0;
+	moveTree->current = moveTree->root;
 	clearEnd();
 }
 
@@ -119,11 +122,22 @@ bool Game::move(int from, int to){
 	if(from / 10 < 0 || from / 10 >7 || from % 10 < 0 || from % 10 >7 || to / 10 < 0 || to / 10 > 7 || to % 10 < 0 || to % 10 > 7 || board->pieces[from / 10][from % 10] == NULL)
 		return false;
 
-	if( board->pieces[from / 10][from % 10]->move(to / 10, to % 10)){
-
-		return true;
+	return ( board->pieces[from / 10][from % 10]->move(to / 10, to % 10));
+}
+bool Game::move(Move * mov){
+	while(moveTree->current->turn >= mov->turn){
+		if(moveTree->current->turn == 0)
+			return false;
+		moveBack();
 	}
-	else return false;
+	stack<Move *> chain;
+	while(mov->turn - chain.top()->turn > 1){
+		if(chain.top()->turn == 0)
+			return false;
+		chain.push(mov);
+		mov = mov->parent;
+	}
+	return true;
 }
 bool Game::inCheck(Piece * checkie)
 {
@@ -320,18 +334,20 @@ bool Game::endGame(){
 	return false;
 }  
 void Game::addTurn(){
+	//implement based on moveTree
 	clearEnd();
 	place++;
 	changes.push_back(vector<change_t>());
 }
 void Game::removeTurn(){
+	//implement based on moveTree
 	if(place <= 0) return;
 	place--;
 	changes.pop_back();
 }
 void Game::addChange(change_t change){
 	//add to move tree's changes instaed of game's
-	changes[place-1].push_back(change);
+	moveTree->current->changes.push_back(change);
 }
 void Game::clearEnd(){  
 	//replaced in moveTree with clearChildren() or deconstructor?
@@ -342,13 +358,17 @@ void Game::clearEnd(){
 }
 bool Game::moveBack(){
 	//fix to use moveTrees changes
+	//done ?
 	if(place <= 0) return false;  
 
 	changeTurn();
-	place --;
+	if(moveTree->current->turn > 0)
+		moveTree->current = moveTree->current->parent;
+	else return false;
+
 	enpasantable = NULL;
 
-	for(unsigned int i = 0; i < changes[place].size(); i++){
+	for(unsigned int i = 0; i < moveTree->current->changes.size(); i++){
 		change_t  * c = &changes[place][i];
 		if(c->oldLoc != c->newLoc){
 			if(Piece::onBoard(c->oldLoc/10, c->oldLoc%10)){
@@ -381,11 +401,13 @@ bool Game::moveBack(int steps){
 bool Game::moveForeward(){
 	//fix to use moveTrees changes
 	//stop if multiple options...
-	if(place >= changes.size()) return false;
+	//if(place >= changes.size()) return false;
+	//done ?
 
-	changeTurn();
-	for(unsigned int i = 0; i < changes[place].size(); i++){
-		change_t  * c = &changes[place][i];
+	if(moveTree->current->choices.size() != 1) return false;
+
+	for(unsigned int i = 0; i < moveTree->current->changes.size(); i++){
+		change_t  * c = &moveTree->current->changes[i];
 		if(c->oldLoc != c->newLoc){
 			if(Piece::onBoard(c->newLoc/10, c->newLoc%10)){
 				board->pieces[c->newLoc / 10][c->newLoc % 10] = c->moded;
@@ -401,8 +423,7 @@ bool Game::moveForeward(){
 		if(c->ep)
 			enpasantable = c->moded;    
 	}
-
-	place++;
+	moveTree->current = moveTree->current->choices[0];
 	return true; //return if successfully moved forward
 }
 bool Game::moveForeward(int steps){

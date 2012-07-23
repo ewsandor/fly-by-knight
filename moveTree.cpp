@@ -5,13 +5,20 @@
 
 #include "moveTree.hpp"
 
-MoveTree::Move::Move(Move * p){
+MoveTree::MoveTree(Game * g){
+	gm = g;
+	root = new Move(NULL);
+	current = root;
+}
+Move::Move(Move * p){
 	foundChoices = false;
 	parent = p;
 	score = 0;
 	turn = 0;	
+	
 }
-MoveTree::Move::~Move(){
+Move::~Move(){
 	changes.clear();
 	choices.clear();
 }
+//to implement findChoices()
