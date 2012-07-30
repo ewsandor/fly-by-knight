@@ -3,6 +3,7 @@
 //Created by Edward Sandor 2012.
 //Read the README for more.
 
+#include <string>
 #include "moveTree.hpp"
 
 MoveTree::MoveTree(Game * g){
@@ -11,6 +12,7 @@ MoveTree::MoveTree(Game * g){
 	current = root;
 }
 Move::Move(Move * p){
+	id="NULL";
 	foundChoices = false;
 	parent = p;
 	score = 0;

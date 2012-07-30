@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <vector>
+#include <string>
 
 class Piece;
 class Game;
@@ -23,6 +24,7 @@ class Move{
 			private:
 				bool foundChoices;
 			public:
+				std::string id;
 				int turn;
 				double score;
 				Move * parent;

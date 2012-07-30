@@ -104,10 +104,11 @@ bool Game::move(string str){
 		return false;
 	}
 	int from = Board::toInts(str.substr(0,2));
+	int to = Board::toInts(str.substr(2,2));
 
 	Piece * p = board->pieces[from / 10][from % 10];
 
-	if(move(Board::toInts(str.substr(0,2)),Board::toInts(str.substr(2,2)))){
+	if(move(from, to)){
 		if(p->toShortString().at(0) == 'P' || p->toShortString().at(0) == 'p'){
 			board->promotePawn((str.length() == 5?str.at(4):'e'));
 		}
@@ -125,18 +126,48 @@ bool Game::move(int from, int to){
 	return ( board->pieces[from / 10][from % 10]->move(to / 10, to % 10));
 }
 bool Game::move(Move * mov){
-	while(moveTree->current->turn >= mov->turn){
+	if(mov->parent != moveTree->current){
+		//bring current position back to same turn as move if ahead
+		while(moveTree->current->turn > mov->turn){
+			if(moveTree->current->turn == 0)
+				return false;
+			moveBack();
+		}
+		//build chain to get mov to current position if ahead
+		stack<Move *> chain;
+		while(mov->turn > moveTree->current->turn){
+			if(chain.top()->turn == 0)
+				return false;
+			chain.push(mov);
+			mov = mov->parent;
+		}
+		//move back to find common parent between move and current position
+		while(mov->parent != moveTree->current->parent){
+			if(moveTree->current->turn == 0)
+				return false;
+			moveBack();
+
+			if(chain.top()->turn == 0)
+				return false;
+			chain.push(mov);
+			mov = mov->parent;
+		}
+		//move current position to parent and follow chain to original mov
 		if(moveTree->current->turn == 0)
 			return false;
 		moveBack();
+
+		if(!move(mov->id))return false;
+		while(chain.size > 0){
+			mov = chan.top();
+			chain.pop();
+			if(!move(mov->id))return false;
+		}
 	}
-	stack<Move *> chain;
-	while(mov->turn - chain.top()->turn > 1){
-		if(chain.top()->turn == 0)
-			return false;
-		chain.push(mov);
-		mov = mov->parent;
-	}
+	else
+		if(!move(mov->id))return false;
+
+		
 	//write moveForward(Move * mov).  Move to move in choices or add to choices.
 	return true;
 }
@@ -340,12 +371,12 @@ void Game::addTurn(){
 	place++;
 	changes.push_back(vector<change_t>());
 }
-void Game::removeTurn(){
+/*void Game::removeTurn(){
 	//implement based on moveTree
 	if(place <= 0) return;
 	place--;
 	changes.pop_back();
-}
+}*/
 void Game::addChange(change_t change){
 	//add to move tree's changes instaed of game's
 	moveTree->current->changes.push_back(change);

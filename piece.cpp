@@ -234,7 +234,8 @@ void Pawn::getMoves(vector<int> &moves){
       int y = Y+rowDisplace;
       
       if(Piece::onBoard(x,y) && isLeagal(x,y))
-	moves.push_back(currentLoc+x*10+y);
+		if(y != 0 || y != 7)
+			moves.push_back(currentLoc+x*10+y);
     }
     rowDisplace = 1;
   }

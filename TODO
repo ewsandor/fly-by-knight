@@ -1,0 +1,1 @@
+convert all piece::getMoves(vector<int> &moves) to piece::getMoves(vector<string> &moves) to simplify moving between moves with movetree
