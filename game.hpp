@@ -58,9 +58,11 @@ public:
   void clearEnd();
   bool moveBack();
   bool moveBack(int steps);
-  bool moveForeward();
-  bool moveForeward(int steps);
+  bool moveForward();
+	bool moveForward(Move * mov);
+  bool moveForward(int steps);
 	bool move(Move * mov);
+	bool goActualLayout();
   
 private:
   bool inMate(Piece * matey);

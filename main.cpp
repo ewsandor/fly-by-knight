@@ -71,9 +71,9 @@ bool handleInput(string input){
 		else if(input.find("remove") == 0)                    //go back 2 moves; play same color
 			currentGame->moveBack(2);
 		else if(input.find("redo") == 0)                         //go foreward 1 move; play same color
-			currentGame->moveForeward();
+			currentGame->moveForward();
 		else if(input.find("replace") == 0)                         //go foreward 2 move; play same color
-			currentGame->moveForeward(2);
+			currentGame->moveForward(2);
 		else if(input.find("edit") == 0){
 			editMode = true;
 			eColor = WHITE;

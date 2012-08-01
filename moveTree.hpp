@@ -25,7 +25,7 @@ class Move{
 				bool foundChoices;
 			public:
 				std::string id;
-				int turn;
+				unsigned int turn;
 				double score;
 				Move * parent;
 				std::vector<change_t> changes;

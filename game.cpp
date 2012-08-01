@@ -158,8 +158,8 @@ bool Game::move(Move * mov){
 		moveBack();
 
 		if(!move(mov->id))return false;
-		while(chain.size > 0){
-			mov = chan.top();
+		while(chain.size() > 0){
+			mov = chain.top();
 			chain.pop();
 			if(!move(mov->id))return false;
 		}
@@ -430,13 +430,17 @@ bool Game::moveBack(int steps){
 	}
 	return true; //return if all moved back
 }
-bool Game::moveForeward(){
+bool Game::moveForward(){
+	if(moveTree->current->choices.size() != 1) return false;
+		return moveForward(moveTree->current->choices[0]);
+}
+bool Game::moveForward(Move * mov){
 	//fix to use moveTrees changes
 	//stop if multiple options...
 	//if(place >= changes.size()) return false;
 	//done ?
-
-	if(moveTree->current->choices.size() != 1) return false;
+	if(mov == NULL || mov->parent != moveTree->current)
+		return false;
 
 	for(unsigned int i = 0; i < moveTree->current->changes.size(); i++){
 		change_t  * c = &moveTree->current->changes[i];
@@ -455,14 +459,25 @@ bool Game::moveForeward(){
 		if(c->ep)
 			enpasantable = c->moded;    
 	}
-	moveTree->current = moveTree->current->choices[0];
+	moveTree->current = mov;
+	//moveTree->current = moveTree->current->choices[0];
 	return true; //return if successfully moved forward
 }
-bool Game::moveForeward(int steps){
+bool Game::moveForward(int steps){
 	for(int i = 0; i < steps; i++){
-		if(!moveForeward()) return false;
+		if(!moveForward()) return false;
 	}
 	return true; //return if all successfully moved forward
+}
+//sets board to match the true board setup
+bool Game::goActualLayout(){
+	while(place > moveTree->current->turn)
+		if(!moveForward())
+			return false;
+	while(place < moveTree ->current->turn)
+		if(!moveBack())	
+			return false;
+	return true;
 }
 
 double Game::evaluateBoard(){
