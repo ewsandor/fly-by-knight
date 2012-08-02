@@ -42,6 +42,7 @@ class MoveTree{
 
 		Move * root;
 		Move * current;
+		Move * actual;
 		Game * gm;
 };
 #endif

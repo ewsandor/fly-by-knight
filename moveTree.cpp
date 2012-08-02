@@ -16,7 +16,7 @@ Move::Move(Move * p){
 	foundChoices = false;
 	parent = p;
 	score = 0;
-	turn = 0;	
+	turn = parent==NULL?0:parent->turn+1;	
 	
 }
 Move::~Move(){

@@ -113,7 +113,6 @@ bool Piece::move(int x, int y){
     gm->addChange(c);
   }
   
-  gm->changeTurn();
   return true;
 }
 Game * Piece::getGame(){
@@ -574,7 +573,6 @@ bool King::move(int x, int y){
 
     gm->getBoard()->pieces[rn][y]->setLocation(rn,y);
 
-    gm->changeTurn();
 	static_cast<Rook *>(gm->getBoard()->pieces[rn][y])->hasMoved = true;
 	hasMoved = true;
 	return true;
