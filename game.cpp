@@ -47,9 +47,11 @@ void Game::resetGame(){
 	//reverse tree to move 0
 	enpasantable = NULL;
 	playAs = BLACK;  
+	delete moveTree->root;
 	setupBoard();
-	moveRoot();
+	moveTree->root = new Move(NULL);
 	moveTree->actual = moveTree->root;
+	moveTree->current = moveTree->root;
 }
 
 void Game::setupBoard(){
@@ -97,6 +99,12 @@ Board * Game::getBoard(){
 }
 bool Game::move(string str){
 
+	//maybe put better serch method if sort choices elsewhere
+	for(unsigned int i = 0; i < moveTree->current->choices.size(); i++){
+		if(moveTree->current->choices[i]->id.compare(str) == 0)
+			return move(moveTree->current->choices[i]);
+	}
+
 	if(str.length() < 4 || str.length() > 5){
 		return false;
 	}
@@ -104,6 +112,7 @@ bool Game::move(string str){
 	int to = Board::toInts(str.substr(2,2));
 
 	Piece * p = board->pieces[from / 10][from % 10];
+
 
 	if(move(from, to)){
 		if(p->toShortString().at(0) == 'P' || p->toShortString().at(0) == 'p'){
@@ -155,15 +164,15 @@ bool Game::move(Move * mov){
 			return false;
 		moveBack();
 
-		if(!move(mov->id))return false;
+		if(!moveForward(mov))return false;
 		while(chain.size() > 0){
 			mov = chain.top();
 			chain.pop();
-			if(!move(mov->id))return false;
+			if(!moveForward(mov))return false;
 		}
 	}
 	else
-		if(!move(mov->id))return false;
+		if(!moveForward(mov))return false;
 
 		
 	//write moveForward(Move * mov).  Move to move in choices or add to choices.

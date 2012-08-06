@@ -19,7 +19,7 @@ moveTree.o: moveTree.cpp
 	g++ -Wall -g -c moveTree.cpp
 
 clean:
-	rm -rf *o flyByKnight
+	rm -rf *o flyByKnight xboard.debug
 
 run:
 	./flyByKnight
