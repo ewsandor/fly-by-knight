@@ -376,6 +376,7 @@ void Game::addTurn(){
 	//implement based on moveTree
 	Move * mov = new Move(moveTree->current);
 	moveTree->current->choices.push_back(mov);
+	Move(mov);
 }
 /*void Game::removeTurn(){
 	//implement based on moveTree
@@ -437,8 +438,7 @@ bool Game::moveBack(int steps){
 	return true; //return if all moved back
 }
 bool Game::moveForward(){
-	if(moveTree->current->choices.size() != 1) return false;
-		return moveForward(moveTree->current->choices[0]);
+	return (moveTree->current->choices.size() != 1)? false:moveForward(moveTree->current->choices[0]);
 }
 bool Game::moveForward(Move * mov){
 	//fix to use moveTrees changes
