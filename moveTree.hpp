@@ -31,6 +31,7 @@ class Move{
 				std::vector<change_t> changes;
 				std::vector<Move *> choices;
 
+				Move();
 				Move(Move * p);
 				~Move();
 				void findChoices();

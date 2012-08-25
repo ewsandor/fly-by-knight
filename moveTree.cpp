@@ -7,9 +7,10 @@
 #include "moveTree.hpp"
 
 MoveTree::MoveTree(Game * g){
-	gm = g;
-	root = new Move(NULL);
-	current = root;
+	gm  = g;
+	root = NULL;
+	current = NULL;
+	actual = NULL;
 }
 Move::Move(Move * p){
 	id="NULL";
@@ -18,6 +19,13 @@ Move::Move(Move * p){
 	score = 0;
 	turn = parent==NULL?0:parent->turn+1;	
 	
+}
+Move::Move(){
+	id="NULL";
+	foundChoices = false;
+	parent = NULL;
+	score = 0;
+	turn = 0;
 }
 Move::~Move(){
 	changes.clear();

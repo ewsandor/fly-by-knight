@@ -23,12 +23,12 @@ class Game{
 		Piece * whiteKing;
 		Piece * blackKing;
 		Board * board;
-		MoveTree * moveTree;
 
 	public:
-		std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
+		//std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
 		Piece * enpasantable;
 		int playAs;
+		MoveTree * moveTree;
 
 		Game();
 

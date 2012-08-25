@@ -18,11 +18,11 @@ using namespace std;
 
 Game::Game(){
 	board = new Board(this);
-	resetGame();
 	moveTree = new MoveTree(this);
-	moveTree->root = new Move(NULL);
+	moveTree->root = new Move();
 	moveTree->actual = moveTree->root;
 	moveTree->current = moveTree->root;
+	resetGame();
 }
 
 void Game::clear(){
@@ -47,9 +47,10 @@ void Game::resetGame(){
 	//reverse tree to move 0
 	enpasantable = NULL;
 	playAs = BLACK;  
-	delete moveTree->root;
+	//if(moveTree->root != NULL)
+		//delete moveTree->root;
 	setupBoard();
-	moveTree->root = new Move(NULL);
+	moveTree->root = new Move();
 	moveTree->actual = moveTree->root;
 	moveTree->current = moveTree->root;
 }
@@ -376,7 +377,7 @@ void Game::addTurn(){
 	//implement based on moveTree
 	Move * mov = new Move(moveTree->current);
 	moveTree->current->choices.push_back(mov);
-	Move(mov);
+	move(mov);
 }
 /*void Game::removeTurn(){
 	//implement based on moveTree

@@ -196,12 +196,12 @@ bool Pawn::move(int x, int y){
     
   if(Piece::move(x,y)){
     if(!hasMoved){
-      change_t * c = &gm->changes.back()[0];
+		change_t * c = &gm->moveTree->current->changes.back();
       c->firstMove = true;
       hasMoved = true;
     }
     if(ep){
-      change_t * c = &gm->changes.back()[0];
+		change_t * c = &gm->moveTree->current->changes.back();
       c->ep = true;
       gm->enpasantable = this;
     }  
@@ -395,7 +395,7 @@ bool Rook::move(int x, int y){
 
   if(Piece::move(x,y)){
     if(!hasMoved){
-      change_t * c = &gm->changes.back()[0];
+		change_t * c = &gm->moveTree->current->changes.back();
       c->firstMove = true;
       hasMoved = true;
     }
@@ -579,7 +579,7 @@ bool King::move(int x, int y){
   }
   else if(Piece::move(x,y)){
     if(!hasMoved){
-      change_t * c = &gm->changes.back()[0];
+		change_t * c = &gm->moveTree->current->changes.back();
       c->firstMove = true;
       hasMoved = true;
     }
