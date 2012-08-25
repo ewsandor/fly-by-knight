@@ -22,8 +22,8 @@ Board::Board(Game * g){
 void Board::clearBoard(){
   for(int i = 0; i < 8; i++)
     for(int j = 0; j < 8; j++){
-      if(pieces[i][j] != NULL)
-		delete pieces[i][j];
+      //if(pieces[i][j] != NULL)
+		//delete pieces[i][j];
       pieces[i][j] = NULL;
     }
  }

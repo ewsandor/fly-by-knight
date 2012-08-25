@@ -1,4 +1,0 @@
-VS
-*.o
-flyByKnight
-xboard.debug

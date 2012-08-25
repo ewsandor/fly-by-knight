@@ -61,6 +61,7 @@ class Game{
 		bool moveForward(int steps);
 		bool move(Move * mov);
 		bool goActualLayout();
+		void commitMove();
 
 	private:
 		bool inMate(Piece * matey);

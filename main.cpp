@@ -21,7 +21,7 @@ bool editMode = false;
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.2.0\" sigint=0 sigterm=0");
+	handleOutput("feature myname=\"Fly By Knight 0.2.4\" sigint=0 sigterm=0");
 
 	//currentGame->setupBoard();
 	//currentGame->getBoard()->printBoard();
@@ -61,25 +61,32 @@ bool handleInput(string input){
 		else if(input.find("print") == 0)                         //draws a board
 			currentGame->getBoard()->printBoard();
 		else if(input.find("help") == 0)                          //dislays list of commands
-			handleOutput("\nquit\nprint\nnew\ngo\nforce\nundo\nremove\nhelp\n");
+			handleOutput("\nquit\nprint\nnew\ngo\nforce\nundo\nremove\nredo\nreplace\nhelp\n");
 		else if(input.find("go") == 0)                             //move right now
 			currentGame->playAs = currentGame->getTurn();
 		else if(input.find("force") == 0 || input.find("result") == 0)                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
-		else if(input.find("undo") == 0)                         //go back 1 move; play same color
+		else if(input.find("undo") == 0){                        //go back 1 move; play same color
 			currentGame->moveBack();
-		else if(input.find("remove") == 0)                    //go back 2 moves; play same color
+		}
+		else if(input.find("remove") == 0){                    //go back 2 moves; play same color
 			currentGame->moveBack(2);
-		else if(input.find("redo") == 0)                         //go foreward 1 move; play same color
+		}
+		else if(input.find("redo") == 0){                        //go foreward 1 move; play same color
 			currentGame->moveForward();
-		else if(input.find("replace") == 0)                         //go foreward 2 move; play same color
+		}
+		else if(input.find("replace") == 0){                         //go foreward 2 move; play same color
 			currentGame->moveForward(2);
+		}
 		else if(input.find("edit") == 0){
+			currentGame->goActualLayout();
 			editMode = true;
 			eColor = WHITE;
 		}
 		else if(Board::moveFormat(input)){                   //move piece
+			currentGame->goActualLayout();
 			if(currentGame->move(input)){
+				currentGame->commitMove();
 				currentGame->endGame();
 			}
 			else{
@@ -90,9 +97,10 @@ bool handleInput(string input){
 			handleOutput("Error (unknown command): " + input);
 		}
 		string str = currentGame->chooseMove();
-		if(!str.find("...---...") == 0){  
+		if(str.find("...---...") != 0){  
 			currentGame->move(str);
 			handleOutput("move " + str);
+			currentGame->commitMove();
 			currentGame->endGame();
 		}
 	}

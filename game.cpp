@@ -19,9 +19,6 @@ using namespace std;
 Game::Game(){
 	board = new Board(this);
 	moveTree = new MoveTree(this);
-	moveTree->root = new Move();
-	moveTree->actual = moveTree->root;
-	moveTree->current = moveTree->root;
 	resetGame();
 }
 
@@ -47,8 +44,8 @@ void Game::resetGame(){
 	//reverse tree to move 0
 	enpasantable = NULL;
 	playAs = BLACK;  
-	//if(moveTree->root != NULL)
-		//delete moveTree->root;
+	if(moveTree->root != NULL)
+		delete moveTree->root;
 	setupBoard();
 	moveTree->root = new Move();
 	moveTree->actual = moveTree->root;
@@ -134,6 +131,8 @@ bool Game::move(int from, int to){
 	return ( board->pieces[from / 10][from % 10]->move(to / 10, to % 10));
 }
 bool Game::move(Move * mov){
+	if(mov == moveTree->current)
+		return true;
 	if(mov->parent != moveTree->current){
 		//bring current position back to same turn as move if ahead
 		while(moveTree->current->turn > mov->turn){
@@ -142,11 +141,11 @@ bool Game::move(Move * mov){
 			moveBack();
 		}
 		//build chain to get mov to current position if ahead
-		stack<Move *> chain;
+		vector<Move *> chain;
 		while(mov->turn > moveTree->current->turn){
-			if(chain.top()->turn == 0)
+			if(!chain.empty() && chain.back()->turn == 0)
 				return false;
-			chain.push(mov);
+			chain.push_back(mov);
 			mov = mov->parent;
 		}
 		//move back to find common parent between move and current position
@@ -155,9 +154,9 @@ bool Game::move(Move * mov){
 				return false;
 			moveBack();
 
-			if(chain.top()->turn == 0)
+			if(!chain.empty() && chain.back()->turn == 0)
 				return false;
-			chain.push(mov);
+			chain.push_back(mov);
 			mov = mov->parent;
 		}
 		//move current position to parent and follow chain to original mov
@@ -167,8 +166,8 @@ bool Game::move(Move * mov){
 
 		if(!moveForward(mov))return false;
 		while(chain.size() > 0){
-			mov = chain.top();
-			chain.pop();
+			mov = chain.back();
+			chain.pop_back();
 			if(!moveForward(mov))return false;
 		}
 	}
@@ -347,7 +346,7 @@ bool Game::causesCheck(Piece * piece, int mov){
 	board->pieces[newLoc/10][newLoc%10] = board->pieces[oldLoc/10][oldLoc%10];
 	board->pieces[oldLoc/10][oldLoc%10] = NULL;
 
-	int check = inCheck(piece);
+	bool check = inCheck(piece);
 
 	board->pieces[newLoc/10][newLoc%10]->setLocation(oldLoc/10, oldLoc%10);
 	board->pieces[oldLoc/10][oldLoc%10] = board->pieces[newLoc/10][newLoc%10];
@@ -480,13 +479,10 @@ bool Game::moveForward(int steps){
 }
 //sets board to match the true board setup
 bool Game::goActualLayout(){
-	while(moveTree->actual->turn > moveTree->current->turn)
-		if(!moveForward())
-			return false;
-	while(moveTree->actual->turn < moveTree ->current->turn)
-		if(!moveBack())	
-			return false;
-	return true;
+	return move(moveTree->actual);
+}
+void Game::commitMove(){
+	moveTree->actual = moveTree->current;
 }
 
 double Game::evaluateBoard(){
