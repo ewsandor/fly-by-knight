@@ -223,7 +223,7 @@ bool Pawn::move(int x, int y){
     gm->getBoard()->pieces[eX][eY] = epv;
   return false;
 }
-void Pawn::getMoves(vector<int> &moves){
+void Pawn::getMoves(vector<string> &moves){
 
   int currentLoc = X*1000 + Y*100;
   int rowDisplace = -1;
@@ -234,16 +234,16 @@ void Pawn::getMoves(vector<int> &moves){
       
       if(Piece::onBoard(x,y) && isLeagal(x,y))
 		if(y != 0 || y != 7)
-			moves.push_back(currentLoc+x*10+y);
+			moves.push_back(Board::toStr(currentLoc+x*10+y));
     }
     rowDisplace = 1;
   }
   int y = Y + 2;
   if(Piece::onBoard(X,y) && isLeagal(X,y))
-	moves.push_back(currentLoc+X*10+y);
+	moves.push_back(Board::toStr(currentLoc+X*10+y));
   y = Y - 2;
   if(Piece::onBoard(X,y) && isLeagal(X,y))
-	moves.push_back(currentLoc+X*10+y);
+	moves.push_back(Board::toStr(currentLoc+X*10+y));
 
   return;
 };
@@ -271,7 +271,7 @@ string Knight::toShortString(){
     return str + "N";*/
   return (getColor()==WHITE? "N":"n");
 }
-void Knight::getMoves(vector<int> &moves){
+void Knight::getMoves(vector<string> &moves){
   
   int oldloc = X * 1000 + Y * 100;
 
@@ -282,7 +282,7 @@ void Knight::getMoves(vector<int> &moves){
 		int y = Y + j;
       if(j == 0 || i == j)	continue;
       if(onBoard(x,y) && isLeagal(x,y))
-	moves.push_back(oldloc + x * 10 + y);
+	moves.push_back(Board::toStr(oldloc + x * 10 + y));
     }
   }
 
@@ -324,7 +324,7 @@ string Bishop::toShortString(){
 
   return (getColor()==WHITE? "B":"b");
 }
-void Bishop::getMoves(vector<int> &moves){
+void Bishop::getMoves(vector<string> &moves){
   
   int oldloc = X * 1000 + Y * 100;
 
@@ -332,19 +332,19 @@ void Bishop::getMoves(vector<int> &moves){
     int x = X + i;
     int y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X + i;
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
   }
 
   return;
@@ -404,24 +404,24 @@ bool Rook::move(int x, int y){
   else
     return false;
 }
-void Rook::getMoves(vector<int> &moves){
+void Rook::getMoves(vector<string> &moves){
 	  int oldloc = X * 1000 + Y * 100;
 
   for(int i = 1; i < 8; i++){
     int x = X + i;
     int y = Y;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X;
     y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
   }
 
 	return;
@@ -470,7 +470,7 @@ string Queen::toShortString(){
 
   return (getColor()==WHITE? "Q":"q");
 }
-void Queen::getMoves(vector<int> &moves){
+void Queen::getMoves(vector<string> &moves){
   
   int oldloc = X*1000 + Y*100;
   
@@ -478,34 +478,34 @@ void Queen::getMoves(vector<int> &moves){
     int x = X + i;
     int y = Y;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X;
     y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X;
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X + i;
     y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     y = Y + i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X + i;
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
     x = X - i;
     y = Y - i;
     if(Piece::onBoard(x,y) && isLeagal(x,y))
-      moves.push_back(oldloc+x*10+y);
+      moves.push_back(Board::toStr(oldloc+x*10+y));
   }
   
   return;
@@ -621,7 +621,7 @@ bool King::castleLegal(int x, int y){
   }
   return (hortmod == 1 || (hortmod == -1 && gm->getBoard()->pieces[1][y] == NULL));
 }
-void King::getMoves(vector<int> &moves){
+void King::getMoves(vector<string> &moves){
   
   int currentLoc = X * 1000 + Y * 100;
   for(int i = -1; i <=1; i++){
@@ -631,18 +631,18 @@ void King::getMoves(vector<int> &moves){
       int y = Y + j;
       
       if(Piece::onBoard(x,y) && isLeagal(x,y))
-	moves.push_back(currentLoc+x*10+y);
+	moves.push_back(Board::toStr(currentLoc+x*10+y));
     }
   }
 
   if(color == WHITE && castleLegal(6,0))
-    moves.push_back(currentLoc+6*10+0);
+    moves.push_back(Board::toStr(currentLoc+6*10+0));
   if(color == BLACK && castleLegal(6,7))
-    moves.push_back(currentLoc+6*10+7);
+    moves.push_back(Board::toStr(currentLoc+6*10+7));
   if(color == WHITE && castleLegal(2,0))
-    moves.push_back(currentLoc+2*10+0);
+    moves.push_back(Board::toStr(currentLoc+2*10+0));
   if(color == BLACK && castleLegal(2,7))
-    moves.push_back(currentLoc+2*10+7);
+    moves.push_back(Board::toStr(currentLoc+2*10+7));
   
   return;
 }

@@ -80,6 +80,7 @@ int Board::toInts(string str){
 }
 string Board::toStr(int mov){
   
+	if(mov < 100){
   if((mov / 10) >= 8 || (mov / 10) < 0 || (mov % 10) >= 8 || (mov % 10) < 0 )
      return "...---...";
 
@@ -87,6 +88,18 @@ string Board::toStr(int mov){
   str += (mov / 10) + 97;
   str += (mov % 10) + 49;
   return str;
+	}
+	else{
+		if(mov/1000 >= 8 || mov / 1000 < 0 || (mov%1000)/100 >= 8 || (mov%1000)/100 < 0 || (mov%100)/10 >= 8 || mov%100/10 < 0 || mov%10 >= 8 || mov%10 < 0)
+		return "...---...";
+	
+		string str = "";
+		str += (mov/1000) + 97;
+		str += (mov%1000)/100 + 49;
+		str += (mov%100) /10 + 97;
+		str += (mov%10) + 49;
+		return str;
+	}
 }
 bool Board::moveFormat(string str){
   

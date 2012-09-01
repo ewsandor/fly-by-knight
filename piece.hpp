@@ -32,7 +32,7 @@ public:
   std::string virtual toString() = 0;
   std::string virtual toShortString() = 0;
   bool virtual move(int x, int y);
-  void virtual getMoves(std::vector<int> &moves) = 0;
+  void virtual getMoves(std::vector<std::string> &moves) = 0;
   Game * getGame();
 
   static bool onBoard(int x, int y);
@@ -49,7 +49,7 @@ public:
   std::string toShortString();
   bool causesCheck(int x, int y);
   bool move(int x, int y);  
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 };
 
 class Knight : public Piece{
@@ -58,7 +58,7 @@ public:
   bool isLeagal(int x, int y);
   std::string toString();
   std::string toShortString();
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 };
 
 class Bishop : public Piece{
@@ -67,7 +67,7 @@ public:
   bool isLeagal(int x, int y);
   std::string toString();
   std::string toShortString();
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 };
 
 class Rook : public Piece{
@@ -79,7 +79,7 @@ public:
   std::string toString();
   std::string toShortString();
   bool move(int x, int y);
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 };
 
 class Queen : public Piece{
@@ -88,7 +88,7 @@ public:
   bool isLeagal(int x, int y);  
   std::string toString();
   std::string toShortString();
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 };
 
 class King : public Piece{
@@ -99,7 +99,7 @@ public:
   std::string toString();
   std::string toShortString();
   bool move(int x, int y);
-  void getMoves(std::vector<int> &moves);
+  void getMoves(std::vector<std::string> &moves);
 
   bool castleLegal(int x, int y);
 };

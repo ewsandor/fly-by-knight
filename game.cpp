@@ -35,7 +35,7 @@ void Game::clear(){
 				c.firstMove = false;
 
 				addChange(c);
-
+				
 				board->pieces[i][j] = NULL;
 			}
 }
@@ -220,12 +220,13 @@ bool Game::inMate(Piece * matey){
 	board->getPieces(matey->getColor(), pieces);
 
 	for(unsigned int i = 0; i < pieces.size(); i++){
-		vector<int> moves;
+		vector<string> moves;
 		pieces[i]->getMoves(moves);
 
 		for(unsigned int i = 0; i < moves.size(); i++){
 
-			bool causesCheck = board->pieces[moves[i]/1000][(moves[i]%1000)/100]->causesCheck((moves[i]%100)/10, moves[i]%10);
+			int mov = Board::toInts(moves[i]);
+			bool causesCheck = board->pieces[mov/1000][(mov%1000)/100]->causesCheck((mov%100)/10, mov%10);
 
 			/*int oldLoc = moves[i]/100;
 			  int newLoc = moves[i]%100;
@@ -497,7 +498,7 @@ double Game::evaluateBoard(){
 		int mute = pieces[i]->getColor() == WHITE?1:-1;
 
 		score += mute * (pieces[i]->getValue());
-		vector <int> moves;
+		vector <string> moves;
 		pieces[i]->getMoves(moves);
 
 		score += mute * (moves.size());
@@ -513,7 +514,7 @@ string Game::chooseMove(){
 
 	board->getPieces(playAs, pieces);
 
-	vector<int> moves;
+	vector<string> moves;
 
 	for(unsigned int i = 0; i < pieces.size(); i++)
 		pieces[i]->getMoves(moves);
@@ -525,24 +526,40 @@ string Game::chooseMove(){
 	if(moves.size() == 0)
 		return "...---...";
 
-	vector <vector<double> > scores(moves.size(), vector<double>(2));
+	vector<string> legalMoves;
 
-	for(unsigned int i = 0; i < moves.size(); i++)
-		if(!( i < moves.size() && board->pieces[moves[i]/1000][(moves[i]%1000)/100]->causesCheck((moves[i]%100)/10, moves[i]%10))){
+	for(unsigned int i = 0; i < moves.size(); i++){
+		//cout << moves[i] << endl;
+		if(move(moves[i])){
+			legalMoves.push_back(moves[i]);
+			moveBack();
+		}
+	}
+	if(legalMoves.size() == 0)
+		return "...---...";
+	for(unsigned int i = 0; i < legalMoves.size(); i++)	
+		cout << legalMoves[i] << endl;
+
+	return legalMoves[(int)time(NULL)%legalMoves.size()];
+	/*vector <vector<double> > scores(moves.size(), vector<double>(2));
+
+	for(unsigned int i = 0; i < moves.size(); i++){
+		int mov = Board::toInts(moves[i]);
+		if(!( i < moves.size() && board->pieces[mov/1000][(mov%1000)/100]->causesCheck((mov%100)/10, mov%10))){
 			//double[]* tmp = {(double) moves[i], 0.0};
 			//scores.push_back(tmp);
-			scores[i][0] = (double)moves[i];
+			scores[i][0] = (double)mov;
 		}
 		else
 			scores[i][0] = -1;
+	}
 
 	moves.clear();
 	for(unsigned int i = 0; i < scores.size(); i++){
 		if(scores[i][0] != -1)
-			moves.push_back(scores[i][0]);
+			moves.push_back(Board::toStr(scores[i][0]));
 	}
 
-	int mov = moves[time(NULL)%moves.size()];
-
-	return Board::toStr(mov / 100) + Board::toStr(mov % 100); 
+	return moves[time(NULL)%moves.size()];
+	*/
 }
