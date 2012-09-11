@@ -66,7 +66,7 @@ void Board::clearSpace(int x, int y){
 
 int Board::toInts(string str){
 
-  if(str.length() < 2)
+  /*if(str.length() < 2)
     return -1;
 
   int ret = 0;
@@ -76,18 +76,41 @@ int Board::toInts(string str){
   if(str.at(1) > 56 || str.at(1) < 49)
     return -1;
 
-  return ((ret * 10) + str.at(1) - 49);
+  return ((ret * 10) + str.at(1) - 49);*/
+
+	if(str.size() < 2)
+		return -1;
+	int ret = 0;
+	ret += (int)(str.at(0))-97;
+	if(ret > 7 || ret < 0)
+		return -1;
+	ret *= 10;
+	if((int)(str.at(1)) > 56 || (int)(str.at(1)) < 49)
+		return -1;
+	ret += str.at(1) - 49;
+	if(str.size() >= 4){
+		ret *= 100;
+		ret += (((int)(str.at(2))-97)*10);
+		if((ret%100)/10 > 7 || (ret%100)/10 < 0)
+			return -1;
+		if((int)(str.at(3)) > 56 || (int)(str.at(3)) < 49)
+			return -1;
+		ret += (int)(str.at(3)) - 49;
+		return ret;
+	}
+	else
+		return ret;
 }
 string Board::toStr(int mov){
   
 	if(mov < 100){
-  if((mov / 10) >= 8 || (mov / 10) < 0 || (mov % 10) >= 8 || (mov % 10) < 0 )
-     return "...---...";
+		if((mov / 10) >= 8 || (mov / 10) < 0 || (mov % 10) >= 8 || (mov % 10) < 0 )
+			 return "...---...";
 
-  string str = "";
-  str += (mov / 10) + 97;
-  str += (mov % 10) + 49;
-  return str;
+		string str = "";
+		str += (mov / 10) + 97;
+		str += (mov % 10) + 49;
+		return str;
 	}
 	else{
 		if(mov/1000 >= 8 || mov / 1000 < 0 || (mov%1000)/100 >= 8 || (mov%1000)/100 < 0 || (mov%100)/10 >= 8 || mov%100/10 < 0 || mov%10 >= 8 || mov%10 < 0)
@@ -103,7 +126,7 @@ string Board::toStr(int mov){
 }
 bool Board::moveFormat(string str){
   
-  return (Board::toInts(str) != -1 && Board::toInts(str.substr(2,2)) != -1 && (str.length() == 4 || (str.length() == 5 && (str.at(4) == 'b' || str.at(4) == 'n' || str.at(4) == 'r' || str.at(4) == 'q'))));
+  return (Board::toInts(str) != -1  && (str.length() == 4 || (str.length() == 5 && (str.at(4) == 'b' || str.at(4) == 'n' || str.at(4) == 'r' || str.at(4) == 'q'))));
 }
 
 void Board::getPieces(int color, vector<Piece *> &found){
