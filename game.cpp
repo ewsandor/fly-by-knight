@@ -536,9 +536,9 @@ string Game::chooseMove(){
 		}
 	}
 	if(legalMoves.size() == 0)
-		return "...---...";
+		return "...---...";/*
 	for(unsigned int i = 0; i < legalMoves.size(); i++)	
-		cout << legalMoves[i] << endl;
+		cout << legalMoves[i] << endl;*/
 
 	return legalMoves[(int)time(NULL)%legalMoves.size()];
 	/*vector <vector<double> > scores(moves.size(), vector<double>(2));

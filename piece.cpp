@@ -96,6 +96,12 @@ bool Piece::move(int x, int y){
     
     this->gm->getBoard()->pieces[x][y] = oldPiece;
     
+	gm->moveTree->current = gm->moveTree->current->parent;
+	gm->moveTree->current->choices.pop_back();
+	  /*Move * tmp = gm->moveTree->current;
+	  gm->moveBack();
+	  gm->moveTree->current->choices.pop_back();*/
+
     //cout << "CHECK" << endl;
     
     return false;
@@ -571,7 +577,7 @@ bool King::move(int x, int y){
     c.ep = false;
     gm->addChange(c);
 
-    gm->getBoard()->pieces[rn][y]->setLocation(rn,y);
+	gm->getBoard()->pieces[rn][y]->setLocation(rn,y);
 
 	static_cast<Rook *>(gm->getBoard()->pieces[rn][y])->hasMoved = true;
 	hasMoved = true;
@@ -585,8 +591,9 @@ bool King::move(int x, int y){
     }
     return true;
   }
-  else
+  else{
     return false;
+  }
 }
 bool King::castleLegal(int x, int y){
 

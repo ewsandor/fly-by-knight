@@ -98,6 +98,7 @@ bool handleInput(string input){
 		}
 		string str = currentGame->chooseMove();
 		if(str.find("...---...") != 0){  
+			currentGame->goActualLayout();
 			currentGame->move(str);
 			handleOutput("move " + str);
 			currentGame->commitMove();
