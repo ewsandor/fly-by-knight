@@ -87,7 +87,7 @@ int Board::toInts(string str){
 	ret *= 10;
 	if((int)(str.at(1)) > 56 || (int)(str.at(1)) < 49)
 		return -1;
-	ret += str.at(1) - 49;
+	ret += (str.at(1) - 49);
 	if(str.size() >= 4){
 		ret *= 100;
 		ret += (((int)(str.at(2))-97)*10);
@@ -95,7 +95,7 @@ int Board::toInts(string str){
 			return -1;
 		if((int)(str.at(3)) > 56 || (int)(str.at(3)) < 49)
 			return -1;
-		ret += (int)(str.at(3)) - 49;
+		ret += ((int)(str.at(3)) - 49);
 		return ret;
 	}
 	else
@@ -103,7 +103,7 @@ int Board::toInts(string str){
 }
 string Board::toStr(int mov){
   
-	if(mov < 100){
+	/*if(mov < 100){
 		if((mov / 10) >= 8 || (mov / 10) < 0 || (mov % 10) >= 8 || (mov % 10) < 0 )
 			 return "...---...";
 
@@ -112,7 +112,7 @@ string Board::toStr(int mov){
 		str += (mov % 10) + 49;
 		return str;
 	}
-	else{
+	else{*/
 		if(mov/1000 >= 8 || mov / 1000 < 0 || (mov%1000)/100 >= 8 || (mov%1000)/100 < 0 || (mov%100)/10 >= 8 || mov%100/10 < 0 || mov%10 >= 8 || mov%10 < 0)
 		return "...---...";
 	
@@ -122,7 +122,7 @@ string Board::toStr(int mov){
 		str += (mov%100) /10 + 97;
 		str += (mov%10) + 49;
 		return str;
-	}
+	//}
 }
 bool Board::moveFormat(string str){
   

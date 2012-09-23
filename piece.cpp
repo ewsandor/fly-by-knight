@@ -549,8 +549,18 @@ bool King::move(int x, int y){
 
     gm->addTurn();
 
-    int ro = (x<X)?0:7;
-    int rn = (x<X)?3:5;
+    int rko; 
+	if(x<X)
+		rko = 0;
+	else
+		rko = 7;
+
+    int rkn;
+	if(x<X)
+		rkn = 3;
+	else
+		rkn = 5;
+
     gm->getBoard()->pieces[x][y] = this;
     gm->getBoard()->pieces[X][Y] = NULL;
 
@@ -566,20 +576,20 @@ bool King::move(int x, int y){
     X=x;
     Y=y;
 
-    gm->getBoard()->pieces[rn][y] = gm->getBoard()->pieces[ro][y];
-    gm->getBoard()->pieces[ro][y] = NULL;    
+    gm->getBoard()->pieces[rkn][y] = gm->getBoard()->pieces[rko][y];
+    gm->getBoard()->pieces[rko][y] = NULL;    
 
-    c.moded = gm->getBoard()->pieces[rn][y];
-    c.oldLoc = ro*10 + y;
-    c.newLoc = rn*10 + y;
-    c.captured = false;
-    c.firstMove = true;
-    c.ep = false;
-    gm->addChange(c);
+	change_t d;
+    d.moded = gm->getBoard()->pieces[rkn][y];
+    d.oldLoc = rko*10 + y;
+    d.newLoc = rkn*10 + y;
+    d.captured = false;
+    d.firstMove = true;
+    d.ep = false;
+    gm->addChange(d);
+	gm->getBoard()->pieces[rkn][y]->setLocation(rkn,y);
 
-	gm->getBoard()->pieces[rn][y]->setLocation(rn,y);
-
-	static_cast<Rook *>(gm->getBoard()->pieces[rn][y])->hasMoved = true;
+	static_cast<Rook *>(gm->getBoard()->pieces[rkn][y])->hasMoved = true;
 	hasMoved = true;
 	return true;
   }
