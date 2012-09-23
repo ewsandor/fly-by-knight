@@ -239,8 +239,14 @@ void Pawn::getMoves(vector<string> &moves){
       int y = Y+rowDisplace;
       
       if(Piece::onBoard(x,y) && isLeagal(x,y))
-		if(y != 0 || y != 7)
+		if(y != 0 && y != 7)
 			moves.push_back(Board::toStr(currentLoc+x*10+y));
+		else{
+			moves.push_back(Board::toStr(currentLoc+x*10+y) + "q");
+			moves.push_back(Board::toStr(currentLoc+x*10+y) + "r");
+			moves.push_back(Board::toStr(currentLoc+x*10+y) + "b");
+			moves.push_back(Board::toStr(currentLoc+x*10+y) + "n");
+		}
     }
     rowDisplace = 1;
   }
@@ -546,9 +552,7 @@ string King::toShortString(){
 bool King::move(int x, int y){
   
   if(abs(x-X) == 2 && castleLegal(x,y)){
-
-    gm->addTurn();
-
+	  
     int rko; 
 	if(x<X)
 		rko = 0;
@@ -560,6 +564,8 @@ bool King::move(int x, int y){
 		rkn = 3;
 	else
 		rkn = 5;
+	if(gm->getBoard()->pieces[rko][y] == NULL || !gm->getBoard()->pieces[rko][y]->move(rkn, y))
+		return false;
 
     gm->getBoard()->pieces[x][y] = this;
     gm->getBoard()->pieces[X][Y] = NULL;
@@ -576,21 +582,6 @@ bool King::move(int x, int y){
     X=x;
     Y=y;
 
-    gm->getBoard()->pieces[rkn][y] = gm->getBoard()->pieces[rko][y];
-    gm->getBoard()->pieces[rko][y] = NULL;    
-
-	change_t d;
-    d.moded = gm->getBoard()->pieces[rkn][y];
-    d.oldLoc = rko*10 + y;
-    d.newLoc = rkn*10 + y;
-    d.captured = false;
-    d.firstMove = true;
-    d.ep = false;
-    gm->addChange(d);
-	gm->getBoard()->pieces[rkn][y]->setLocation(rkn,y);
-
-	static_cast<Rook *>(gm->getBoard()->pieces[rkn][y])->hasMoved = true;
-	hasMoved = true;
 	return true;
   }
   else if(Piece::move(x,y)){
@@ -606,37 +597,51 @@ bool King::move(int x, int y){
   }
 }
 bool King::castleLegal(int x, int y){
+	//initial king test
+	if(abs(x-X) != 2 || (x != 2 && x != 6) || this->hasMoved || gm->getBoard()->pieces[x][y] != NULL || gm->inCheck(gm->getKing(this->color)))
+		return false;
+	
+	//test rook
+	int rx = 0;
+	if(x>X)
+		rx = 7;
+	if(gm->getBoard()->pieces[rx][y] == NULL || (gm->getBoard()->pieces[rx][y]->toShortString().find("R") != 0 && gm->getBoard()->pieces[rx][y]->toShortString().find("r") != 0)
+		|| gm->getBoard()->pieces[rx][y]->hasMoved)
+		return false;
 
-  if( hasMoved || (y!=0 && y != 7) || (x != 2 && x != 6) || gm->inCheck(this))
-    return false;
+	//test clear path and doesn't enter check
+	int oX = X;
+	int hortmod = (x<X)?-1:1;
+	//first space
+	X=oX + hortmod;
+	if(gm->getBoard()->pieces[X][y] != NULL){
+		X = oX;
+		return false;
+	}
+	gm->getBoard()->pieces[X][y] = gm->getBoard()->pieces[oX][Y];
+	gm->getBoard()->pieces[oX][Y] = NULL;
+	bool check = gm->inCheck(gm->getKing(this->color));
+	gm->getBoard()->pieces[oX][Y] = gm->getBoard()->pieces[X][y];
+	gm->getBoard()->pieces[X][y] = NULL;
+	X = oX;
+	if(check){
+		return false;
+	}
+	//test destination
+	X=x;
+	gm->getBoard()->pieces[x][y] = gm->getBoard()->pieces[oX][Y];
+	gm->getBoard()->pieces[oX][Y] = NULL;
+	check = gm->inCheck(gm->getKing(this->color));
+	gm->getBoard()->pieces[oX][Y] = gm->getBoard()->pieces[x][y];
+	gm->getBoard()->pieces[x][y] = NULL;
+	X = oX;
+	if(check)
+		return false;
 
-  int r = (x<X)?0:7;
-  int hortmod= (x<X)?-1:1;
-
-  if(gm->getBoard()->pieces[r][y] != NULL && (gm->getBoard()->pieces[r][y]->toShortString().at(0) == 'R' || gm->getBoard()->pieces[r][y]->toShortString().at(0) == 'r') 
-     && static_cast<Rook *>(gm->getBoard()->pieces[r][y])->getHasMoved())
-    return false;
-  
-  for(int bx = X+hortmod; (x<X && bx >= x) || (x>X && bx <= x); bx+=hortmod){
-    //int bx= X + (i * hortmod);
-    if(gm->getBoard()->getPiece(bx,y) != NULL)
-      return false;
-    int oldloc = (X* 10)+ Y;
-    X=bx;
-    Y=y;
-    gm->getBoard()->pieces[bx][y] = this;
-    gm->getBoard()->pieces[oldloc/10][oldloc%10] = NULL;
-  
-    bool check = gm->inCheck(this);
-
-    gm->getBoard()->pieces[oldloc/10][oldloc%10] = this;
-    gm->getBoard()->pieces[bx][y] = NULL;
-    X=oldloc/10;
-    Y=oldloc%10;
-    if(check)
-      return false;
-  }
-  return (hortmod == 1 || (hortmod == -1 && gm->getBoard()->pieces[1][y] == NULL));
+	//test left rook space clear
+	if(x<X && gm->getBoard()->pieces[1][y] != NULL)
+		return false;
+	return true;
 }
 void King::getMoves(vector<string> &moves){
   
