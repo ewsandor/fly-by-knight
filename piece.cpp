@@ -55,7 +55,7 @@ bool Piece::causesCheck(int x, int y){
   gm->getBoard()->pieces[x][y] = gm->getBoard()->pieces[oldLoc/10][oldLoc%10];
   gm->getBoard()->pieces[oldLoc/10][oldLoc%10] = NULL;
   
-  int check = gm->inCheck(gm->getKing(color));
+  bool check = gm->inCheck(gm->getKing(color));
   
   gm->getBoard()->pieces[x][y]->setLocation(oldLoc/10, oldLoc%10);
   gm->getBoard()->pieces[oldLoc/10][oldLoc%10] = gm->getBoard()->pieces[x][y];

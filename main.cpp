@@ -68,15 +68,19 @@ bool handleInput(string input){
 			currentGame->playAs = NONE;
 		else if(input.find("undo") == 0){                        //go back 1 move; play same color
 			currentGame->moveBack();
+				currentGame->commitMove();
 		}
 		else if(input.find("remove") == 0){                    //go back 2 moves; play same color
 			currentGame->moveBack(2);
+				currentGame->commitMove();
 		}
 		else if(input.find("redo") == 0){                        //go foreward 1 move; play same color
 			currentGame->moveForward();
+				currentGame->commitMove();
 		}
 		else if(input.find("replace") == 0){                         //go foreward 2 move; play same color
 			currentGame->moveForward(2);
+				currentGame->commitMove();
 		}
 		else if(input.find("edit") == 0){
 			currentGame->goActualLayout();
