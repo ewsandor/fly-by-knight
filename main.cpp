@@ -21,7 +21,7 @@ bool editMode = false;
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.3.0\" sigint=0 sigterm=0");
+	handleOutput("feature myname=\"Fly By Knight 0.3.0\" sigint=0 sigterm=0"); 
 
 	//currentGame->setupBoard();
 	//currentGame->getBoard()->printBoard();
