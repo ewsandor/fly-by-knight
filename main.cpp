@@ -7,6 +7,8 @@
 #include <string>
 #include <stdlib.h>
 #include <fstream>
+#include <queue>
+#include <boost/thread.hpp>
 #include "game.hpp"
 #include "main.hpp"
 #include "board.hpp"
@@ -15,35 +17,43 @@
 using namespace std;
 
 int eColor = WHITE;
+queue<string> inputQueue;
 
 Game * currentGame = new Game();
 bool editMode = false;
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.3.0\" sigint=0 sigterm=0");
+	handleOutput("feature myname=\"Fly By Knight 0.3.2\" sigint=0 sigterm=0");
 
-	//currentGame->setupBoard();
-	//currentGame->getBoard()->printBoard();
+	boost::thread inputQueuerThread(inputQueuer);
 
 	string input = "";
 	string last = input;
 
 	for(;;){
-		getline(cin, input);
+		if(inputQueue.size() > 0){
+			input = inputQueue.front();
 
-		if(input.length() == 0)
-			input = last;
-		else
-			last = input;
-
+			if(input.length() == 0)
+				input = last;
+			else
+				last = input;
+			inputQueue.pop();
+		}
 		handleInput(input);
-
 		input = "";
 	}
 
 
 	return 0;
+}
+void inputQueuer(){
+	for(;;){
+		string input;
+		getline(cin, input);
+		inputQueue.push(input);
+	}
 }
 
 bool handleInput(string input){  
@@ -54,7 +64,8 @@ bool handleInput(string input){
 	//   input = input.substr(0,input.length()-1);
 
 	if(!editMode){
-		if(input.find("quit") == 0 || input.find("exit") == 0)                                  //exits program
+		if(input.size() == 0);
+		else if(input.find("quit") == 0 || input.find("exit") == 0)                                  //exits program
 			exit(0);
 		else if(input.find("new") == 0)                         //reset the board play white
 			currentGame->resetGame();
@@ -63,7 +74,7 @@ bool handleInput(string input){
 		else if(input.find("help") == 0)                          //dislays list of commands
 			handleOutput("\nquit\nprint\nnew\ngo\nforce\nundo\nremove\nredo\nreplace\nhelp\n");
 		else if(input.find("go") == 0)                             //move right now
-			currentGame->playAs = currentGame->getTurn();
+			currentGame->playAs = currentGame->moveTree->actual->turn%2;
 		else if(input.find("force") == 0 || input.find("result") == 0)                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
 		else if(input.find("undo") == 0){                        //go back 1 move; play same color
@@ -100,14 +111,23 @@ bool handleInput(string input){
 		else{                                                                     //handle unknown commands
 			handleOutput("Error (unknown command): " + input);
 		}
-		string str = currentGame->chooseMove();
+		if(currentGame->playAs == currentGame->moveTree->actual->turn%2){
+			currentGame->stepAnalysis();
+			cout << currentGame->moveTree->current->id << endl;
+			if(currentGame->moveTree->current->turn - currentGame->moveTree->actual->turn >= DEPTH){
+				Move * tmp = currentGame->moveTree->actual->getBest();
+				if(tmp != NULL)
+					handleOutput("move " + tmp->id);
+			}
+		}
+		/*string str = currentGame->chooseMove();
 		if(str.find("...---...") != 0){  
 			currentGame->goActualLayout();
 			currentGame->move(str);
 			handleOutput("move " + str);
 			currentGame->commitMove();
 			currentGame->endGame();
-		}
+		}*/
 	}
 	else{
 		if(input.find(".") == 0)

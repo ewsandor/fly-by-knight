@@ -4,9 +4,14 @@
 
 #ifndef _GAME_INCLUDED_
 #define _GAME_INCLUDED_
+
 #define WHITE 0
 #define BLACK 1
 #define NONE -1 
+
+#define BREADTH  5
+#define DEPTH    5
+
 #include <stdlib.h>
 #include <vector>
 #include <string>
@@ -29,6 +34,7 @@ class Game{
 		Piece * enpasantable;
 		int playAs;
 		MoveTree * moveTree;
+		std::vector<Move *> analysisQueue;
 
 		Game();
 
@@ -62,7 +68,8 @@ class Game{
 		bool move(Move * mov);
 		bool goActualLayout();
 		void commitMove();
-
+		void findChoices(Move * mov);
+		void stepAnalysis();
 	private:
 		bool inMate(Piece * matey);
 };

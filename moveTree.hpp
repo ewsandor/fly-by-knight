@@ -22,24 +22,26 @@ struct change_t{
 };
 class Move{
 			private:
-				bool foundChoices;
 			public:
+				bool foundChoices;
 				std::string id;
 				unsigned int turn;
 				double score;
 				Move * parent;
 				std::vector<change_t> changes;
 				std::vector<Move *> choices;
+				void sortScores();
+				Move * getBest();
 
 				Move();
 				Move(Move * p);
 				~Move();
-				void findChoices();
+				Move * getChoice(std::string mid);
 };
 
 class MoveTree{
 	public: 
-				MoveTree(Game * g);
+		MoveTree(Game * g);
 
 		Move * root;
 		Move * current;

@@ -1,1 +1,3 @@
-convert all piece::getMoves(vector<int> &moves) to piece::getMoves(vector<string> &moves) to simplify moving between moves with movetree
+Check move() methods
+Find search cut off
+Tweek algorithm constants and ratios

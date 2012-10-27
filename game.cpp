@@ -506,6 +506,25 @@ double Game::evaluateBoard(){
 
 	return score;
 }
+void Game::stepAnalysis(){
+	if(analysisQueue.size() == 0)
+		analysisQueue.push_back(moveTree->actual);
+	Move(this->analysisQueue[0]);
+	findChoices(analysisQueue[0]);
+	analysisQueue[0]->sortScores();
+
+	if(analysisQueue[0]->turn%2 == WHITE)
+		for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
+			analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
+	else		
+		for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
+			analysisQueue.push_back(analysisQueue[0]->choices[i]);
+	//if(playAs == moveTree->actual->turn%2 && moveTree->actual->getBest() != NULL && analysisQueue[0]->turn - moveTree->actual->turn >= DEPTH)
+		//handleOutput("move " + moveTree->actual->getBest()->id);
+
+	analysisQueue.erase(analysisQueue.begin());
+}
+
 string Game::chooseMove(){
 	if(playAs != getTurn())
 		return "...---...";
@@ -563,3 +582,34 @@ string Game::chooseMove(){
 	return moves[time(NULL)%moves.size()];
 	*/
 }
+
+void Game::findChoices(Move * mov){
+
+	Move * curMove = moveTree->current;
+
+	move(mov);
+	vector<Piece *> pieces;
+
+	board->getPieces(mov->turn%2, pieces);
+
+	vector<string> moves;
+
+	for(unsigned int i = 0; i < pieces.size(); i++)
+		pieces[i]->getMoves(moves);
+	
+	if(moves.size() == 0)
+		return;
+
+	for(unsigned int i = 0; i < moves.size(); i++){
+		if(move(moves[i])){
+			board->printBoard();
+			Move * tmp = mov->getChoice(moves[i]);
+			if(tmp != NULL){
+				tmp->score = evaluateBoard();
+				moveBack();
+			}
+		}
+	}
+	move(curMove);
+}
+
