@@ -10,7 +10,7 @@
 #define NONE -1 
 
 #define BREADTH  5
-#define DEPTH    5
+#define DEPTH    2
 
 #include <stdlib.h>
 #include <vector>
@@ -31,6 +31,8 @@ class Game{
 
 	public:
 		//std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
+		bool post;
+		int nodes;
 		Piece * enpasantable;
 		int playAs;
 		MoveTree * moveTree;

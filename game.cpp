@@ -16,7 +16,9 @@
 #include "moveTree.hpp"
 using namespace std;
 
+
 Game::Game(){
+	post = true;
 	board = new Board(this);
 	moveTree = new MoveTree(this);
 	resetGame();
@@ -42,6 +44,7 @@ void Game::clear(){
 
 void Game::resetGame(){
 	//reverse tree to move 0
+	nodes = 0;
 	enpasantable = NULL;
 	playAs = BLACK;  
 	if(moveTree->root != NULL)
@@ -50,6 +53,7 @@ void Game::resetGame(){
 	moveTree->root = new Move();
 	moveTree->actual = moveTree->root;
 	moveTree->current = moveTree->root;
+	analysisQueue.clear();
 }
 
 void Game::setupBoard(){
@@ -484,6 +488,7 @@ bool Game::goActualLayout(){
 }
 void Game::commitMove(){
 	moveTree->actual = moveTree->current;
+	nodes = 0;
 }
 
 double Game::evaluateBoard(){
@@ -497,18 +502,18 @@ double Game::evaluateBoard(){
 	for(unsigned int i = 0; i < pieces.size(); i++){
 		int mute = pieces[i]->getColor() == WHITE?1:-1;
 
-		score += mute * (pieces[i]->getValue());
-		vector <string> moves;
-		pieces[i]->getMoves(moves);
-
-		score += mute * (moves.size());
+		score += (mute * (pieces[i]->getValue()));
 	}
 
 	return score;
 }
 void Game::stepAnalysis(){
+	while(analysisQueue.size() > 0 && analysisQueue[0]->turn <= moveTree->actual->turn)
+		analysisQueue.erase(analysisQueue.begin());
+
 	if(analysisQueue.size() == 0)
 		analysisQueue.push_back(moveTree->actual);
+
 	Move(this->analysisQueue[0]);
 	findChoices(analysisQueue[0]);
 	analysisQueue[0]->sortScores();
@@ -521,6 +526,19 @@ void Game::stepAnalysis(){
 			analysisQueue.push_back(analysisQueue[0]->choices[i]);
 	//if(playAs == moveTree->actual->turn%2 && moveTree->actual->getBest() != NULL && analysisQueue[0]->turn - moveTree->actual->turn >= DEPTH)
 		//handleOutput("move " + moveTree->actual->getBest()->id);
+	if(post){
+		int depth = ((int)analysisQueue[0]->turn - moveTree->actual->turn);
+		string think = "" ;
+		think = think + to_string((long double)depth);
+		think.append(" ");
+		think.append(to_string((long double)analysisQueue[0]->score));
+		think.append(" 0 ");
+		think.append(to_string((long double)nodes));
+		think.append(" ");
+		think.append(analysisQueue[0]->id);
+	
+		handleOutput(think);
+	}
 
 	analysisQueue.erase(analysisQueue.begin());
 }
@@ -601,8 +619,8 @@ void Game::findChoices(Move * mov){
 		return;
 
 	for(unsigned int i = 0; i < moves.size(); i++){
-		if(move(moves[i])){
-			board->printBoard();
+		if(move(moves[i])){			
+			nodes++;
 			Move * tmp = mov->getChoice(moves[i]);
 			if(tmp != NULL){
 				tmp->score = evaluateBoard();
