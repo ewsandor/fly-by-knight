@@ -43,8 +43,8 @@ Move * Move::getChoice(string mid){
 	return NULL;
 }
 void Move::sortScores(){
-	for(unsigned int i  = 1; i < choices.size(); i ++){
-		for(unsigned int j = i; j > 1 && choices[j] < choices[j - 1]; j--){
+	for(unsigned int i = 1; i < choices.size(); i ++){
+		for(unsigned int j = i; j >= 1 && choices[j]->score < choices[j - 1]->score; j--){
 			Move * tmp = choices[j-1];
 			choices[j-1] = choices[j];
 			choices[j] = tmp;

@@ -10,7 +10,7 @@
 #define NONE -1 
 
 #define BREADTH  5
-#define DEPTH    2
+#define DEPTH    4
 
 #include <stdlib.h>
 #include <vector>

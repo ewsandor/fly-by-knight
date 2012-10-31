@@ -104,7 +104,10 @@ bool handleInput(string input){
 			eColor = WHITE;
 		}
 		else if(input.find("ping") == 0){
-			pings.push(input.substr(5));
+			if(input.length() > 5)
+				pings.push(input.substr(5));
+			else
+				pings.push("");
 		}
 		else if(input.find("hard") == 0){
 			ponder = true;
