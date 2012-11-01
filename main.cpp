@@ -168,7 +168,7 @@ bool handleInput(string input){
 				handleOutput("Illegal move: " + input); 
 			}
 		}
-		else if(input.find("?") == 0){
+		else if(input.find("?") == 0 && currentGame->playAs == currentGame->moveTree->actual->turn%2){
 			Move * tmp = currentGame->moveTree->actual->getBest();
 				if(tmp != NULL){
 					handleOutput("move " + tmp->id);
@@ -182,6 +182,10 @@ bool handleInput(string input){
 				if(tmp != NULL){
 					handleOutput("Hint: " + tmp->id);
 				}
+		}
+		else if(input.find("stepp") == 0){			
+			currentGame->stepAnalysis();
+			currentGame->getBoard()->printBoard();
 		}
 		else{                                                                     //handle unknown commands
 			handleOutput("Error (unknown command): " + input);

@@ -527,16 +527,15 @@ void Game::stepAnalysis(){
 	if(analysisQueue.size() == 0 || this->analysisQueue[0] == moveTree->actual){
 		analysisQueue.clear();
 		analysisQueue.push_back(moveTree->actual);
-		Move(this->analysisQueue[0]);
+		move(this->analysisQueue[0]);
+		//getBoard()->printBoard();
 		findChoices(analysisQueue[0]);
 		for(unsigned int i = 0; i < analysisQueue[0]->choices.size(); i++){
 			analysisQueue.push_back(analysisQueue[0]->choices[i]);
 		}
 		return;
 	}
-
-
-	Move(this->analysisQueue[0]);
+	move(this->analysisQueue[0]);
 	findChoices(analysisQueue[0]);
 	analysisQueue[0]->sortScores();
 
@@ -553,7 +552,7 @@ void Game::stepAnalysis(){
 		string think = "";
 		think = think + to_string((long double)depth);
 		think.append(" ");
-		think.append(to_string((long double)analysisQueue[0]->score));
+		think.append(to_string((long double)(playAs==WHITE?analysisQueue[0]->score:-1*analysisQueue[0]->score)));
 		think.append(" 0 ");
 		think.append(to_string((long double)nodes));
 		think.append(" ");
@@ -639,7 +638,10 @@ void Game::findChoices(Move * mov){
 
 	Move * curMove = moveTree->current;
 
-	move(mov);
+	if(!move(mov)){
+		return;
+	}
+
 	vector<Piece *> pieces;
 
 	board->getPieces(mov->turn%2, pieces);

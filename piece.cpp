@@ -76,7 +76,8 @@ bool Piece::move(int x, int y){
   c.oldLoc = X*10 + Y;
   c.newLoc = x*10 +y;
   c.captured = false;
-  c.firstMove = false;
+  c.firstMove = hasMoved?false:true;
+	hasMoved = true;
   c.ep = false;
   gm->addChange(c);
   
@@ -201,11 +202,6 @@ bool Pawn::move(int x, int y){
     gm->getBoard()->pieces[eX][eY] = NULL;
     
   if(Piece::move(x,y)){
-    if(!hasMoved){
-		change_t * c = &gm->moveTree->current->changes.back();
-      c->firstMove = true;
-      hasMoved = true;
-    }
     if(ep){
 		change_t * c = &gm->moveTree->current->changes.back();
       c->ep = true;
