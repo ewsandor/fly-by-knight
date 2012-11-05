@@ -22,16 +22,21 @@ struct change_t{
 };
 class Move{
 			private:
+				double adjuster;
+				double score;
 			public:
-				bool foundChoices;
+				bool evaluated;
 				std::string id;
 				unsigned int turn;
-				double score;
 				Move * parent;
 				std::vector<change_t> changes;
 				std::vector<Move *> choices;
 				void sortScores();
 				Move * getBest();
+				double adjustedScore();
+				void updateAdjuster();
+				double getScore();
+				void setScore(double s);
 
 				Move();
 				Move(Move * p);

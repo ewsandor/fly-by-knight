@@ -37,6 +37,7 @@ int main(int argc, char* argv[]){
 	string last = input;
 
 	for(;;){
+		currentGame->updateClocks();
 		if(inputQueue.size() > 0){
 			input = inputQueue.front();
 
@@ -135,8 +136,7 @@ bool handleInput(string input){
 				analyze = false;
 			}
 		}
-		else if(input.find(".") == 0){   
-			if(analyze){
+		else if(input.find(".") == 0){  
 				if(currentGame->analysisQueue.size() > 0){
 					string stat01 = "stat01: 0 ";
 					stat01.append(to_string((long double)currentGame->nodes));
@@ -156,7 +156,6 @@ bool handleInput(string input){
 					stat01.append(currentGame->analysisQueue[0]->id);
 					handleOutput(stat01);
 				}
-			}
 		}
 		else if(Board::moveFormat(input)){                   //move piece
 			currentGame->goActualLayout();

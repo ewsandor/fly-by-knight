@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 #include "moveTree.hpp"
 #include "game.hpp"
 using namespace std;
@@ -17,17 +18,19 @@ MoveTree::MoveTree(Game * g){
 }
 Move::Move(Move * p){
 	id="NULL";
-	foundChoices = false;
+	evaluated = false;
 	parent = p;
 	score = 0;
+	adjuster = 0;
 	turn = parent==NULL?0:parent->turn+1;	
 	
 }
 Move::Move(){
 	id="NULL";
-	foundChoices = false;
+	evaluated = false;
 	parent = NULL;
 	score = 0;
+	adjuster = 0;
 	turn = 0;
 }
 Move::~Move(){
@@ -44,7 +47,7 @@ Move * Move::getChoice(string mid){
 }
 void Move::sortScores(){
 	for(unsigned int i = 1; i < choices.size(); i ++){
-		for(unsigned int j = i; j >= 1 && choices[j]->score < choices[j - 1]->score; j--){
+		for(unsigned int j = i; j >= 1 && choices[j]->adjustedScore() < choices[j - 1]->adjustedScore(); j--){
 			Move * tmp = choices[j-1];
 			choices[j-1] = choices[j];
 			choices[j] = tmp;
@@ -59,4 +62,31 @@ Move * Move::getBest(){
 		return choices[choices.size()-1];
 	else
 		return choices[0];
+}
+void Move::updateAdjuster(){
+	double c = 0;
+	double t = 0;
+	for(unsigned int i = 0; i < choices.size(); i++){
+		//if(!adjust && choices[i]->getBest() != NULL && choices[i]->getBest()->evaluated)
+			//adjust = true;
+		if(choices[i]->evaluated){
+			c++;
+			t += choices[i]->adjustedScore();
+		}
+	}
+	//cout << turn << " " << t << "  " << c << " " << t/c << endl;
+	if(c == 0)
+		adjuster = score;
+	else
+		adjuster = t/c;
+}
+double Move::adjustedScore(){
+	return score*60 + adjuster*40;
+}
+void Move::setScore(double s){
+	score = s;
+	updateAdjuster();
+}
+double Move::getScore(){
+	return score;
 }

@@ -196,3 +196,10 @@ bool Board::promotePawn(char newPiece){
   
   return false;
 }
+double Board::squareVal(int x, int y){
+	double vals[4][4] = {{23,24,25,25,},
+					  {24,27,29,29,},
+					  {25,29,33,33,},
+					  {25,29,33,35,},};
+	return vals[x>=4?3-(x-4):x][y>=4?3-(y-4):y]/35.0;
+}

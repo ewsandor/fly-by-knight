@@ -77,7 +77,6 @@ bool Piece::move(int x, int y){
   c.newLoc = x*10 +y;
   c.captured = false;
   c.firstMove = hasMoved?false:true;
-	hasMoved = true;
   c.ep = false;
   gm->addChange(c);
   
@@ -107,6 +106,8 @@ bool Piece::move(int x, int y){
     
     return false;
   }
+  
+  hasMoved = true;
   
   if(oldPiece != NULL){
     change_t c;

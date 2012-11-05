@@ -10,11 +10,12 @@
 #define NONE -1 
 
 #define BREADTH  3
-#define DEPTH    4
+#define DEPTH    5
 
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <ctime>
 
 class Board;
 class Piece;
@@ -37,6 +38,7 @@ class Game{
 		int playAs;
 		MoveTree * moveTree;
 		std::vector<Move *> analysisQueue;
+		int searchClock;
 
 		Game();
 
@@ -44,6 +46,7 @@ class Game{
 		void resetGame();
 		void setupBoard();
 		void changeTurn();
+		void updateClocks();
 		int getTurn();
 		Board * getBoard();
 		Piece * getKing(int color);

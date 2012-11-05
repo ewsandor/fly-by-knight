@@ -7,8 +7,9 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <time.h>
+#include <ctime>
 #include <stack>
+#include<cmath>
 #include "main.hpp"
 #include "game.hpp"
 #include "board.hpp"
@@ -56,6 +57,7 @@ void Game::resetGame(){
 	moveTree->current = moveTree->root;
 	analysisQueue.clear();
 	analysisQueue.push_back(moveTree->root);
+	searchClock = clock();
 }
 
 void Game::setupBoard(){
@@ -94,6 +96,8 @@ void Game::setupBoard(){
 	for(int i = 0; i < 8; i++){
 		board->placePiece(new Pawn(BLACK, this), i, 6);
 	}
+}
+void Game::updateClocks(){
 }
 int Game::getTurn(){  
 	return moveTree->current->turn % 2;
@@ -502,78 +506,117 @@ void Game::commitMove(){
 	nodes = 0;
 	analysisQueue.clear();
 	analysisQueue.push_back(moveTree->current);
+	searchClock = clock();
 }
 
 double Game::evaluateBoard(){
 
-	double score = 0;
-
+	nodes++;
+	double score = 0.0;
+	
+	findChoices(moveTree->current);
+	
 	vector<Piece *> pieces;
 	board->getPieces(WHITE, pieces);
 	board->getPieces(BLACK, pieces);
 
 	for(unsigned int i = 0; i < pieces.size(); i++){
-		int mute = pieces[i]->getColor() == WHITE?1:-1;
+		//cout << pieces[i]->toString() << endl;
+		double mute = pieces[i]->getColor() == WHITE?1:-1;
 
 		score += (mute * (pieces[i]->getValue()) * 100);
+		if(pieces[i] != pieces[i]->getGame()->getKing(pieces[i]->getColor())){
+			score += mute * 100 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
+		}
 	}
+	if(this->inCheckmate(this->whiteKing))
+		score -= 50;
+	if(this->inCheckmate(this->blackKing))
+		score += 50;
 
 	return score;
 }
 void Game::stepAnalysis(){
-	while(analysisQueue.size() > 0 && analysisQueue[0]->turn <= moveTree->actual->turn)
+	while(analysisQueue.size() > 0 && analysisQueue[0]->turn < moveTree->actual->turn)
 		analysisQueue.erase(analysisQueue.begin());
+
+
 
 	if(analysisQueue.size() == 0 || this->analysisQueue[0] == moveTree->actual){
 		analysisQueue.clear();
 		analysisQueue.push_back(moveTree->actual);
-		move(this->analysisQueue[0]);
-		//getBoard()->printBoard();
-		findChoices(analysisQueue[0]);
-		for(unsigned int i = 0; i < analysisQueue[0]->choices.size(); i++){
-			analysisQueue.push_back(analysisQueue[0]->choices[i]);
-		}
-		return;
-	}
-	move(this->analysisQueue[0]);
-	findChoices(analysisQueue[0]);
-	analysisQueue[0]->sortScores();
+		move(moveTree->actual);
+		moveTree->actual->setScore(evaluateBoard());
+		for(unsigned int i = 0; i < moveTree->actual->choices.size(); i++){
+			move(moveTree->actual->choices[i]);
+			moveTree->actual->choices[i]->setScore(evaluateBoard());		
 
-	if(analysisQueue[0]->turn%2 == WHITE)
-		for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
-			analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
-	else		
-		for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
-			analysisQueue.push_back(analysisQueue[0]->choices[i]);
+			analysisQueue.push_back(moveTree->actual->choices[i]);
+		}
+	}
+	else
+	{
+		if(analysisQueue[0]->evaluated){
+			nodes++;
+			if(analysisQueue[0]->turn%2 == WHITE)
+				for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
+					analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
+			else		
+				for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
+					analysisQueue.push_back(analysisQueue[0]->choices[i]);
+					analysisQueue.erase(analysisQueue.begin());
+					return;
+		}
+		move(this->analysisQueue[0]);
+		for(unsigned int i = 0; i < analysisQueue[0]->choices.size(); i++){
+				move(analysisQueue[0]->choices[i]);
+				analysisQueue[0]->choices[i]->setScore(evaluateBoard());
+			}
+		analysisQueue[0]->sortScores();
+
+		if(analysisQueue[0]->turn%2 == WHITE)
+			for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
+				analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
+		else		
+			for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
+				analysisQueue.push_back(analysisQueue[0]->choices[i]);
+	}
+	
+	analysisQueue[0]->evaluated = true;
+	Move * up = analysisQueue[0];			
+	while(up->parent != NULL){
+		up->updateAdjuster();
+		up = up->parent;
+	}
 	//if(playAs == moveTree->actual->turn%2 && moveTree->actual->getBest() != NULL && analysisQueue[0]->turn - moveTree->actual->turn >= DEPTH)
 		//handleOutput("move " + moveTree->actual->getBest()->id);
-	if(post){
-		int depth = ((int)analysisQueue[0]->turn - moveTree->actual->turn);
+	if(post && (analysisQueue.size() == 1 || analysisQueue[0]->turn<analysisQueue[1]->turn)){
+		unsigned int depth = ((int)analysisQueue[0]->turn - moveTree->actual->turn);
 		string think = "";
 		think = think + to_string((long double)depth);
 		think.append(" ");
-		think.append(to_string((long double)(playAs==WHITE?analysisQueue[0]->score:-1*analysisQueue[0]->score)));
-		think.append(" 0 ");
-		think.append(to_string((long double)nodes));
+		think.append(to_string((long double)floor((playAs!=BLACK?moveTree->actual->adjustedScore()+.5:-1*moveTree->actual->adjustedScore())+.5)));
 		think.append(" ");
+		double searchTime = ((clock() - searchClock) /CLOCKS_PER_SEC)*100;
+		think.append(to_string((long double)searchTime));
+		think.append(" ");
+		think.append(to_string((long double)nodes));
 
-		vector<string> chain;
-		Move * strt = analysisQueue[0];
-		while(strt!=NULL && strt->turn > moveTree->actual->turn){
-			chain.push_back(strt->id);
-			strt=strt->parent;
-		}
-		while(chain.size() > 0){
-			think.append(chain.back());
+		Move * best = moveTree->actual->getBest();
+		bool out = best->evaluated;
+		
+		if(best != NULL)
+			while(best->choices.size() > 0){
 			think.append(" ");
-			chain.pop_back();
+			think.append(best->id);
+			best = best->getBest();
 		}
 			
-	
+		if(out)
 		handleOutput(think);
 	}
-
 	analysisQueue.erase(analysisQueue.begin());
+
 }
 
 string Game::chooseMove(){
@@ -656,13 +699,7 @@ void Game::findChoices(Move * mov){
 
 	for(unsigned int i = 0; i < moves.size(); i++){
 		move(mov);
-		if(move(moves[i])){			
-			nodes++;
-			Move * tmp = mov->getChoice(moves[i]);
-			if(tmp != NULL){
-				tmp->score = evaluateBoard();
-			}
-		}
+		move(moves[i]);
 	}
 	move(curMove);
 }
