@@ -64,8 +64,8 @@ Move * Move::getBest(){
 		return choices[0];
 }
 void Move::updateAdjuster(){
-	double c = 0;
-	double t = 0;
+	double c = 0.0;
+	double t = 0.0;
 	for(unsigned int i = 0; i < choices.size(); i++){
 		//if(!adjust && choices[i]->getBest() != NULL && choices[i]->getBest()->evaluated)
 			//adjust = true;
@@ -79,9 +79,11 @@ void Move::updateAdjuster(){
 		adjuster = score;
 	else
 		adjuster = t/c;
+	if(parent != NULL)
+		parent->updateAdjuster();
 }
 double Move::adjustedScore(){
-	return score*60 + adjuster*40;
+	return score*.5 + adjuster*.5;
 }
 void Move::setScore(double s){
 	score = s;

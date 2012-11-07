@@ -9,6 +9,7 @@
 #include <fstream>
 #include <queue>
 #include <boost/thread.hpp>
+#include <ctime>
 #include "game.hpp"
 #include "main.hpp"
 #include "board.hpp"
@@ -29,7 +30,7 @@ bool pondB4 = false;
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.3.2\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
+	handleOutput("feature myname=\"Fly By Knight 0.3.4\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
 
 	boost::thread inputQueuerThread(inputQueuer);
 
@@ -79,8 +80,10 @@ bool handleInput(string input){
 			currentGame->getBoard()->printBoard();
 		else if(input.find("help") == 0)                          //dislays list of commands
 			handleOutput("\nquit\nprint\nnew\ngo\nforce\nundo\nremove\nredo\nreplace\nhelp\n");
-		else if(input.find("go") == 0)                             //move right now
+		else if(input.find("go") == 0){                             //move right now
 			currentGame->playAs = currentGame->moveTree->actual->turn%2;
+			currentGame->searchClock = clock();
+		}
 		else if(input.find("force") == 0 || input.find("result") == 0)                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
 		else if(input.find("undo") == 0){                        //go back 1 move; play same color

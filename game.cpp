@@ -144,6 +144,9 @@ bool Game::move(int from, int to){
 	return ( board->pieces[from / 10][from % 10]->move(to / 10, to % 10));
 }
 bool Game::move(Move * mov){
+	if(mov == NULL)
+		return false;
+
 	if(mov == moveTree->current)
 		return true;
 	if(mov == moveTree->root){
@@ -511,52 +514,51 @@ void Game::commitMove(){
 
 double Game::evaluateBoard(){
 
-	nodes++;
 	double score = 0.0;
 	
-	findChoices(moveTree->current);
-	
+	/*if(this->inCheckmate(this->whiteKing)){
+		score -= 5000;
+	}
+	if(this->inCheckmate(this->blackKing)){
+		score += 5000;
+	}*/
+			
 	vector<Piece *> pieces;
 	board->getPieces(WHITE, pieces);
 	board->getPieces(BLACK, pieces);
 
 	for(unsigned int i = 0; i < pieces.size(); i++){
+		//vector<string> moves;
+		//pieces[i]->getMoves(moves);
 		//cout << pieces[i]->toString() << endl;
 		double mute = pieces[i]->getColor() == WHITE?1:-1;
-
+		//score += (mute * moves.size());
 		score += (mute * (pieces[i]->getValue()) * 100);
 		if(pieces[i] != pieces[i]->getGame()->getKing(pieces[i]->getColor())){
-			score += mute * 100 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
+			score += mute * 70 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
 		}
 	}
-	if(this->inCheckmate(this->whiteKing))
-		score -= 50;
-	if(this->inCheckmate(this->blackKing))
-		score += 50;
 
 	return score;
 }
 void Game::stepAnalysis(){
 	while(analysisQueue.size() > 0 && analysisQueue[0]->turn < moveTree->actual->turn)
 		analysisQueue.erase(analysisQueue.begin());
-
-
-
+	
 	if(analysisQueue.size() == 0 || this->analysisQueue[0] == moveTree->actual){
 		analysisQueue.clear();
 		analysisQueue.push_back(moveTree->actual);
 		move(moveTree->actual);
+		findChoices(moveTree->actual);
+		moveTree->actual->evaluated = true;
 		moveTree->actual->setScore(evaluateBoard());
 		for(unsigned int i = 0; i < moveTree->actual->choices.size(); i++){
-			move(moveTree->actual->choices[i]);
-			moveTree->actual->choices[i]->setScore(evaluateBoard());		
-
 			analysisQueue.push_back(moveTree->actual->choices[i]);
 		}
 	}
 	else
 	{
-		if(analysisQueue[0]->evaluated){
+		/*if(analysisQueue[0]->evaluated){
 			nodes++;
 			if(analysisQueue[0]->turn%2 == WHITE)
 				for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
@@ -566,12 +568,9 @@ void Game::stepAnalysis(){
 					analysisQueue.push_back(analysisQueue[0]->choices[i]);
 					analysisQueue.erase(analysisQueue.begin());
 					return;
-		}
+		}*/
 		move(this->analysisQueue[0]);
-		for(unsigned int i = 0; i < analysisQueue[0]->choices.size(); i++){
-				move(analysisQueue[0]->choices[i]);
-				analysisQueue[0]->choices[i]->setScore(evaluateBoard());
-			}
+		findChoices(this->analysisQueue[0]);
 		analysisQueue[0]->sortScores();
 
 		if(analysisQueue[0]->turn%2 == WHITE)
@@ -580,13 +579,7 @@ void Game::stepAnalysis(){
 		else		
 			for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
 				analysisQueue.push_back(analysisQueue[0]->choices[i]);
-	}
 	
-	analysisQueue[0]->evaluated = true;
-	Move * up = analysisQueue[0];			
-	while(up->parent != NULL){
-		up->updateAdjuster();
-		up = up->parent;
 	}
 	//if(playAs == moveTree->actual->turn%2 && moveTree->actual->getBest() != NULL && analysisQueue[0]->turn - moveTree->actual->turn >= DEPTH)
 		//handleOutput("move " + moveTree->actual->getBest()->id);
@@ -603,16 +596,15 @@ void Game::stepAnalysis(){
 		think.append(to_string((long double)nodes));
 
 		Move * best = moveTree->actual->getBest();
-		bool out = best->evaluated;
+		//bool out = best->evaluated;
 		
-		if(best != NULL)
-			while(best->choices.size() > 0){
+		while(best != NULL){
 			think.append(" ");
 			think.append(best->id);
 			best = best->getBest();
 		}
 			
-		if(out)
+		//if(out)
 		handleOutput(think);
 	}
 	analysisQueue.erase(analysisQueue.begin());
@@ -699,8 +691,23 @@ void Game::findChoices(Move * mov){
 
 	for(unsigned int i = 0; i < moves.size(); i++){
 		move(mov);
-		move(moves[i]);
+		if(move(moves[i])){			
+			Move * t = mov->getChoice(moves[i]);
+			nodes++;
+			move(t);
+			//if(!t->evaluated){
+				t->setScore(evaluateBoard());
+				t->evaluated = true;
+				
+			/*Move * up = t;			
+			while(up->parent != NULL){
+				up->updateAdjuster();
+				up = up->parent;
+			}*/
+		}
 	}
 	move(curMove);
+
 }
+
 
