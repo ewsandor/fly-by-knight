@@ -30,7 +30,7 @@ bool pondB4 = false;
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.3.4\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
+	handleOutput("feature myname=\"Fly By Knight 0.3.5\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
 
 	boost::thread inputQueuerThread(inputQueuer);
 

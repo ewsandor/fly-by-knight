@@ -516,12 +516,12 @@ double Game::evaluateBoard(){
 
 	double score = 0.0;
 	
-	/*if(this->inCheckmate(this->whiteKing)){
-		score -= 5000;
+	if(this->inCheckmate(this->whiteKing)){
+		score -= 3900;
 	}
 	if(this->inCheckmate(this->blackKing)){
-		score += 5000;
-	}*/
+		score += 3900;
+	}
 			
 	vector<Piece *> pieces;
 	board->getPieces(WHITE, pieces);

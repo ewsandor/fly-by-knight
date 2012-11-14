@@ -66,15 +66,27 @@ Move * Move::getBest(){
 void Move::updateAdjuster(){
 	double c = 0.0;
 	double t = 0.0;
+	
+	if(choices.size() != 0){
+	//double weight = (turn%2)==WHITE?1.0:0.0;
+	//double wInc = (1.0/choices.size()) * (turn%2)==WHITE?-1.0:1.0;
+	//double wInc = 0;
+
+	sortScores();
+
 	for(unsigned int i = 0; i < choices.size(); i++){
 		//if(!adjust && choices[i]->getBest() != NULL && choices[i]->getBest()->evaluated)
 			//adjust = true;
-		if(choices[i]->evaluated){
-			c++;
-			t += choices[i]->adjustedScore();
-		}
+		//if(choices[i]->evaluated){
+			double weight;
+			weight = pow(2.0, (turn%2)==WHITE?(int) i:(int)(choices.size()-i-1));
+			c+=weight;
+			t += weight*(choices[i]->adjustedScore());
+		//}
 	}
 	//cout << turn << " " << t << "  " << c << " " << t/c << endl;
+	}
+	if(c<0)c*=-1;
 	if(c == 0)
 		adjuster = score;
 	else
@@ -83,7 +95,7 @@ void Move::updateAdjuster(){
 		parent->updateAdjuster();
 }
 double Move::adjustedScore(){
-	return score*.5 + adjuster*.5;
+	return score*.1 + adjuster*.9;
 }
 void Move::setScore(double s){
 	score = s;

@@ -9,7 +9,7 @@
 #define BLACK 1
 #define NONE -1 
 
-#define BREADTH  6
+#define BREADTH  4
 #define DEPTH    5
 
 #include <stdlib.h>
