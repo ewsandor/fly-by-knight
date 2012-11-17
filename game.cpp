@@ -410,6 +410,11 @@ void Game::addTurn(){
 void Game::addChange(change_t change){
 	//add to move tree's changes instaed of game's
 	moveTree->current->changes.push_back(change);
+	if(change.captured)
+		moveTree->current->capture=true;
+	if(change.moded != NULL && (change.moded->toShortString().compare("p") == 0 || change.moded->toShortString().compare("P") == 0)
+		&& change.oldLoc!=change.newLoc)
+		moveTree->current->pawnMove=true;
 }
 void Game::moveRoot(){  
 	//replaced in moveTree with clearChildren() or deconstructor?
@@ -516,6 +521,13 @@ double Game::evaluateBoard(){
 
 	double score = 0.0;
 	
+	
+	if(moveTree->current->pawnMove)
+		if(moveTree->actual->turn%2 == WHITE)
+			score-=10;
+		else
+			score+=10;
+
 	if(this->inCheckmate(this->whiteKing)){
 		score -= 3900;
 	}

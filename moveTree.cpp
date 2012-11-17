@@ -23,7 +23,8 @@ Move::Move(Move * p){
 	score = 0;
 	adjuster = 0;
 	turn = parent==NULL?0:parent->turn+1;	
-	
+	pawnMove=false;
+	capture=false;
 }
 Move::Move(){
 	id="NULL";
@@ -32,6 +33,8 @@ Move::Move(){
 	score = 0;
 	adjuster = 0;
 	turn = 0;
+	pawnMove=false;
+	capture=false;
 }
 Move::~Move(){
 	for(unsigned int i = 0; i < choices.size(); i++)
@@ -79,7 +82,7 @@ void Move::updateAdjuster(){
 			//adjust = true;
 		//if(choices[i]->evaluated){
 			double weight;
-			weight = pow(2.0, (turn%2)==WHITE?(int) i:(int)(choices.size()-i-1));
+			weight = pow(2.5, (turn%2)==WHITE?(int) i:(int)(choices.size()-i-1));
 			c+=weight;
 			t += weight*(choices[i]->adjustedScore());
 		//}
@@ -95,7 +98,7 @@ void Move::updateAdjuster(){
 		parent->updateAdjuster();
 }
 double Move::adjustedScore(){
-	return score*.1 + adjuster*.9;
+	return score*.05 + adjuster*.95;
 }
 void Move::setScore(double s){
 	score = s;

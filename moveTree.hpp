@@ -37,6 +37,8 @@ class Move{
 				void updateAdjuster();
 				double getScore();
 				void setScore(double s);
+				bool capture;
+				bool pawnMove;
 
 				Move();
 				Move(Move * p);
