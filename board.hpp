@@ -20,6 +20,7 @@ public:
   static int toInts(std::string str);
   static std::string toStr(int mov);
   static bool moveFormat(std::string str);
+  static double squareVal(int x, int y);
 
   void clearBoard();
   void placePiece(Piece * piece, int x, int y);

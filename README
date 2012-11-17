@@ -12,13 +12,17 @@
 			P P P P P P P P
 			R N B Q K B N R
 
-	Fly By Knight is an amature chess engine currently implementing the xboard/winboard chess protocol.  The code is written in C++.  Main development and support is for the x86_64 Linux kernel, code is written as portable as possible for easy porting to Windows and other kernels.
+	Fly By Knight is an amateur chess engine currently implementing the xboard/winboard chess protocol.  The code is written in C++.  Main development and support is for the x86_64 Linux Kernel.  The code is written as portable as possible for easy porting to Windows and other kernels.
 
+	- Requires g++ to compile with Make
+	- Requires Boost C++ Compiled Libraries >= 1.51.0
+		-$BOOT_ROOT set to boost directory
+		-http://www.boost.org/
 	- Simply type 'make' to compile.
 	- To run with the command line interface type 'make run'
 	- If xboard is installed, the engine can be run with xboard by typing 'make runxboard'
 
-	Fly By Knight's development is a private project.  Anyone is free to examine, test, and branch the code.  No one is allowed to distribute or profit from the code or any branch without direct permision from Edward Sandor.  No warranty or protection is provided for users of Fly By Knights code.  Edward Sandor is not responsible for any damage caused by Fly By Knight.  Fly By Knight is not a professional engine, it should not be used for contest of any sort.  Fly By Knight is intended for private, amature, entertainment uses only.
+	Fly By Knight's development is a private project.  Anyone is free to examine, test, and branch the code.  No one is allowed to distribute or profit from the code or any branch without direct permission from Edward Sandor.  No warranty or protection is provided for users of Fly By Knight’s code.  Edward Sandor is not responsible for any damage caused by Fly By Knight.  Fly By Knight is not a professional engine, it should not be used for contest of any sort.  Fly By Knight is intended for private, amateur, entertainment uses only.
 
 By compiling, editing, or running any of Fly By Knight's code, you accept everything stated above.
 
@@ -27,3 +31,4 @@ http://www.gnu.org/software/xboard/
 
 xboard/winboard protocol: 
 http://www.gnu.org/software/xboard/engine-intf.html
+

@@ -4,12 +4,18 @@
 
 #ifndef _GAME_INCLUDED_
 #define _GAME_INCLUDED_
+
 #define WHITE 0
 #define BLACK 1
 #define NONE -1 
+
+#define BREADTH  4
+#define DEPTH    5
+
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <ctime>
 
 class Board;
 class Piece;
@@ -26,9 +32,13 @@ class Game{
 
 	public:
 		//std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
+		bool post;
+		int nodes;
 		Piece * enpasantable;
 		int playAs;
 		MoveTree * moveTree;
+		std::vector<Move *> analysisQueue;
+		int searchClock;
 
 		Game();
 
@@ -36,6 +46,7 @@ class Game{
 		void resetGame();
 		void setupBoard();
 		void changeTurn();
+		void updateClocks();
 		int getTurn();
 		Board * getBoard();
 		Piece * getKing(int color);
@@ -62,7 +73,8 @@ class Game{
 		bool move(Move * mov);
 		bool goActualLayout();
 		void commitMove();
-
+		void findChoices(Move * mov);
+		void stepAnalysis();
 	private:
 		bool inMate(Piece * matey);
 };

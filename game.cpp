@@ -7,8 +7,9 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <time.h>
+#include <ctime>
 #include <stack>
+#include<cmath>
 #include "main.hpp"
 #include "game.hpp"
 #include "board.hpp"
@@ -16,7 +17,9 @@
 #include "moveTree.hpp"
 using namespace std;
 
+
 Game::Game(){
+	post = true;
 	board = new Board(this);
 	moveTree = new MoveTree(this);
 	resetGame();
@@ -42,14 +45,19 @@ void Game::clear(){
 
 void Game::resetGame(){
 	//reverse tree to move 0
+	nodes = 0;
 	enpasantable = NULL;
 	playAs = BLACK;  
 	if(moveTree->root != NULL)
 		delete moveTree->root;
 	setupBoard();
 	moveTree->root = new Move();
+	moveTree->root->id = "ROOT";
 	moveTree->actual = moveTree->root;
 	moveTree->current = moveTree->root;
+	analysisQueue.clear();
+	analysisQueue.push_back(moveTree->root);
+	searchClock = clock();
 }
 
 void Game::setupBoard(){
@@ -89,6 +97,8 @@ void Game::setupBoard(){
 		board->placePiece(new Pawn(BLACK, this), i, 6);
 	}
 }
+void Game::updateClocks(){
+}
 int Game::getTurn(){  
 	return moveTree->current->turn % 2;
 }
@@ -98,6 +108,9 @@ Board * Game::getBoard(){
 bool Game::move(string str){
 
 	//maybe put better serch method if sort choices elsewhere
+
+	if(str.compare("ROOT") == 0 && moveTree->root != NULL)
+		return move(moveTree->root);
 	for(unsigned int i = 0; i < moveTree->current->choices.size(); i++){
 		if(moveTree->current->choices[i]->id.compare(str) == 0)
 			return move(moveTree->current->choices[i]);
@@ -131,8 +144,17 @@ bool Game::move(int from, int to){
 	return ( board->pieces[from / 10][from % 10]->move(to / 10, to % 10));
 }
 bool Game::move(Move * mov){
+	if(mov == NULL)
+		return false;
+
 	if(mov == moveTree->current)
 		return true;
+	if(mov == moveTree->root){
+		while(moveTree->current != moveTree->root)
+			if(!moveBack())
+				return false;
+		return true;
+	}
 	if(mov->parent != moveTree->current){
 		//bring current position back to same turn as move if ahead
 		while(moveTree->current->turn > mov->turn){
@@ -388,6 +410,11 @@ void Game::addTurn(){
 void Game::addChange(change_t change){
 	//add to move tree's changes instaed of game's
 	moveTree->current->changes.push_back(change);
+	if(change.captured)
+		moveTree->current->capture=true;
+	if(change.moded != NULL && (change.moded->toShortString().compare("p") == 0 || change.moded->toShortString().compare("P") == 0)
+		&& change.oldLoc!=change.newLoc)
+		moveTree->current->pawnMove=true;
 }
 void Game::moveRoot(){  
 	//replaced in moveTree with clearChildren() or deconstructor?
@@ -484,28 +511,118 @@ bool Game::goActualLayout(){
 }
 void Game::commitMove(){
 	moveTree->actual = moveTree->current;
+	nodes = 0;
+	analysisQueue.clear();
+	analysisQueue.push_back(moveTree->current);
+	searchClock = clock();
 }
 
 double Game::evaluateBoard(){
 
-	double score = 0;
+	double score = 0.0;
+	
+	
+	if(moveTree->current->pawnMove)
+		if(moveTree->actual->turn%2 == WHITE)
+			score-=10;
+		else
+			score+=10;
 
+	if(this->inCheckmate(this->whiteKing)){
+		score -= 3900;
+	}
+	if(this->inCheckmate(this->blackKing)){
+		score += 3900;
+	}
+			
 	vector<Piece *> pieces;
 	board->getPieces(WHITE, pieces);
 	board->getPieces(BLACK, pieces);
 
 	for(unsigned int i = 0; i < pieces.size(); i++){
-		int mute = pieces[i]->getColor() == WHITE?1:-1;
-
-		score += mute * (pieces[i]->getValue());
-		vector <string> moves;
-		pieces[i]->getMoves(moves);
-
-		score += mute * (moves.size());
+		//vector<string> moves;
+		//pieces[i]->getMoves(moves);
+		//cout << pieces[i]->toString() << endl;
+		double mute = pieces[i]->getColor() == WHITE?1:-1;
+		//score += (mute * moves.size());
+		score += (mute * (pieces[i]->getValue()) * 100);
+		if(pieces[i] != pieces[i]->getGame()->getKing(pieces[i]->getColor())){
+			score += mute * 70 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
+		}
 	}
 
 	return score;
 }
+void Game::stepAnalysis(){
+	while(analysisQueue.size() > 0 && analysisQueue[0]->turn < moveTree->actual->turn)
+		analysisQueue.erase(analysisQueue.begin());
+	
+	if(analysisQueue.size() == 0 || this->analysisQueue[0] == moveTree->actual){
+		analysisQueue.clear();
+		analysisQueue.push_back(moveTree->actual);
+		move(moveTree->actual);
+		findChoices(moveTree->actual);
+		moveTree->actual->evaluated = true;
+		moveTree->actual->setScore(evaluateBoard());
+		for(unsigned int i = 0; i < moveTree->actual->choices.size(); i++){
+			analysisQueue.push_back(moveTree->actual->choices[i]);
+		}
+	}
+	else
+	{
+		/*if(analysisQueue[0]->evaluated){
+			nodes++;
+			if(analysisQueue[0]->turn%2 == WHITE)
+				for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
+					analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
+			else		
+				for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
+					analysisQueue.push_back(analysisQueue[0]->choices[i]);
+					analysisQueue.erase(analysisQueue.begin());
+					return;
+		}*/
+		move(this->analysisQueue[0]);
+		findChoices(this->analysisQueue[0]);
+		analysisQueue[0]->sortScores();
+
+		if(analysisQueue[0]->turn%2 == WHITE)
+			for(unsigned int i = 1; i <= BREADTH && i <= analysisQueue[0]->choices.size(); i ++)
+				analysisQueue.push_back(analysisQueue[0]->choices[analysisQueue[0]->choices.size()-i]);
+		else		
+			for(unsigned int i = 0; i < BREADTH && i < analysisQueue[0]->choices.size(); i ++)
+				analysisQueue.push_back(analysisQueue[0]->choices[i]);
+	
+	}
+	//if(playAs == moveTree->actual->turn%2 && moveTree->actual->getBest() != NULL && analysisQueue[0]->turn - moveTree->actual->turn >= DEPTH)
+		//handleOutput("move " + moveTree->actual->getBest()->id);
+	if(post && (analysisQueue.size() == 1 || analysisQueue[0]->turn<analysisQueue[1]->turn)){
+		unsigned int depth = ((int)analysisQueue[0]->turn - moveTree->actual->turn);
+		string think = "";
+		think = think + to_string((long double)depth);
+		think.append(" ");
+		think.append(to_string((long double)floor((playAs!=BLACK?moveTree->actual->adjustedScore()+.5:-1*moveTree->actual->adjustedScore())+.5)));
+		think.append(" ");
+		double searchTime = ((clock() - searchClock) /CLOCKS_PER_SEC)*100;
+		think.append(to_string((long double)searchTime));
+		think.append(" ");
+		think.append(to_string((long double)nodes));
+
+		Move * best = moveTree->actual->getBest();
+		//bool out = best->evaluated;
+		
+		while(best != NULL){
+			think.append(" ");
+			think.append(best->id);
+			best = best->getBest();
+		}
+			
+		//if(out)
+		handleOutput(think);
+	}
+	analysisQueue.erase(analysisQueue.begin());
+
+}
+
 string Game::chooseMove(){
 	if(playAs != getTurn())
 		return "...---...";
@@ -563,3 +680,46 @@ string Game::chooseMove(){
 	return moves[time(NULL)%moves.size()];
 	*/
 }
+
+void Game::findChoices(Move * mov){
+
+	Move * curMove = moveTree->current;
+
+	if(!move(mov)){
+		return;
+	}
+
+	vector<Piece *> pieces;
+
+	board->getPieces(mov->turn%2, pieces);
+
+	vector<string> moves;
+
+	for(unsigned int i = 0; i < pieces.size(); i++)
+		pieces[i]->getMoves(moves);
+	
+	if(moves.size() == 0)
+		return;
+
+	for(unsigned int i = 0; i < moves.size(); i++){
+		move(mov);
+		if(move(moves[i])){			
+			Move * t = mov->getChoice(moves[i]);
+			nodes++;
+			move(t);
+			//if(!t->evaluated){
+				t->setScore(evaluateBoard());
+				t->evaluated = true;
+				
+			/*Move * up = t;			
+			while(up->parent != NULL){
+				up->updateAdjuster();
+				up = up->parent;
+			}*/
+		}
+	}
+	move(curMove);
+
+}
+
+
