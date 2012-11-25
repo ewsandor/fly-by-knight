@@ -37,6 +37,7 @@ int main(int argc, char* argv[]){
 	string input = "";
 	string last = input;
 
+	//currentGame->recordGameToBook();
 	for(;;){
 		currentGame->updateClocks();
 		if(inputQueue.size() > 0){
@@ -51,7 +52,6 @@ int main(int argc, char* argv[]){
 		handleInput(input);
 		input = "";
 	}
-
 
 	return 0;
 }
@@ -84,8 +84,11 @@ bool handleInput(string input){
 			currentGame->playAs = currentGame->moveTree->actual->turn%2;
 			currentGame->searchClock = clock();
 		}
-		else if(input.find("force") == 0 || input.find("result") == 0)                         //turn on force mode or stop play.
+		else if(input.find("force") == 0 || input.find("result") == 0){                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
+			if(input.find("result") == 0)
+				currentGame->recordGameToBook(input.substr(7));
+		}
 		else if(input.find("undo") == 0){                        //go back 1 move; play same color
 			currentGame->moveBack();
 				currentGame->commitMove();
@@ -169,6 +172,7 @@ bool handleInput(string input){
 			else{
 				handleOutput("Illegal move: " + input); 
 			}
+			//currentGame->recordGameToBook();
 		}
 		else if(input.find("?") == 0 && currentGame->playAs == currentGame->moveTree->actual->turn%2){
 			Move * tmp = currentGame->moveTree->actual->getBest();
@@ -192,8 +196,22 @@ bool handleInput(string input){
 		else{                                                                     //handle unknown commands
 			handleOutput("Error (unknown command): " + input);
 		}
+		
+		if(currentGame->onBook && currentGame->playAs == currentGame->moveTree->actual->turn%2){
+			currentGame->move(currentGame->moveTree->actual);
+			Move * tmp = currentGame->getBookMove();
+			if(tmp != NULL && tmp->bookTotal > 20){
+				handleOutput("move " + tmp->id);
+				currentGame->move(tmp);
+				currentGame->commitMove();
+			}
+			else
+				currentGame->onBook = false;
+			currentGame->endGame();
+		}
 
 		if(ponder)
+
 			currentGame->stepAnalysis();
 		else if(currentGame->playAs == currentGame->moveTree->actual->turn%2)
 			currentGame->stepAnalysis();

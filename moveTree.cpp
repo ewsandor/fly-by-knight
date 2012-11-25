@@ -24,7 +24,10 @@ Move::Move(Move * p){
 	adjuster = 0;
 	turn = parent==NULL?0:parent->turn+1;	
 	pawnMove=false;
-	capture=false;
+	capture=NULL;
+	bookWins = 0;
+	bookTotal = 0;
+	nxtBootTotal = 0;
 }
 Move::Move(){
 	id="NULL";
@@ -34,7 +37,10 @@ Move::Move(){
 	adjuster = 0;
 	turn = 0;
 	pawnMove=false;
-	capture=false;
+	capture=NULL;
+	bookWins = 0;
+	bookTotal = 0;
+	nxtBootTotal = 0;
 }
 Move::~Move(){
 	for(unsigned int i = 0; i < choices.size(); i++)
@@ -98,7 +104,7 @@ void Move::updateAdjuster(){
 		parent->updateAdjuster();
 }
 double Move::adjustedScore(){
-	return score*.05 + adjuster*.95;
+	return score*.2 + adjuster*.8;
 }
 void Move::setScore(double s){
 	score = s;
@@ -106,4 +112,13 @@ void Move::setScore(double s){
 }
 double Move::getScore(){
 	return score;
+}
+void Move::sortBkScores(){
+	for(unsigned int i = 1; i < choices.size(); i ++){
+		for(unsigned int j = i; j >= 1 && choices[j]->bookWins > choices[j - 1]->bookWins; j--){
+			Move * tmp = choices[j-1];
+			choices[j-1] = choices[j];
+			choices[j] = tmp;
+		}
+	}
 }
