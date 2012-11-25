@@ -239,7 +239,7 @@ void Pawn::getMoves(vector<string> &moves){
 		if(y != 0 && y != 7)
 			moves.push_back(Board::toStr(currentLoc+x*10+y));
 		else{
-			moves.push_back(Board::toStr(currentLoc+x*10+y) + "q");
+			moves.push_back(Board::toStr(currentLoc+x*10+y) + "");
 			moves.push_back(Board::toStr(currentLoc+x*10+y) + "r");
 			moves.push_back(Board::toStr(currentLoc+x*10+y) + "b");
 			moves.push_back(Board::toStr(currentLoc+x*10+y) + "n");

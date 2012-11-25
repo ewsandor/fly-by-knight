@@ -1,4 +1,6 @@
 VS
 *.o
+*.pgn
+*.lnk
 flyByKnight
 xboard.debug
