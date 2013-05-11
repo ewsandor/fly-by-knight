@@ -142,7 +142,7 @@ bool handleInput(string input){
 		else if(input.find(".") == 0){  
 				if(currentGame->analysisQueue.size() > 0){
 					string stat01 = "stat01: 0 ";
-					stat01.append(to_string((long double)currentGame->nodes));
+					stat01.append(std::to_string((long double)currentGame->nodes));
 					stat01.append(" ");
 					int depth = currentGame->analysisQueue[0]->turn - currentGame->moveTree->actual->turn;				
 					stat01.append(to_string((long double)depth));

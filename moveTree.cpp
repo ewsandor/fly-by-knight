@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include "moveTree.hpp"
 #include "game.hpp"
 using namespace std;
