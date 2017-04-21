@@ -22,10 +22,6 @@
 	- To run with the command line interface type 'make run'
 	- If xboard is installed, the engine can be run with xboard by typing 'make runxboard'
 
-	Fly By Knight's development is a private project.  Anyone is free to examine, test, and branch the code.  No one is allowed to distribute or profit from the code or any branch without direct permission from Edward Sandor.  No warranty or protection is provided for users of Fly By Knight’s code.  Edward Sandor is not responsible for any damage caused by Fly By Knight.  Fly By Knight is not a professional engine, it should not be used for contest of any sort.  Fly By Knight is intended for private, amateur, entertainment uses only.
-
-By compiling, editing, or running any of Fly By Knight's code, you accept everything stated above.
-
 XBoard/WinBoard information: 
 http://www.gnu.org/software/xboard/
 
