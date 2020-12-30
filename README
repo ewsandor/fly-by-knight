@@ -1,5 +1,5 @@
 	################################
-	# Fly By Knight - Chess Engine #	September 2011 - 2012
+	# Fly By Knight - Chess Engine #	September 2011 - 2012, 2020
 	################################
 		Created by Edward Sandor.
 
@@ -12,19 +12,13 @@
 			P P P P P P P P
 			R N B Q K B N R
 
-	Fly By Knight is an amateur chess engine currently implementing the xboard/winboard chess protocol.  The code is written in C++.  Main development and support is for the x86_64 Linux Kernel.  The code is written as portable as possible for easy porting to Windows and other kernels.
+	REWRITE IN PROGRESS
 
-	- Requires g++ to compile with Make
-	- Requires Boost C++ Compiled Libraries >= 1.51.0
-		-$BOOT_ROOT set to boost directory
-		-http://www.boost.org/
-	- Simply type 'make' to compile.
-	- To run with the command line interface type 'make run'
-	- If xboard is installed, the engine can be run with xboard by typing 'make runxboard'
+	Fly By Knight is an amateur chess engine currently implementing the UCI chess protocol.  This chess engine leverages my FarewellToKing C chess library.
 
-XBoard/WinBoard information: 
-http://www.gnu.org/software/xboard/
+	Depends on https://github.com/ewsandor/FarewellToKing.
 
-xboard/winboard protocol: 
-http://www.gnu.org/software/xboard/engine-intf.html
+
+UCI Protocol:
+http://wbec-ridderkerk.nl/html/UCIProtocol.html
 
