@@ -1,4 +1,13 @@
 VS
 *.o
-flyByKnight
+build
 xboard.debug
+*~
+*.gch
+*dump
+*exe
+*.swp
+build
+.clangd
+compile_commands.json
+*.code-workspace
