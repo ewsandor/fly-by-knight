@@ -13,8 +13,13 @@
 #include <farewell_to_king_strings.h>
 
 #include "fly_by_knight_types.h"
+#include "fly_by_knight_version.h"
 
-int main(){
+int main()
+{
+  printf("Fly by Knight version %s by Edward Sandor.\n", FLY_BY_KNIGHT_VERSION_STR);
+
+  /*
   ftk_game_s game;
   ftk_game_end_e game_end;
   ftk_begin_standard_game(&game);
@@ -83,6 +88,7 @@ int main(){
       printf("%d\n\n", ftk_move_forward(&game, &move));
     }
   }
+  */
 
   return 0;
 }
