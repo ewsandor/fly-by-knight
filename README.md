@@ -8,6 +8,9 @@ September 2011 - 2012, 2020.
 
 Fly by Knight is an amateur chess engine currently implementing the UCI chess protocol.  This chess engine leverages my Farewell to King C chess library.
 
+Versions 0.x.x supported only the XBoard chess engine protocol.
+Versions 1.x.x+ is is a rewrite and is designed to support the UCI protocol.  XBoard protocol support may be added later after UCI is stable.
+
 ## Usage
 
 ### Dependencies
