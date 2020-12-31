@@ -10,6 +10,7 @@
 #include <pthread.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -39,15 +40,41 @@ void init(fbk_instance_s * fbk, bool debug)
   fbk->protocol   = FBK_PROTOCOL_UNDEFINED;
 }
 
-int main()
+int main(int argc, char ** argv)
 {
   printf(FLY_BY_KNIGHT_NAME " version " FLY_BY_KNIGHT_VERSION_STR " by " FLY_BY_KNIGHT_AUTHOR " <" FLY_BY_KNIGHT_CONTACT ">\n");
 
+  bool debug = false;
+  uint i;
   int presult;
   pthread_t io_thread;
   fbk_instance_s fbk_instance;
 
-  init(&fbk_instance, true);
+  for(i = 1; i < argc; i++)
+  {
+    if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0)
+    {
+      debug = true;
+    }
+    else
+    {
+      printf( "Usage: fly_by_knight [OPTION]...\n"
+              "Chess engine following the UCI protocol\n"
+              "  -d, --debug  start in debug mode\n"
+              "  -h, --help   display this help and exit\n");
+      
+      if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+      {
+        exit(0);
+      }
+      else
+      {
+        exit(1);
+      }
+    }
+  }
+
+  init(&fbk_instance, debug);
 
   presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
   FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
