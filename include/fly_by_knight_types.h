@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 //Include Farewell to King library
-#include <farewell_to_king.h>
 #include <farewell_to_king_types.h>
 
 /**
@@ -38,7 +37,10 @@ typedef struct
   bool debug_mode;
 
   //Active communication protocol
-  fbk_protocol_e comm_protocol;
+  fbk_protocol_e protocol;
+
+  //Game state
+  ftk_game_s game;
 
 } fbk_instance_s;
 

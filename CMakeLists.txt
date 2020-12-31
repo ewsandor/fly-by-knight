@@ -7,5 +7,5 @@ subdirs(src)
 set(HEADERS "${CMAKE_SOURCE_DIR}/include")
 include_directories(${HEADERS})
 
-find_library(FAREWELL_TO_KING_LIB         farewell_to_king)
-find_library(FAREWELL_TO_KING_STRINGS_LIB farewell_to_king_strings)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)

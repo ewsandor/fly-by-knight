@@ -7,17 +7,52 @@
  Main file for Fly by Knight
 */
 
+#include <pthread.h>
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+
 #include <farewell_to_king_strings.h>
 
+#include "fly_by_knight_debug.h"
+#include "fly_by_knight_error.h"
+#include "fly_by_knight_io.h"
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_version.h"
 
+/**
+ * @brief Initializes Fly by Knight
+ * 
+ * @param fbk Fly by Knight instance data
+ * @param debug true if debug logging should be enabled
+ */
+void init(fbk_instance_s * fbk, bool debug)
+{
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
+
+  memset(fbk, 0, sizeof(fbk_instance_s));
+  fbk->debug_mode = debug;
+
+  FBK_DEBUG_MSG(*fbk, "Initializing Fly by Knight");
+
+  fbk->protocol   = FBK_PROTOCOL_UNDEFINED;
+}
+
 int main()
 {
-  printf("Fly by Knight version %s by Edward Sandor.\n", FLY_BY_KNIGHT_VERSION_STR);
+  printf(FLY_BY_KNIGHT_NAME " version " FLY_BY_KNIGHT_VERSION_STR " by " FLY_BY_KNIGHT_AUTHOR " <" FLY_BY_KNIGHT_CONTACT ">\n");
+
+  int presult;
+  pthread_t io_thread;
+  fbk_instance_s fbk_instance;
+
+  init(&fbk_instance, true);
+
+  presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
+  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
+
+  pause();
 
   /*
   ftk_game_s game;
