@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <farewell_to_king.h>
 #include <farewell_to_king_strings.h>
 
 #include "fly_by_knight_debug.h"
@@ -38,6 +39,8 @@ void init(fbk_instance_s * fbk)
 
   memset(fbk, 0, sizeof(fbk_instance_s));
   fbk->protocol = FBK_PROTOCOL_UNDEFINED;
+
+  ftk_begin_standard_game(&fbk->game);
 }
 
 /**
