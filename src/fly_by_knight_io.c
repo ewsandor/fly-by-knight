@@ -21,6 +21,7 @@
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"
 #include "fly_by_knight_types.h"
+#include "fly_by_knight_uci.h"
 #include "fly_by_knight_version.h"
 
 #define FBK_INPUT_BUFFER_SIZE  1024
@@ -96,8 +97,7 @@ void *fly_by_knight_io_thread(void *fbk_instance)
     }
     else if(FBK_PROTOCOL_UCI == fbk->protocol)
     {
-      /* TODO send to UCI Parser */
-      input_handled = false;
+      input_handled = fbk_process_uci_input(fbk, input_buffer);
     }
     else
     {
