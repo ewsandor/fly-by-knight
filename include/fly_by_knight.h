@@ -15,9 +15,8 @@
 /**
  * @brief Exits Fly by Knight cleanly and return code to calling process
  * 
- * @param fbk 
  * @param return_code 
  */
-void fbk_exit(fbk_instance_s *fbk, int return_code);
+void fbk_exit(int return_code);
 
 #endif //_FLY_BY_KNIGHT_H_

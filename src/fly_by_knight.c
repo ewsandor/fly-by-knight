@@ -31,29 +31,23 @@ fbk_instance_s fbk_instance;
  * @param fbk Fly by Knight instance data
  * @param debug true if debug logging should be enabled
  */
-void init(fbk_instance_s * fbk, fbk_debug_level_t debug_level, char * log_path)
+void init(fbk_instance_s * fbk)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Initializing Fly by Knight");
 
   memset(fbk, 0, sizeof(fbk_instance_s));
-  fbk->debug_level = debug_level;
-
-  fbk_open_log_file(fbk, log_path);
-
-  FBK_DEBUG_MSG(*fbk, FBK_DEBUG_MED, "Initializing Fly by Knight");
-
-  fbk->protocol   = FBK_PROTOCOL_UNDEFINED;
+  fbk->protocol = FBK_PROTOCOL_UNDEFINED;
 }
 
 /**
  * @brief Exits Fly by Knight cleanly and return code to calling process
  * 
- * @param fbk 
  * @param return_code 
  */
-void fbk_exit(fbk_instance_s *fbk, int return_code)
+void fbk_exit(int return_code)
 {
-  fbk_close_log_file(fbk);
+  fbk_close_log_file();
 
   exit(return_code);
 }
@@ -76,12 +70,12 @@ void display_help(bool user_requested, bool exit_fbk)
     if(user_requested)
     {
       /* User requested, exit cleanly */
-      exit(0);
+      fbk_exit(0);
     }
     else
     {
       /* Triggered by bad arguments, exit with error */
-      exit(1);
+      fbk_exit(1);
     }
   }
 }
@@ -89,7 +83,7 @@ void display_help(bool user_requested, bool exit_fbk)
 void handle_signal(int signal)
 {
   /* Clean exit with bash signal code */
-  fbk_exit(&fbk_instance, 128+signal);
+  fbk_exit(128+signal);
 }
 
 int main(int argc, char ** argv)
@@ -121,6 +115,10 @@ int main(int argc, char ** argv)
       {
         display_help(false, true);
       }
+      else
+      {
+        fbk_set_debug_level(debug);
+      }
     }
     else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--log") == 0)
     {
@@ -128,6 +126,7 @@ int main(int argc, char ** argv)
       {
         log_path = argv[i+1];
         i++;
+        fbk_open_log_file(log_path);
       }
       else
       {
@@ -144,18 +143,18 @@ int main(int argc, char ** argv)
     }
   }
 
-  init(&fbk_instance, debug, log_path);
+  init(&fbk_instance);
 
   // Log command and arguments
-  FBK_LOG_MSG(fbk_instance, "# [COMMAND]: ");
+  FBK_LOG_MSG("# [COMMAND]: ");
   for(i = 0; i < argc; i++)
   {
-    FBK_LOG_MSG(fbk_instance, "%s ", argv[i]);
+    FBK_LOG_MSG("%s ", argv[i]);
   }
-  FBK_LOG_MSG(fbk_instance, "\n");
+  FBK_LOG_MSG("\n");
 
   presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
-  FBK_ASSERT_LOG(fbk_instance, 0 == presult, "Failed to start IO thread, presult %d", presult);
+  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
 
   pause();
 

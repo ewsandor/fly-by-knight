@@ -14,23 +14,23 @@
 
 #include "fly_by_knight_types.h"
 
-#define FBK_LOG_MSG(fbk, msg, ...) if((fbk).log_file != NULL){fprintf((fbk).log_file, msg, ##__VA_ARGS__);}
-#define FBK_OUTPUT_MSG(fbk, msg, ...) printf(msg, ##__VA_ARGS__); FBK_LOG_MSG(fbk, msg, ##__VA_ARGS__)
+extern bool fbk_log_file_configured;
+extern FILE *fbk_log_file;
+
+#define FBK_LOG_MSG(msg, ...) if(fbk_log_file_configured){fprintf(fbk_log_file, msg, ##__VA_ARGS__);}
+#define FBK_OUTPUT_MSG(msg, ...) printf(msg, ##__VA_ARGS__); FBK_LOG_MSG(msg, ##__VA_ARGS__)
 
 /**
  * @brief Open file for logging
  * 
- * @param fbk 
  * @param log_path 
  */
-void fbk_open_log_file(fbk_instance_s * fbk, char * log_path);
+void fbk_open_log_file(char * log_path);
 
 /**
  * @brief Close log file
- * 
- * @param fbk 
  */
-void fbk_close_log_file(fbk_instance_s * fbk);
+void fbk_close_log_file();
 
 /**
  * @brief Thread for handling IO

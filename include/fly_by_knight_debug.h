@@ -14,6 +14,8 @@
 
 #include "fly_by_knight_io.h"
 
+typedef uint8_t fbk_debug_level_t;
+
 typedef enum
 {
   FBK_DEBUG_DISABLED = 0,
@@ -24,6 +26,22 @@ typedef enum
   FBK_DEBUG_MIN      = 9,
 } fbk_debug_level_e;
 
-#define FBK_DEBUG_MSG(fbk, level, msg, ...) if(level <= (fbk).debug_level){printf("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__); FBK_LOG_MSG(fbk, "# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__);}
+/**
+ * @brief Validates and configures debug logging level
+ * 
+ * @param new_debug_level 
+ */
+void fbk_set_debug_level(fbk_debug_level_t new_debug_level);
+
+/**
+ * @brief Returns current debug logging level 
+ */
+fbk_debug_level_t fbk_get_debug_level();
+
+/**
+ * @brief Log debug message to STDOUT and logfile if current logging level is set
+ * 
+ */
+#define FBK_DEBUG_MSG(level, msg, ...) if(level <= fbk_get_debug_level()){printf("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__); FBK_LOG_MSG("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__);}
 
 #endif //_FLY_BY_KNIGHT_DEBUG_H_
