@@ -26,17 +26,17 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
 {
   ftk_result_e ftk_result;
 
-  FBK_DEBUG_MSG(*fbk, "Processing position command: %s", input);
+  FBK_DEBUG_MSG(*fbk, FBK_DEBUG_MED, "Processing position command: %s", input);
 
   if(strncmp("fen", input, 3) == 0)
   {
-    FBK_DEBUG_MSG(*fbk, "FEN position received: %s", &input[4]);
+    FBK_DEBUG_MSG(*fbk, FBK_DEBUG_LOW, "FEN position received: %s", &input[4]);
     ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[4]);
-    FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s", &input[4]);
+    FBK_ASSERT_LOG(*fbk, FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s", &input[4]);
   }
-  else if(strncmp("startpos", input, 8) == 0)
+  else if(strncmp("startpos moves", input, 14) == 0)
   {
-    FBK_DEBUG_MSG(*fbk, "startpos received: %s", &input[9]);
+    FBK_DEBUG_MSG(*fbk, FBK_DEBUG_LOW, "startpos received: %s", &input[15]);
     ftk_begin_standard_game(&fbk->game);
 
     uint i, move_string_idx = 0;
@@ -46,28 +46,28 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
     ftk_castle_e   castle;
     ftk_move_s     move;
 
-    for(i = 9; true; i++)
+    for(i = 15; true; i++)
     {
       if(input[i] != ' ' && input[i] != '\0')
       {
-        FBK_ASSERT_MSG(move_string_idx < FTK_MOVE_STRING_SIZE, "move string exceeded max size: %s", move_string);
+        FBK_ASSERT_LOG(*fbk, move_string_idx < FTK_MOVE_STRING_SIZE, "move string exceeded max size: %s", move_string);
         move_string[move_string_idx] = input[i];
         move_string_idx++;
       }
       else if(move_string_idx > 0)
       {
-        FBK_DEBUG_MSG(*fbk, "processing move: %s", move_string);
+        FBK_DEBUG_MSG(*fbk,FBK_DEBUG_MIN, "processing move: %s", move_string);
 
         target = FTK_XX;
         source = FTK_XX;
         pawn_promotion = FTK_TYPE_EMPTY;
         castle         = FTK_CASTLE_NONE;
         ftk_result = ftk_long_algebraic_move(move_string, &target, &source, &pawn_promotion, &castle);          
-        FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse move string: %s", move_string);
+        FBK_ASSERT_LOG(*fbk, FTK_SUCCESS == ftk_result, "Failed to parse move string: %s", move_string);
 
         move = ftk_move_piece(&fbk->game, target, source, pawn_promotion);
-        FBK_ASSERT_MSG(FTK_XX != move.source, "Illegal move %s", move_string);
-        FBK_ASSERT_MSG(FTK_XX != move.target, "Illegal move %s", move_string);
+        FBK_ASSERT_LOG(*fbk, FTK_XX != move.source, "Illegal move %s", move_string);
+        FBK_ASSERT_LOG(*fbk, FTK_XX != move.target, "Illegal move %s", move_string);
 
         memset(move_string, 0, sizeof(move_string));
         move_string_idx = 0;
@@ -80,7 +80,7 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
   }
   else
   {
-    FBK_FATAL_MSG("Cannot process position command: %s\n", input);
+    FBK_FATAL_LOG(*fbk, "Cannot process position command: %s", input);
   }
 }
 
@@ -97,11 +97,11 @@ bool fbk_process_uci_input(fbk_instance_s *fbk, char * input)
   bool input_handled = true;
 
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
-  FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
+  FBK_ASSERT_LOG(*fbk, input != NULL, "NULL input pointer passed.");
 
   if(strcmp("isready", input) == 0)
   {
-    printf("readyok\n");
+    FBK_OUTPUT_MSG(*fbk, "readyok\n");
   }
   else if(strncmp("position", input, 8) == 0)
   {
@@ -109,12 +109,12 @@ bool fbk_process_uci_input(fbk_instance_s *fbk, char * input)
   }
   else if(strcmp("debug on", input) == 0)
   {
-    fbk->debug_mode = true;
-    FBK_DEBUG_MSG(*fbk, "debug logging enabled");
+    fbk->debug_level = FBK_DEBUG_HIGH;
+    FBK_DEBUG_MSG(*fbk, FBK_DEBUG_HIGH, "debug logging enabled (level %u)", fbk->debug_level);
   }
   else if(strcmp("debug off", input) == 0)
   {
-    fbk->debug_mode = false;
+    fbk->debug_level = FBK_DEBUG_DISABLED;
   }
   else
   {

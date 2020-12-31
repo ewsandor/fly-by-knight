@@ -14,9 +14,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "fly_by_knight_io.h"
+
 #define FBK_ERROR_MSG(msg, ...) fprintf(stderr, "# [ERROR] FBK: " msg "\n", ##__VA_ARGS__)
 #define FBK_ERROR_MSG_HARD(msg, ...) fprintf(stderr, "# [ERROR] (%s:%d) FBK: " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #define FBK_ASSERT_MSG(exp, msg, ...) if(!(exp)) {FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); assert(exp); }
 #define FBK_FATAL_MSG(msg, ...) FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); exit(1);
+
+#define FBK_ERROR_LOG(fbk, msg, ...) FBK_ERROR_MSG(msg, ##__VA_ARGS__); FBK_LOG_MSG(fbk, "# [ERROR] FBK: " msg "\n", ##__VA_ARGS__)
+#define FBK_ERROR_LOG_HARD(fbk, msg, ...) FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); FBK_LOG_MSG(fbk, "# [ERROR] (%s:%d) FBK: " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define FBK_ASSERT_LOG(fbk, exp, msg, ...) if(!(exp)) { FBK_ERROR_LOG_HARD(fbk, msg, ##__VA_ARGS__); fbk_close_log_file(&(fbk)); assert(exp); }
+#define FBK_FATAL_LOG(fbk, msg, ...) FBK_ERROR_LOG_HARD(fbk, msg, ##__VA_ARGS__); fbk_close_log_file(&(fbk)); exit(1);
+
 
 #endif //_FLY_BY_KNIGHT_ERROR_H_

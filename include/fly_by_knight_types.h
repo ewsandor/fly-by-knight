@@ -27,14 +27,19 @@ typedef enum
   FBK_PROTOCOL_XBOARD
 } fbk_protocol_e;
 
+typedef uint8_t fbk_debug_level_t;
+
 /**
  * @brief Main struction for Fly by Knight
  * 
  */
 typedef struct
 {
-  //Debug mode enabled
-  bool debug_mode;
+  //Debug logging level [0(disabled) - 9(maximum)]
+  fbk_debug_level_t debug_level;
+  
+  //Logging file if enabled
+  FILE *log_file;
 
   //Active communication protocol
   fbk_protocol_e protocol;

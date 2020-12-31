@@ -9,6 +9,7 @@
 
 #include <pthread.h>
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,23 +29,62 @@
  * @param fbk Fly by Knight instance data
  * @param debug true if debug logging should be enabled
  */
-void init(fbk_instance_s * fbk, bool debug)
+void init(fbk_instance_s * fbk, fbk_debug_level_t debug_level, char * log_path)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
 
   memset(fbk, 0, sizeof(fbk_instance_s));
-  fbk->debug_mode = debug;
+  fbk->debug_level = debug_level;
 
-  FBK_DEBUG_MSG(*fbk, "Initializing Fly by Knight");
+  fbk_open_log_file(fbk, log_path);
+
+  FBK_DEBUG_MSG(*fbk, FBK_DEBUG_MED, "Initializing Fly by Knight");
 
   fbk->protocol   = FBK_PROTOCOL_UNDEFINED;
 }
 
+/**
+ * @brief Display help text and exit if requested
+ * 
+ * @param user_requested true if user requested help text
+ * @param exit_fbk true if program should exit
+ */
+void display_help(bool user_requested, bool exit_fbk)
+{
+  printf( "Usage: fly_by_knight [OPTION]...\n"
+          "Chess engine following the UCI protocol\n"
+          "  -d#, --debug=#  start with debug logging level [0(disabled) - 9(maximum)]\n"
+          "  -h, --help      display this help and exit\n");
+  
+  if(exit_fbk)
+  {
+    if(user_requested)
+    {
+      /* User requested, exit cleanly */
+      exit(0);
+    }
+    else
+    {
+      /* Triggered by bad arguments, exit with error */
+      exit(1);
+    }
+  }
+}
+
+void handle_signal(int signal)
+{
+  /* Clean exit with bash signal code */
+  exit(128 + signal);
+}
+
 int main(int argc, char ** argv)
 {
-  printf(FLY_BY_KNIGHT_NAME " version " FLY_BY_KNIGHT_VERSION_STR " by " FLY_BY_KNIGHT_AUTHOR " <" FLY_BY_KNIGHT_CONTACT ">\n");
+  printf(FLY_BY_KNIGHT_INTRO "\n");
 
-  bool debug = false;
+  signal(SIGINT, handle_signal);
+
+  fbk_debug_level_t debug = false;
+  char * log_path = NULL;
   uint i;
   int presult;
   pthread_t io_thread;
@@ -52,32 +92,56 @@ int main(int argc, char ** argv)
 
   for(i = 1; i < argc; i++)
   {
-    if(strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0)
+    if(strncmp(argv[i], "-d", 2) == 0 || strncmp(argv[i], "--debug=", 8) == 0)
     {
-      debug = true;
-    }
-    else
-    {
-      printf( "Usage: fly_by_knight [OPTION]...\n"
-              "Chess engine following the UCI protocol\n"
-              "  -d, --debug  start in debug mode\n"
-              "  -h, --help   display this help and exit\n");
-      
-      if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+      if(strncmp(argv[i], "-d", 2) == 0)
       {
-        exit(0);
+        debug = argv[i][2] - '0';
+      }
+      else if(strncmp(argv[i], "--debug=", 8) == 0)
+      {
+        debug = argv[i][8] - '0';
+      }
+
+      if(debug > 9)
+      {
+        display_help(false, true);
+      }
+    }
+    else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--log") == 0)
+    {
+      if(i + 1 < argc)
+      {
+        log_path = argv[i+1];
+        i++;
       }
       else
       {
-        exit(1);
+        display_help(false, true);
       }
+    }
+    else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+    {
+      display_help(true, true);
+    }
+    else
+    {
+      display_help(false, true);
     }
   }
 
-  init(&fbk_instance, debug);
+  init(&fbk_instance, debug, log_path);
+
+  // Log command and arguments
+  FBK_LOG_MSG(fbk_instance, "# [COMMAND]: ");
+  for(i = 0; i < argc; i++)
+  {
+    FBK_LOG_MSG(fbk_instance, "%s ", argv[i]);
+  }
+  FBK_LOG_MSG(fbk_instance, "\n");
 
   presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
-  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
+  FBK_ASSERT_LOG(fbk_instance, 0 == presult, "Failed to start IO thread, presult %d", presult);
 
   pause();
 
