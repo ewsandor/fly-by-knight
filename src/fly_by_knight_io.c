@@ -169,5 +169,5 @@ void *fly_by_knight_io_thread(void *fbk_instance)
     }
   }
 
-  exit(0);
+  fbk_exit(fbk, 0);
 }

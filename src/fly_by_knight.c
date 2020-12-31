@@ -23,6 +23,8 @@
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_version.h"
 
+fbk_instance_s fbk_instance;
+
 /**
  * @brief Initializes Fly by Knight
  * 
@@ -41,6 +43,19 @@ void init(fbk_instance_s * fbk, fbk_debug_level_t debug_level, char * log_path)
   FBK_DEBUG_MSG(*fbk, FBK_DEBUG_MED, "Initializing Fly by Knight");
 
   fbk->protocol   = FBK_PROTOCOL_UNDEFINED;
+}
+
+/**
+ * @brief Exits Fly by Knight cleanly and return code to calling process
+ * 
+ * @param fbk 
+ * @param return_code 
+ */
+void fbk_exit(fbk_instance_s *fbk, int return_code)
+{
+  fbk_close_log_file(fbk);
+
+  exit(return_code);
 }
 
 /**
@@ -74,7 +89,7 @@ void display_help(bool user_requested, bool exit_fbk)
 void handle_signal(int signal)
 {
   /* Clean exit with bash signal code */
-  exit(128 + signal);
+  fbk_exit(&fbk_instance, 128+signal);
 }
 
 int main(int argc, char ** argv)
@@ -88,7 +103,6 @@ int main(int argc, char ** argv)
   uint i;
   int presult;
   pthread_t io_thread;
-  fbk_instance_s fbk_instance;
 
   for(i = 1; i < argc; i++)
   {
