@@ -15,7 +15,7 @@ Versions 1.x.x+ is is a rewrite and is designed to support the UCI protocol.  XB
 
 ### Dependencies
 - Farewell to King Chess Library: https://git.sandorlabs.us/edward/farewell-to-king.
-- POSIX for Threading.
+- POSIX for threading.
 
 ### Building
 ```
