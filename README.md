@@ -6,10 +6,10 @@ September 2011 - 2012, 2020.
 
 **REWRITE IN PROGRESS**
 
-Fly by Knight is an amateur chess engine currently implementing the UCI chess protocol.  This chess engine leverages my Farewell to King C chess library.
+Fly by Knight is an amateur chess engine currently implementing the xboard chess protocol.  This chess engine leverages my Farewell to King C chess library.
 
-Versions 0.x.x supported only the XBoard chess engine protocol.
-Versions 1.x.x+ is is a rewrite and is designed to support the UCI protocol.  XBoard protocol support may be added later after UCI is stable.
+Versions 0.x.x supported only the xboard chess engine protocol.
+Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol.  UCI protocol support may be added later after xboard is stable.
 
 ## Usage
 
@@ -34,8 +34,10 @@ $ ./fly_by_knight
 ```
 
 ### GUI
-Fly by Knight supports the UCI chess protocol compatible with many popular chess GUIs including XBoard: https://www.gnu.org/software/xboard/.
+Fly by Knight supports the xboard chess protocol compatible with many popular chess GUIs including xboard: https://www.gnu.org/software/xboard/.
 
 ## References
+xboard Protocol:
+https://www.gnu.org/software/xboard/engine-intf.html
 UCI Protocol:
 http://wbec-ridderkerk.nl/html/UCIProtocol.html

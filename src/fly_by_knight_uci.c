@@ -2,7 +2,7 @@
  fly_by_knight_uci.c
  Fly by Knight - Chess Engine
  Edward Sandor
- December 2020
+ December 2020 - 2021
  
  UCI protocol interpetting for Fly by Knight
 */
@@ -106,6 +106,21 @@ bool fbk_process_uci_input(fbk_instance_s *fbk, char * input)
   else if(strncmp("position", input, 8) == 0)
   {
     fbk_process_uci_position_command(fbk, &input[9]);
+  }
+  else if(strcmp("stop", input) == 0)
+  {
+    //TODO stop ongoing analysis, reset decision maker
+    //TODO return best move and best response (ponder) from decision maker
+    FBK_OUTPUT_MSG("bestmove 0000\n");
+  }
+  else if(strcmp("ucinewgame", input) == 0)
+  {
+    //TODO stop ongoing analysis, reset decision maker, flush analysis
+    ftk_begin_standard_game(&fbk->game);
+  }
+  else if(strcmp("go", input) == 0)
+  {
+    //TODO start analysis and decision maker based on GUI's instructions
   }
   else if(strcmp("debug on", input) == 0)
   {

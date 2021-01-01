@@ -2,7 +2,7 @@
  fly_by_knight.c
  Fly by Knight - Chess Engine
  Edward Sandor
- December 2020
+ December 2020 - 2021
  
  Main file for Fly by Knight
 */
@@ -39,6 +39,9 @@ void init(fbk_instance_s * fbk)
 
   memset(fbk, 0, sizeof(fbk_instance_s));
   fbk->protocol = FBK_PROTOCOL_UNDEFINED;
+  
+  fbk->config.random           = false;
+  fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
 
   ftk_begin_standard_game(&fbk->game);
 }
@@ -93,7 +96,8 @@ int main(int argc, char ** argv)
 {
   printf(FLY_BY_KNIGHT_INTRO "\n");
 
-  signal(SIGINT, handle_signal);
+  signal(SIGINT,  handle_signal);
+  signal(SIGTERM, handle_signal);
 
   fbk_debug_level_t debug = false;
   char * log_path = NULL;

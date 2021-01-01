@@ -2,7 +2,7 @@
  fly_by_knight_types.h
  Fly by Knight - Chess Engine
  Edward Sandor
- December 2020
+ December 2020 - 2021
  
  Common types for Fly by Knight
 */
@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-//Include Farewell to King library
 #include <farewell_to_king_types.h>
 
 /**
@@ -27,16 +26,81 @@ typedef enum
   FBK_PROTOCOL_XBOARD
 } fbk_protocol_e;
 
+typedef uint8_t xboard_version_t;
+
+typedef enum
+{
+  FBK_XBOARD_MODE_NORMAL,
+  FBK_XBOARD_MODE_EDIT,
+} fbk_xboard_mode_e;
+
+typedef struct
+{
+  /* Active protocol version */
+  xboard_version_t version;
+
+  /* Active xboard protocol mode */
+  fbk_xboard_mode_e mode;
+
+  /* Edit color */
+  ftk_color_e      edit_color;
+
+  /* Color engine should play as */
+  ftk_color_e      play_as;
+
+  /* Ponder on opponents turn */
+  bool             ponder;
+
+} fbk_xboard_data_s;
+
+typedef union
+{
+  /* Data specific to xboard */
+  fbk_xboard_data_s xboard;
+
+} fbk_protocol_data_u;
+
+/**
+ * @brief Type for analysis depth
+ * 
+ */
+typedef uint8_t fbk_depth_t;
+
+#define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
+
+/**
+ * @brief Configures engine behavior
+ * 
+ */
+typedef struct
+{
+  /* Include radom factor for move decision */
+  bool        random;
+
+  /* Maximum analysis depth, 0 for no limit */
+  fbk_depth_t max_search_depth;
+
+  /* Output current analysis details */
+  bool        analysis_output;
+
+} fbk_engine_config_s;
+
 /**
  * @brief Main struction for Fly by Knight
  * 
  */
 typedef struct
 {
-  //Active communication protocol
+  /* Active communication protocol */
   fbk_protocol_e protocol;
 
-  //Game state
+  /* Active protocol data */
+  fbk_protocol_data_u protocol_data;
+
+  /* Engine configuration */
+  fbk_engine_config_s config;
+
+  /* Game state */
   ftk_game_s game;
 
 } fbk_instance_s;

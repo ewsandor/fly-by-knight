@@ -2,7 +2,7 @@
  fly_by_knight_io.c
  Fly by Knight - Chess Engine
  Edward Sandor
- December 2020
+ December 2020 - 2021
  
  Input and Output handling for Fly by Knight
 */
@@ -24,6 +24,7 @@
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_uci.h"
 #include "fly_by_knight_version.h"
+#include "fly_by_knight_xboard.h"
 
 #define FBK_INPUT_BUFFER_SIZE  1024
 #define FBK_OUTPUT_BUFFER_SIZE 1024
@@ -100,7 +101,20 @@ void *fly_by_knight_io_thread(void *fbk_instance)
     // Read from stdin
     memset(input_buffer, 0, sizeof(input_buffer));
     fgets_result = fgets(input_buffer, FBK_INPUT_BUFFER_SIZE, stdin);
-    FBK_ASSERT_MSG((fgets_result == input_buffer), "Failed to read from stdin");
+
+    if(fgets_result != input_buffer)
+    {
+      if(feof(stdin))
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "STDIN EOF.  Exiting");
+        break;
+      }
+      else
+      {
+        FBK_FATAL_MSG("Failed to read from stdin (ferror %d)", ferror(stdin));
+      }
+    }
+
 
     // Strip trailing newline
     strlength = strlen(input_buffer);
@@ -136,6 +150,8 @@ void *fly_by_knight_io_thread(void *fbk_instance)
     {
       if(strcmp("uci", input_buffer) == 0)
       {
+        FBK_FATAL_MSG("UCI not fully supported yet, please prefer xboard");
+
         fbk->protocol = FBK_PROTOCOL_UCI;
 
         /* Acknowledge UCI mode */
@@ -146,13 +162,16 @@ void *fly_by_knight_io_thread(void *fbk_instance)
       }
       else if(strcmp("xboard", input_buffer) == 0)
       {
-        FBK_ERROR_MSG("XBoard Protocol not supported");
-        input_handled = false;
+        fbk_init_xboard_protocol(fbk);
       }
       else
       {
         input_handled = false;
       }
+    }
+    else if(FBK_PROTOCOL_XBOARD == fbk->protocol)
+    {
+      input_handled = fbk_process_xboard_input(fbk, input_buffer);
     }
     else if(FBK_PROTOCOL_UCI == fbk->protocol)
     {
