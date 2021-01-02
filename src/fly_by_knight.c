@@ -119,7 +119,6 @@ int main(int argc, char ** argv)
 
   fbk_debug_level_t debug = false;
   bool print_version = false;
-  char * log_path = NULL;
   uint i;
   int presult;
   pthread_t io_thread;
@@ -154,9 +153,7 @@ int main(int argc, char ** argv)
     {
       if(i + 1 < argc)
       {
-        log_path = argv[i+1];
-        i++;
-        fbk_open_log_file(log_path);
+        fbk_open_log_file(argv[i]);
       }
       else
       {
