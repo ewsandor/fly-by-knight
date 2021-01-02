@@ -56,33 +56,16 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
 }
 
 /**
- * @brief Process position command
+ * @brief Handle rejcted features
  * 
- * @param fbk Fly by Knight instance data
- * @param input Input string from external process
+ * @param fbk 
+ * @param input 
  */
-void fbk_process_xboard_position_command(fbk_instance_s *fbk, char * input)
+void fbk_xboard_handle_rejected_feature(fbk_instance_s *fbk, char * input)
 {
-  ftk_result_e ftk_result;
-
-  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Processing position command: %s", input);
-
-  if(strncmp("fen", input, 3) == 0)
+  if(strcmp("debug", input) == 0)
   {
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "FEN position received: %s", &input[4]);
-    ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[4]);
-    FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[4], ftk_result);
-  }
-  else if(strncmp("startpos moves", input, 14) == 0)
-  {
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "startpos received: %s", &input[15]);
-    ftk_begin_standard_game(&fbk->game);
-
-
-  }
-  else
-  {
-    FBK_FATAL_MSG("Cannot process position command: %s", input);
+    fbk_set_debug_level(FBK_DEBUG_DISABLED);
   }
 }
 
@@ -147,6 +130,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
       if(input_length > 9)
       {
         FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' rejected", &input[9]);
+        fbk_xboard_handle_rejected_feature(fbk, &input[9]);
       }
       else
       {

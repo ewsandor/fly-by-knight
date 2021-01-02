@@ -89,6 +89,7 @@ void display_help(bool user_requested, bool exit_fbk)
 
 void handle_signal(int signal)
 {
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Received signal %u", signal);
   /* Clean exit with bash signal code */
   fbk_exit(128+signal);
 }
