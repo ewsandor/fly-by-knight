@@ -87,6 +87,22 @@ void display_help(bool user_requested, bool exit_fbk)
   }
 }
 
+/**
+ * @brief Displays addtional version details including supporting libraries
+ * 
+ */
+void display_version_details(bool print_stdout)
+{
+  char * version_str = FAREWELL_TO_KING_INTRO;
+
+  if(print_stdout)
+  {
+    printf("%s\n", version_str);
+  }
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "%s", version_str);
+}
+
 void handle_signal(int signal)
 {
   FBK_DEBUG_MSG(FBK_DEBUG_MED, "Received signal %u", signal);
@@ -102,6 +118,7 @@ int main(int argc, char ** argv)
   signal(SIGTERM, handle_signal);
 
   fbk_debug_level_t debug = false;
+  bool print_version = false;
   char * log_path = NULL;
   uint i;
   int presult;
@@ -150,11 +167,17 @@ int main(int argc, char ** argv)
     {
       display_help(true, true);
     }
+    else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0)
+    {
+      print_version = true;
+    }
     else
     {
       display_help(false, true);
     }
   }
+
+  display_version_details(print_version);
 
   init(&fbk_instance);
 
