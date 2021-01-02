@@ -147,6 +147,23 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
       //TODO start analysis and decision maker 
       fbk->protocol_data.xboard.play_as = fbk->game.turn;
     }
+    else if(strcmp("playother", input) == 0)
+    {
+      //TODO start analysis if pondering enabled
+      fbk->protocol_data.xboard.play_as = (FTK_WHITE == fbk->game.turn)?FTK_BLACK:FTK_WHITE;
+    }
+    else if(strcmp("white", input) == 0)
+    {
+      //stop clock
+      fbk->protocol_data.xboard.play_as = FTK_WHITE;
+      fbk->game.turn                    = FTK_BLACK;
+    }
+    else if(strcmp("black", input) == 0)
+    {
+      //stop clock
+      fbk->protocol_data.xboard.play_as = FTK_BLACK;
+      fbk->game.turn                    = FTK_WHITE;
+    }
     else if(strcmp("?", input) == 0)
     {
       //Force decision maker
