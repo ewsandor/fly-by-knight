@@ -150,19 +150,19 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     else if(strcmp("playother", input) == 0)
     {
       //TODO start analysis if pondering enabled
-      fbk->protocol_data.xboard.play_as = (FTK_WHITE == fbk->game.turn)?FTK_BLACK:FTK_WHITE;
+      fbk->protocol_data.xboard.play_as = (FTK_COLOR_WHITE == fbk->game.turn)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
     }
     else if(strcmp("white", input) == 0)
     {
       //stop clock
-      fbk->protocol_data.xboard.play_as = FTK_WHITE;
-      fbk->game.turn                    = FTK_BLACK;
+      fbk->protocol_data.xboard.play_as = FTK_COLOR_WHITE;
+      fbk->game.turn                    = FTK_COLOR_BLACK;
     }
     else if(strcmp("black", input) == 0)
     {
       //stop clock
-      fbk->protocol_data.xboard.play_as = FTK_BLACK;
-      fbk->game.turn                    = FTK_WHITE;
+      fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
+      fbk->game.turn                    = FTK_COLOR_WHITE;
     }
     else if(strcmp("?", input) == 0)
     {
