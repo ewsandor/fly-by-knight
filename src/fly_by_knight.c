@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <farewell_to_king.h>
@@ -96,7 +97,7 @@ int main(int argc, char ** argv)
 {
   printf(FLY_BY_KNIGHT_INTRO "\n");
 
-  signal(SIGINT,  handle_signal);
+  signal(SIGINT,  SIG_IGN);
   signal(SIGTERM, handle_signal);
 
   fbk_debug_level_t debug = false;
@@ -104,6 +105,10 @@ int main(int argc, char ** argv)
   uint i;
   int presult;
   pthread_t io_thread;
+  time_t curr_time;
+
+  
+  srand((unsigned) time(&curr_time));
 
   for(i = 1; i < argc; i++)
   {

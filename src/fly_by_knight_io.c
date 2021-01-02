@@ -98,6 +98,9 @@ void *fly_by_knight_io_thread(void *fbk_instance)
 
   while(true)
   {
+    // Flush pending output
+    fflush(stdout);
+
     // Read from stdin
     memset(input_buffer, 0, sizeof(input_buffer));
     fgets_result = fgets(input_buffer, FBK_INPUT_BUFFER_SIZE, stdin);

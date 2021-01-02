@@ -49,6 +49,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "draw=0 "
                  "analyze=0 "
                  "myname=\"" FLY_BY_KNIGHT_NAME_VER "\" "
+                 "colors=0 "
                  "name=0 "
                  "done=1\n"
                 );
@@ -130,12 +131,43 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
         FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
       }
     }
+    else if(strncmp("accepted", input, 8) == 0)
+    {
+      if(input_length > 9)
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' accepted", &input[9]);
+      }
+      else
+      {
+        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+      }
+    }
+    else if(strncmp("rejected", input, 8) == 0)
+    {
+      if(input_length > 9)
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' rejected", &input[9]);
+      }
+      else
+      {
+        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+      }
+    }
     else if(strcmp("force", input) == 0)
     {
       //TODO stop ongoing analysis, reset decision maker
       fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
     }
-    else if(strcmp("random", input) == 0)
+    else if(strcmp("go", input) == 0)
+    {
+      //TODO start analysis and decision maker 
+      fbk->protocol_data.xboard.play_as = fbk->game.turn;
+    }
+    else if(strcmp("?", input) == 0)
+    {
+      //Force decision maker
+    }
+     else if(strcmp("random", input) == 0)
     {
       fbk->config.random = !fbk->config.random;
     }
@@ -153,6 +185,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     }
     else if(strcmp("hard", input) == 0)
     {
+      // TODO start analysis
       fbk->protocol_data.xboard.ponder = true;
     }
     else if(strcmp("edit", input) == 0)
@@ -301,6 +334,33 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
   else
   {
     FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
+  }
+
+
+  /* Temporary logic to return random move */
+  if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
+  {
+    int pick;
+    ftk_move_s move;
+    ftk_move_list_s move_list;
+    char move_output[FTK_MOVE_STRING_SIZE];
+
+    ftk_get_move_list(&fbk->game, &move_list);
+
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %u legal moves", move_list.count);
+
+    if(move_list.count > 0)
+    {
+      move = move_list.move[rand() % move_list.count];
+    }
+
+    ftk_delete_move_list(&move_list);
+
+    ftk_move_forward(&fbk->game, &move);
+
+    ftk_move_to_xboard_string(&move, move_output);
+
+    FBK_OUTPUT_MSG("move %s\n", move_output);
   }
 
   return input_handled;
