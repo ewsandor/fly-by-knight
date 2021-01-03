@@ -16,7 +16,7 @@
 #define FLY_BY_KNIGHT_NAME "Fly by Knight"
 #define FLY_BY_KNIGHT_NAME_VER "Fly by Knight "FLY_BY_KNIGHT_VERSION_STR
 #define FLY_BY_KNIGHT_AUTHOR "Edward Sandor"
-#define FLY_BY_KNIGHT_CONTACT "flybyknight@sandorlabs.us"
+#define FLY_BY_KNIGHT_CONTACT "flybyknight@sandorlaboratories.com"
 
 #define FLY_BY_KNIGHT_INTRO FLY_BY_KNIGHT_NAME " version " FLY_BY_KNIGHT_VERSION_STR " by " FLY_BY_KNIGHT_AUTHOR " <" FLY_BY_KNIGHT_CONTACT ">"
 

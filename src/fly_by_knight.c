@@ -93,7 +93,7 @@ void display_help(bool user_requested, bool exit_fbk)
  */
 void display_version_details(bool print_stdout)
 {
-  char * version_str = FAREWELL_TO_KING_INTRO;
+  const char * version_str = ftk_get_intro_string();
 
   if(print_stdout)
   {
