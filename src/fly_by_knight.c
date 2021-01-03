@@ -153,6 +153,7 @@ int main(int argc, char ** argv)
     {
       if(i + 1 < argc)
       {
+        i++;
         fbk_open_log_file(argv[i]);
       }
       else
