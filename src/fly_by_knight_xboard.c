@@ -233,7 +233,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     }
     else
     {
-      uint i, move_string_idx = 0;
+      unsigned int i, move_string_idx = 0;
       char move_string[FTK_MOVE_STRING_SIZE] = {0};
       ftk_position_t target, source;
       ftk_type_e     pawn_promotion;
