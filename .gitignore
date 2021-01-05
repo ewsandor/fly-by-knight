@@ -14,3 +14,4 @@ compile_commands.json
 .vs
 out
 CMakeSettings.json
+.vscode
