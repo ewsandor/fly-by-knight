@@ -41,6 +41,8 @@ void fbk_init_xboard_protocol(fbk_instance_s *fbk)
  */
 void fbk_xboard_config_features(fbk_instance_s *fbk)
 {
+  FBK_UNUSED(fbk);
+
   FBK_OUTPUT_MSG("feature "
                  "debug=1 "
                  "ping=1 "
@@ -63,6 +65,8 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
  */
 void fbk_xboard_handle_rejected_feature(fbk_instance_s *fbk, char * input)
 {
+  FBK_UNUSED(fbk);
+
   if(strcmp("debug", input) == 0)
   {
     fbk_set_debug_level(FBK_DEBUG_DISABLED);
@@ -341,7 +345,6 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
   /* Temporary logic to return random move */
   if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
   {
-    int pick;
     ftk_move_s move;
     ftk_move_list_s move_list;
     char move_output[FTK_MOVE_STRING_SIZE];

@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
 
   fbk_debug_level_t debug = false;
   bool print_version = false;
-  uint i;
+  int i;
   int presult;
   pthread_t io_thread;
   time_t curr_time;

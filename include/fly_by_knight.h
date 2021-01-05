@@ -12,6 +12,9 @@
 
 #include "fly_by_knight_types.h"
 
+/* Acknowledge variable is unused */
+#define FBK_UNUSED(x) {(void)(x);}
+
 /**
  * @brief Exits Fly by Knight cleanly and return code to calling process
  * 
