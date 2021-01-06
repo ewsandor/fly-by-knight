@@ -38,7 +38,7 @@ FILE *fbk_log_file = NULL;
  * 
  * @param log_path 
  */
-void fbk_open_log_file(char * log_path)
+void fbk_open_log_file(const char * log_path)
 {
   if(log_path != NULL)
   {
@@ -54,8 +54,6 @@ void fbk_open_log_file(char * log_path)
     }
 
     fbk_log_file_configured = true;
-
-    FBK_LOG_MSG(FLY_BY_KNIGHT_INTRO "\n");
   }
 }
 

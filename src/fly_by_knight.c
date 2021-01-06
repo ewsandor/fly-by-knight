@@ -25,8 +25,6 @@
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_version.h"
 
-fbk_instance_s fbk_instance;
-
 /**
  * @brief Initializes Fly by Knight
  * 
@@ -88,19 +86,25 @@ void display_help(bool user_requested, bool exit_fbk)
 }
 
 /**
- * @brief Displays addtional version details including supporting libraries
+ * @brief Reports addtional version details including supporting libraries
  * 
  */
 void display_version_details(bool print_stdout)
 {
   const char * version_str = ftk_get_intro_string();
 
+  FBK_LOG_MSG(FLY_BY_KNIGHT_INTRO "\n");
+
   if(print_stdout)
   {
-    printf("%s\n", version_str);
+    /* Output and log*/
+    FBK_OUTPUT_MSG("%s\n", version_str);
   }
-
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "%s", version_str);
+  else
+  {
+    /* Always output and log if with debug */
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "%s", version_str);
+  }
 }
 
 void handle_signal(int signal)
@@ -110,22 +114,44 @@ void handle_signal(int signal)
   fbk_exit(128+signal);
 }
 
-int main(int argc, char ** argv)
+void fbk_set_random_number_seed(unsigned int seed)
 {
-  printf(FLY_BY_KNIGHT_INTRO "\n");
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Using random number seed %u", seed);
+  srand(seed);
+} 
 
-  signal(SIGINT,  SIG_IGN);
-  signal(SIGTERM, handle_signal);
+/**
+ * @brief Parsed argument data
+ * 
+ */
+typedef struct 
+{
+  /* Argument params as needed */
+  void * placeholder;
+} fbk_arguments_s;
 
-  fbk_debug_level_t debug = false;
-  bool print_version = false;
+/**
+ * @brief Parses arguments passed with command
+ * 
+ * @param argc      argc from main()
+ * @param argv      argv from main()
+ * @param arguments Output structure of parsed arguments
+ */
+void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
+{
   int i;
-  int presult;
-  pthread_t io_thread;
+  fbk_debug_level_t debug = FBK_DEBUG_DISABLED;
+  bool version_details_requested = false;
   time_t curr_time;
+  unsigned int random_seed;
 
-  
-  srand((unsigned) time(&curr_time));
+  /* Seed random numbers */
+  time(&curr_time);
+  random_seed = curr_time;
+
+  FBK_ASSERT_MSG(arguments != NULL, "Empty arguments structure passed");
+
+  memset(arguments, 0, sizeof(fbk_arguments_s));
 
   for(i = 1; i < argc; i++)
   {
@@ -167,7 +193,7 @@ int main(int argc, char ** argv)
     }
     else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0)
     {
-      print_version = true;
+      version_details_requested = true;
     }
     else
     {
@@ -175,93 +201,49 @@ int main(int argc, char ** argv)
     }
   }
 
-  display_version_details(print_version);
-
-  init(&fbk_instance);
-
   // Log command and arguments
   FBK_LOG_MSG("# [COMMAND]: ");
   for(i = 0; i < argc; i++)
   {
     FBK_LOG_MSG("%s ", argv[i]);
   }
+
+  /* Log version details */
+  display_version_details(version_details_requested);
+
+  /* Set random number seed */
+  fbk_set_random_number_seed(random_seed);
+
   FBK_LOG_MSG("\n");
+}
 
-  presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
-  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
+int main(int argc, char ** argv)
+{
+  fbk_arguments_s arguments;
+  fbk_instance_s fbk_instance;
 
-  pause();
+  /* Introduce Fly by Knight */
+  printf(FLY_BY_KNIGHT_INTRO "\n");
+
+  /* Configure signal handlers */
+  signal(SIGINT,  SIG_IGN);
+  signal(SIGTERM, handle_signal);
+
+  /* Parse command arguments */
+  parse_arguments(argc, (const char **) argv, &arguments);
+
+  /* Initialize Fly by Knight root structure */
+  init(&fbk_instance);
 
   /*
-  ftk_game_s game;
-  ftk_game_end_e game_end;
-  ftk_begin_standard_game(&game);
-
-  char input[128];
-  char out[1024];
-  ftk_move_s move = {0};
-
-  for(;;){
-    //printBoard(game.board, out);
-    ftk_board_to_string_with_coordinates(&game.board, out);
-    printf("%s\r\n", out);
-
-    game_end = ftk_check_for_game_end(&game);
-    if(FTK_END_NOT_OVER == game_end)
-    {
-      if(FTK_CHECK_IN_CHECK == ftk_check_for_check(&game))
-      {
-        printf("CHECK!\r\n\r\n");
-      }
-    }
-    else if (FTK_END_CHECKMATE == game_end) 
-    {
-      printf("CHECKMATE!\r\n\r\n");
-    }
-    else if (FTK_END_DRAW_STALEMATE == game_end) 
-    {
-      printf("STALEMATE!\r\n\r\n");
-    }
-    else {
-      printf("GAME OVER! Reason %u\r\n\r\n", game_end);
-    }
-
-    ftk_game_to_fen_string(&game, out);
-    printf("%s\r\n", out);
-
-    scanf("%s", input);
-
-    if(strcmp("q",input) == 0 || strcmp("quit",input)==0)
-        break;
-
-    if(strcmp("u",input) == 0)
-    {
-      ftk_move_backward(&game, &move);
-    }
-    else if(strcmp("r",input) == 0)
-    {
-      ftk_move_forward(&game, &move);
-    }
-    else if(strcmp("n",input) == 0)
-    {
-      ftk_begin_standard_game(&game);
-    }
-    else 
-    {
-      ftk_position_t target = FTK_XX;
-      ftk_position_t source = FTK_XX;
-
-      ftk_type_e   pawn_promo_type = FTK_TYPE_EMPTY;
-      ftk_castle_e castle_type     = FTK_CASTLE_NONE;
-      ftk_xboard_move(input, &target, &source, &pawn_promo_type, &castle_type);
-
-      move = ftk_move_piece(&game, target, source, pawn_promo_type);
-
-      ftk_move_backward(&game, &move);
-      printf("%d\n\n", ftk_move_forward(&game, &move));
-    }
-  }
+  int presult;
+  pthread_t io_thread;
+  presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
+  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
   */
+
+  /* Start IO handler on main thread, analysis to be done on separate threads */
+  fly_by_knight_io_thread(&fbk_instance);
 
   return 0;
 }

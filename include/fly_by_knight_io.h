@@ -25,7 +25,7 @@ extern FILE *fbk_log_file;
  * 
  * @param log_path 
  */
-void fbk_open_log_file(char * log_path);
+void fbk_open_log_file(const char * log_path);
 
 /**
  * @brief Close log file
