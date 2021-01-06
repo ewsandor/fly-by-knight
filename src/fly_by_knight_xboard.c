@@ -236,6 +236,10 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
       FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
     }
   }
+  else if(strncmp("computer", input, 8) == 0)
+  {
+    fbk->config.opponent_type = FBK_OPPONENT_COMPUTER;
+  }
   else
   {
     unsigned int i, move_string_idx = 0;

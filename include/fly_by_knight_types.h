@@ -71,6 +71,13 @@ typedef uint8_t fbk_depth_t;
 
 #define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
 
+typedef enum
+{
+  FBK_OPPONENT_UNKNOWN,
+  FBK_OPPONENT_HUMAN,
+  FBK_OPPONENT_COMPUTER,
+} fbk_opponent_type_e;
+
 /**
  * @brief Configures engine behavior
  * 
@@ -78,13 +85,16 @@ typedef uint8_t fbk_depth_t;
 typedef struct
 {
   /* Include radom factor for move decision */
-  bool        random;
+  bool                random;
 
   /* Maximum analysis depth, 0 for no limit */
-  fbk_depth_t max_search_depth;
+  fbk_depth_t         max_search_depth;
 
   /* Output current analysis details */
-  bool        analysis_output;
+  bool                analysis_output;
+
+  /* Current opponent type */
+  fbk_opponent_type_e opponent_type;
 
 } fbk_engine_config_s;
 

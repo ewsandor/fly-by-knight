@@ -41,6 +41,7 @@ void init(fbk_instance_s * fbk)
   
   fbk->config.random           = false;
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
+  fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
 
   ftk_begin_standard_game(&fbk->game);
 }
@@ -207,14 +208,13 @@ void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
   {
     FBK_LOG_MSG("%s ", argv[i]);
   }
+  FBK_LOG_MSG("\n");
 
   /* Log version details */
   display_version_details(version_details_requested);
 
   /* Set random number seed */
   fbk_set_random_number_seed(random_seed);
-
-  FBK_LOG_MSG("\n");
 }
 
 int main(int argc, char ** argv)
