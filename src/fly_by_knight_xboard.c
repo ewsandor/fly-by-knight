@@ -52,13 +52,12 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "analyze=0 "
                  "myname=\"" FLY_BY_KNIGHT_NAME_VER "\" "
                  "colors=0 "
-                 "name=0 "
                  "done=1\n"
                 );
 }
 
 /**
- * @brief Handle rejcted features
+ * @brief Handle rejected features
  * 
  * @param fbk 
  * @param input 
@@ -74,6 +73,291 @@ void fbk_xboard_handle_rejected_feature(fbk_instance_s *fbk, char * input)
 }
 
 /**
+ * @brief Handles input string when xboard is in normal mode
+ * 
+ * @param fbk 
+ * @param input 
+ * @param input_length 
+ * @return true 
+ * @return false 
+ */
+bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, size_t input_length)
+{
+  bool input_handled = true;
+  ftk_result_e ftk_result;
+
+  if(strncmp("protover", input, 8) == 0)
+  {
+    xboard_version_t version;
+    if(input_length >= 10)
+    {
+      version = input[9] - '0';
+      if(version <= 9)
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Using xboard protocol version %u", version);
+        fbk->protocol_data.xboard.version = version;
+        if(fbk->protocol_data.xboard.version > 1)
+        {
+          fbk_xboard_config_features(fbk);
+        }
+      }
+      else
+      {
+        FBK_ERROR_MSG("Error parsing xboard protocol");
+        input_handled = false;
+      }
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else if(strncmp("accepted", input, 8) == 0)
+  {
+    if(input_length > 9)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' accepted", &input[9]);
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else if(strncmp("rejected", input, 8) == 0)
+  {
+    if(input_length > 9)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' rejected", &input[9]);
+      fbk_xboard_handle_rejected_feature(fbk, &input[9]);
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else if(strcmp("force", input) == 0)
+  {
+    //TODO stop ongoing analysis, reset decision maker
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
+  }
+  else if(strcmp("go", input) == 0)
+  {
+    //TODO start analysis and decision maker 
+    fbk->protocol_data.xboard.play_as = fbk->game.turn;
+  }
+  else if(strcmp("playother", input) == 0)
+  {
+    //TODO start analysis if pondering enabled
+    fbk->protocol_data.xboard.play_as = (FTK_COLOR_WHITE == fbk->game.turn)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
+  }
+  else if(strcmp("white", input) == 0)
+  {
+    //stop clock
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_WHITE;
+    fbk->game.turn                    = FTK_COLOR_BLACK;
+  }
+  else if(strcmp("black", input) == 0)
+  {
+    //stop clock
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
+    fbk->game.turn                    = FTK_COLOR_WHITE;
+  }
+  else if(strcmp("?", input) == 0)
+  {
+    //Force decision maker
+  }
+    else if(strcmp("random", input) == 0)
+  {
+    fbk->config.random = !fbk->config.random;
+  }
+  else if(strcmp("post", input) == 0)
+  {
+    fbk->config.analysis_output = true;
+  }
+  else if(strcmp("nopost", input) == 0)
+  {
+    fbk->config.analysis_output = false;
+  }
+  else if(strcmp("easy", input) == 0)
+  {
+    fbk->protocol_data.xboard.ponder = false;
+  }
+  else if(strcmp("hard", input) == 0)
+  {
+    // TODO start analysis
+    fbk->protocol_data.xboard.ponder = true;
+  }
+  else if(strncmp("name", input, 4) == 0)
+  {
+    if(input_length > 5)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Opponent - %s", &input[5]);
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else if(strcmp("edit", input) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Entering xboard edit mode");
+    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_EDIT;
+    fbk->protocol_data.xboard.edit_color = FTK_COLOR_WHITE;
+  }
+  else if(strcmp("new", input) == 0)
+  {
+    //TODO stop ongoing analysis, reset decision maker, flush analysis
+    ftk_begin_standard_game(&fbk->game);
+
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
+    fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
+  }
+  else if(strncmp("ping", input, 4) == 0)
+  {
+    if(input_length > 5)
+    {
+      FBK_OUTPUT_MSG("pong %s\n", &input[5]);
+    }
+    else
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_MED, "ping received without argument");
+      FBK_OUTPUT_MSG("pong\n");
+    }
+  }
+  else if(strncmp("setboard", input, 8) == 0)
+  {
+    if(input_length > 9)
+    {
+      ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[9]);
+      FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[9], ftk_result);
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else
+  {
+    unsigned int i, move_string_idx = 0;
+    char move_string[FTK_MOVE_STRING_SIZE] = {0};
+    ftk_position_t target, source;
+    ftk_type_e     pawn_promotion;
+    ftk_castle_e   castle;
+    ftk_move_s     move;
+
+    input_handled = false;
+
+    for(i = 0; move_string_idx < FTK_MOVE_STRING_SIZE; i++)
+    {
+      if(input[i] != ' ' && input[i] != '\0')
+      {
+        move_string[move_string_idx] = input[i];
+        move_string_idx++;
+      }
+      else if(move_string_idx > 0)
+      {
+
+        target = FTK_XX;
+        source = FTK_XX;
+        pawn_promotion = FTK_TYPE_EMPTY;
+        castle         = FTK_CASTLE_NONE;
+        ftk_result = ftk_xboard_move(move_string, &target, &source, &pawn_promotion, &castle);          
+
+        if(FTK_SUCCESS == ftk_result && FTK_XX != target && FTK_XX != source)
+        {
+          FBK_DEBUG_MSG(FBK_DEBUG_LOW, "processing move: %s", move_string);
+          input_handled = true;
+          move = ftk_move_piece(&fbk->game, target, source, pawn_promotion);
+
+          if(FTK_XX == move.source || FTK_XX == move.target)
+          {
+            FBK_OUTPUT_MSG("Illegal move: %s\n", move_string);
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  return input_handled;
+}
+
+/**
+ * @brief Handles input string when xboard is in edit mode
+ * 
+ * @param fbk 
+ * @param input 
+ * @return true 
+ * @return false 
+ */
+bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_t input_length)
+{
+  bool input_handled = true;
+
+  if(strcmp(".", input) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Exiting xboard edit mode");
+    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_NORMAL;
+    ftk_update_board_masks(&fbk->game);
+  }
+  else if(strcmp("c", input) == 0)
+  {
+    fbk->protocol_data.xboard.edit_color = (FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
+    FBK_DEBUG_MSG(FBK_DEBUG_MED, "Editing %s pieces", (FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color)?"WHITE":"BLACK");
+  }
+  else if(strcmp("#", input) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_MED, "Clearing board");
+    ftk_clear_board(&fbk->game.board);
+  }
+  else if(3 == input_length)
+  {
+    ftk_position_t mod_square = ftk_string_to_position(&input[1]);
+    
+    if(mod_square != FTK_XX)
+    {
+      if(input[0] == 'x' || input[0] == 'X')
+      {
+        FTK_SQUARE_CLEAR(fbk->game.board.square[mod_square]);
+      }
+      else
+      {
+        ftk_moved_status_e piece_status = FTK_MOVED_HAS_MOVED;
+        ftk_type_e piece_type = ftk_char_to_piece_type(input[0]);
+
+        if(piece_type != FTK_TYPE_EMPTY)
+        {
+          if( (FTK_TYPE_KING == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_E1 == mod_square) ||
+              (FTK_TYPE_ROOK == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_A1 == mod_square) ||
+              (FTK_TYPE_ROOK == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_H1 == mod_square) ||
+              (FTK_TYPE_KING == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_E8 == mod_square) || (FTK_TYPE_ROOK == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_A8 == mod_square) ||
+              (FTK_TYPE_ROOK == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_H8 == mod_square) )
+          {
+            piece_status = FTK_MOVED_NOT_MOVED;
+          }
+
+          FTK_SQUARE_SET(fbk->game.board.square[mod_square], piece_type, fbk->protocol_data.xboard.edit_color, piece_status);
+        }
+        else
+        {
+          FBK_OUTPUT_MSG("Error (ambiguous edit): %s", input);
+        }
+      }
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (ambiguous edit): %s", input);
+    }
+  }
+  else
+  {
+    input_handled = false;
+  }
+  
+  return input_handled;
+}
+
+/**
  * @brief Process input string with xboard protocol
  * 
  * @param fbk Fly by Knight instance data
@@ -83,289 +367,86 @@ void fbk_xboard_handle_rejected_feature(fbk_instance_s *fbk, char * input)
  */
 bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 {
-  ftk_result_e ftk_result;
   bool input_handled = true;
   size_t input_length = strlen(input);
+  ftk_game_end_e game_result;
 
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
   FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
 
   if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
   {
-    if(strncmp("protover", input, 8) == 0)
-    {
-      xboard_version_t version;
-      if(input_length >= 10)
-      {
-        version = input[9] - '0';
-        if(version <= 9)
-        {
-          FBK_DEBUG_MSG(FBK_DEBUG_MED, "Using xboard protocol version %u", version);
-          fbk->protocol_data.xboard.version = version;
-          if(fbk->protocol_data.xboard.version > 1)
-          {
-            fbk_xboard_config_features(fbk);
-          }
-        }
-        else
-        {
-          FBK_ERROR_MSG("Error parsing xboard protocol");
-          input_handled = false;
-        }
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
-      }
-    }
-    else if(strncmp("accepted", input, 8) == 0)
-    {
-      if(input_length > 9)
-      {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' accepted", &input[9]);
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
-      }
-    }
-    else if(strncmp("rejected", input, 8) == 0)
-    {
-      if(input_length > 9)
-      {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Feature '%s' rejected", &input[9]);
-        fbk_xboard_handle_rejected_feature(fbk, &input[9]);
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
-      }
-    }
-    else if(strcmp("force", input) == 0)
-    {
-      //TODO stop ongoing analysis, reset decision maker
-      fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
-    }
-    else if(strcmp("go", input) == 0)
-    {
-      //TODO start analysis and decision maker 
-      fbk->protocol_data.xboard.play_as = fbk->game.turn;
-    }
-    else if(strcmp("playother", input) == 0)
-    {
-      //TODO start analysis if pondering enabled
-      fbk->protocol_data.xboard.play_as = (FTK_COLOR_WHITE == fbk->game.turn)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
-    }
-    else if(strcmp("white", input) == 0)
-    {
-      //stop clock
-      fbk->protocol_data.xboard.play_as = FTK_COLOR_WHITE;
-      fbk->game.turn                    = FTK_COLOR_BLACK;
-    }
-    else if(strcmp("black", input) == 0)
-    {
-      //stop clock
-      fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
-      fbk->game.turn                    = FTK_COLOR_WHITE;
-    }
-    else if(strcmp("?", input) == 0)
-    {
-      //Force decision maker
-    }
-     else if(strcmp("random", input) == 0)
-    {
-      fbk->config.random = !fbk->config.random;
-    }
-    else if(strcmp("post", input) == 0)
-    {
-      fbk->config.analysis_output = true;
-    }
-    else if(strcmp("nopost", input) == 0)
-    {
-      fbk->config.analysis_output = false;
-    }
-    else if(strcmp("easy", input) == 0)
-    {
-      fbk->protocol_data.xboard.ponder = false;
-    }
-    else if(strcmp("hard", input) == 0)
-    {
-      // TODO start analysis
-      fbk->protocol_data.xboard.ponder = true;
-    }
-    else if(strcmp("edit", input) == 0)
-    {
-      FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Entering xboard edit mode");
-      fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_EDIT;
-      fbk->protocol_data.xboard.edit_color = FTK_COLOR_WHITE;
-    }
-    else if(strcmp("new", input) == 0)
-    {
-      //TODO stop ongoing analysis, reset decision maker, flush analysis
-      ftk_begin_standard_game(&fbk->game);
-
-      fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
-      fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
-    }
-    else if(strncmp("ping", input, 4) == 0)
-    {
-      if(input_length > 5)
-      {
-        FBK_OUTPUT_MSG("pong %s\n", &input[5]);
-      }
-      else
-      {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "ping received without argument");
-        FBK_OUTPUT_MSG("pong\n");
-      }
-    }
-    else if(strncmp("setboard", input, 8) == 0)
-    {
-      if(input_length > 9)
-      {
-        ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[9]);
-        FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[9], ftk_result);
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
-      }
-    }
-    else
-    {
-      unsigned int i, move_string_idx = 0;
-      char move_string[FTK_MOVE_STRING_SIZE] = {0};
-      ftk_position_t target, source;
-      ftk_type_e     pawn_promotion;
-      ftk_castle_e   castle;
-      ftk_move_s     move;
-
-      input_handled = false;
-
-      for(i = 0; move_string_idx < FTK_MOVE_STRING_SIZE; i++)
-      {
-        if(input[i] != ' ' && input[i] != '\0')
-        {
-          move_string[move_string_idx] = input[i];
-          move_string_idx++;
-        }
-        else if(move_string_idx > 0)
-        {
-
-          target = FTK_XX;
-          source = FTK_XX;
-          pawn_promotion = FTK_TYPE_EMPTY;
-          castle         = FTK_CASTLE_NONE;
-          ftk_result = ftk_xboard_move(move_string, &target, &source, &pawn_promotion, &castle);          
-
-          if(FTK_SUCCESS == ftk_result && FTK_XX != target && FTK_XX != source)
-          {
-            FBK_DEBUG_MSG(FBK_DEBUG_LOW, "processing move: %s", move_string);
-            input_handled = true;
-            move = ftk_move_piece(&fbk->game, target, source, pawn_promotion);
-
-            if(FTK_XX == move.source || FTK_XX == move.target)
-            {
-              FBK_OUTPUT_MSG("Illegal move: %s\n", move_string);
-            }
-          }
-          break;
-        }
-      }
-    }
+    input_handled = fbk_process_xboard_input_normal_mode(fbk, input, input_length);
   }
   else if(FBK_XBOARD_MODE_EDIT == fbk->protocol_data.xboard.mode)
   {
-    if(strcmp(".", input) == 0)
-    {
-      FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Exiting xboard edit mode");
-      fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_NORMAL;
-      ftk_update_board_masks(&fbk->game);
-    }
-    else if(strcmp("c", input) == 0)
-    {
-      fbk->protocol_data.xboard.edit_color = (FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
-      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Editing %s pieces", (FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color)?"WHITE":"BLACK");
-    }
-    else if(strcmp("#", input) == 0)
-    {
-      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Clearing board");
-      ftk_clear_board(&fbk->game.board);
-    }
-    else if(3 == input_length)
-    {
-      ftk_position_t mod_square = ftk_string_to_position(&input[1]);
-      
-      if(mod_square != FTK_XX)
-      {
-        if(input[0] == 'x' || input[0] == 'X')
-        {
-          FTK_SQUARE_CLEAR(fbk->game.board.square[mod_square]);
-        }
-        else
-        {
-          ftk_moved_status_e piece_status = FTK_MOVED_HAS_MOVED;
-          ftk_type_e piece_type = ftk_char_to_piece_type(input[0]);
-
-          if(piece_type != FTK_TYPE_EMPTY)
-          {
-            if( (FTK_TYPE_KING == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_E1 == mod_square) ||
-                (FTK_TYPE_ROOK == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_A1 == mod_square) ||
-                (FTK_TYPE_ROOK == piece_type && FTK_COLOR_WHITE == fbk->protocol_data.xboard.edit_color && FTK_H1 == mod_square) ||
-                (FTK_TYPE_KING == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_E8 == mod_square) || (FTK_TYPE_ROOK == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_A8 == mod_square) ||
-                (FTK_TYPE_ROOK == piece_type && FTK_COLOR_BLACK == fbk->protocol_data.xboard.edit_color && FTK_H8 == mod_square) )
-            {
-              piece_status = FTK_MOVED_NOT_MOVED;
-            }
-
-            FTK_SQUARE_SET(fbk->game.board.square[mod_square], piece_type, fbk->protocol_data.xboard.edit_color, piece_status);
-          }
-          else
-          {
-            FBK_OUTPUT_MSG("Error (ambiguous edit): %s", input);
-          }
-        }
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("Error (ambiguous edit): %s", input);
-      }
-    }
-    else
-    {
-      input_handled = false;
-    }
+    input_handled = fbk_process_xboard_input_edit_mode(fbk, input, input_length);
   }
   else
   {
     FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
   }
 
-
-  /* Temporary logic to return random move */
-  if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
+  game_result = ftk_check_for_game_end(&fbk->game);
+  if(FTK_END_NOT_OVER == game_result)
   {
-    ftk_move_s move;
-    ftk_move_list_s move_list;
-    char move_output[FTK_MOVE_STRING_SIZE];
+    fbk->protocol_data.xboard.result_reported = false;
 
-    ftk_get_move_list(&fbk->game, &move_list);
-
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %u legal moves", move_list.count);
-
-    if(move_list.count > 0)
+    /* Temporary logic to return random move */
+    if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
     {
-      move = move_list.move[rand() % move_list.count];
+      ftk_move_s move;
+      ftk_move_list_s move_list;
+      char move_output[FTK_MOVE_STRING_SIZE];
+
+      ftk_get_move_list(&fbk->game, &move_list);
+
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %u legal moves", move_list.count);
+
+      if(move_list.count > 0)
+      {
+        move = move_list.move[rand() % move_list.count];
+      }
+
+      ftk_delete_move_list(&move_list);
+
+      ftk_move_forward(&fbk->game, &move);
+
+      ftk_move_to_xboard_string(&move, move_output);
+
+      FBK_OUTPUT_MSG("move %s\n", move_output);
+    }
+  }
+  else if(false == fbk->protocol_data.xboard.result_reported)
+  {
+    if(FTK_END_DEFINITIVE(game_result))
+    {
+      if(FTK_COLOR_BLACK == fbk->game.turn)
+      {
+        FBK_OUTPUT_MSG("1-0 {White mates}\n");
+      }
+      else
+      {
+        FBK_OUTPUT_MSG("0-1 {Black mates}\n");
+      }
+    }
+    else
+    {
+      FBK_ASSERT_MSG(FTK_END_DRAW(game_result), "Unexpected game result %u", game_result);
+
+      if(FTK_END_DRAW_STALEMATE == game_result)
+      {
+        FBK_OUTPUT_MSG("1/2-1/2 {Stalemate}\n");
+      }
+      else
+      {
+        FBK_OUTPUT_MSG("1/2-1/2 {Rule %u}\n", game_result);
+      }
     }
 
-    ftk_delete_move_list(&move_list);
-
-    ftk_move_forward(&fbk->game, &move);
-
-    ftk_move_to_xboard_string(&move, move_output);
-
-    FBK_OUTPUT_MSG("move %s\n", move_output);
+    fbk->protocol_data.xboard.result_reported = true;
   }
+  
 
   return input_handled;
 }

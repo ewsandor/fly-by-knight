@@ -51,6 +51,9 @@ typedef struct
   /* Ponder on opponents turn */
   bool             ponder;
 
+  /* Game result reported */
+  bool             result_reported;
+
 } fbk_xboard_data_s;
 
 typedef union
@@ -86,7 +89,7 @@ typedef struct
 } fbk_engine_config_s;
 
 /**
- * @brief Main struction for Fly by Knight
+ * @brief Main structure for Fly by Knight
  * 
  */
 typedef struct
