@@ -86,7 +86,7 @@ void display_help(bool user_requested, bool exit_fbk)
 }
 
 /**
- * @brief Reports addtional version details including supporting libraries
+ * @brief Reports additional version details including supporting libraries
  * 
  */
 void display_version_details(bool print_stdout)
