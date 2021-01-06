@@ -405,7 +405,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 
       ftk_get_move_list(&fbk->game, &move_list);
 
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %u legal moves", move_list.count);
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %lu legal moves", move_list.count);
 
       if(move_list.count > 0)
       {

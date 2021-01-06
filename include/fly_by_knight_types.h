@@ -15,6 +15,13 @@
 
 #include <farewell_to_king_types.h>
 
+
+/**
+ * @brief Type for scoring games in millipawns.  + White advantage, - Black advantage
+ * 
+ */
+typedef int_fast32_t fbk_score_t;
+
 /**
  * @brief Chess communication protocol enum
  * 
