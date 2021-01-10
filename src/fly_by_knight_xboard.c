@@ -14,6 +14,7 @@
 
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
+#include "fly_by_knight_pick.h"
 #include "fly_by_knight_version.h"
 #include "fly_by_knight_xboard.h"
 
@@ -400,23 +401,17 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
     {
       ftk_move_s move;
-      ftk_move_list_s move_list;
-      char move_output[FTK_MOVE_STRING_SIZE];
+      /* Null move by default */
+      char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
 
-      ftk_get_move_list(&fbk->game, &move_list);
+      move = fbk_get_best_move(fbk);
 
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Found %lu legal moves", move_list.count);
-
-      if(move_list.count > 0)
+      if(FTK_MOVE_VALID(move))
       {
-        move = move_list.move[rand() % move_list.count];
+        /* Commit move */
+        ftk_move_forward(&fbk->game, &move);
+        ftk_move_to_xboard_string(&move, move_output);
       }
-
-      ftk_delete_move_list(&move_list);
-
-      ftk_move_forward(&fbk->game, &move);
-
-      ftk_move_to_xboard_string(&move, move_output);
 
       FBK_OUTPUT_MSG("move %s\n", move_output);
     }

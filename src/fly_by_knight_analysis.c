@@ -18,7 +18,7 @@
  */
 fbk_score_t fbk_score_game(const ftk_game_s * game)
 {
-  fbk_score_t score;
+  fbk_score_t score = 0;
   unsigned int i;
   int         advantage;
 
