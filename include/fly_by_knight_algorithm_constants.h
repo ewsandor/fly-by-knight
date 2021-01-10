@@ -18,7 +18,19 @@
 #define FBK_SCORE_QUEEN     9000
 #define FBK_SCORE_KING   1000000
 
+/* Max score for each color */
 #define FBK_SCORE_WHITE_MAX  (64  * FBK_SCORE_KING)
 #define FBK_SCORE_BLACK_MAX  (-64 * FBK_SCORE_KING)
+
+/* Weight per legal move for piece */
+#define FBK_SCORE_PAWN_MOVE    1
+#define FBK_SCORE_KNIGHT_MOVE  3
+#define FBK_SCORE_BISHOP_MOVE  3
+#define FBK_SCORE_ROOK_MOVE    5
+#define FBK_SCORE_QUEEN_MOVE   9
+#define FBK_SCORE_KING_MOVE   10
+
+/* Score for the ability to castle */
+#define FBK_SCORE_CAN_CASTLE (FBK_SCORE_PAWN/3)
 
 #endif //_FLY_BY_KNIGHT_ALGORITHM_CONSTANTS_H_
