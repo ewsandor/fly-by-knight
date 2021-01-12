@@ -26,6 +26,73 @@
 #include "fly_by_knight_version.h"
 
 /**
+ * @brief Initialize Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to init
+ * @return bool  True if successful
+ */
+bool fbk_mutex_init(fbk_mutex_t *mutex)
+{
+  bool ret_val = true; 
+
+  if(mutex)
+  {
+    ret_val = (0 == pthread_mutex_init(mutex, NULL));
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  return ret_val;
+}
+
+/**
+ * @brief Locks Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to lock 
+ * @return bool  True if successful
+ */
+bool fbk_mutex_lock(fbk_mutex_t *mutex)
+{
+  bool ret_val = true; 
+
+  if(mutex)
+  {
+    ret_val = (0 == pthread_mutex_lock(mutex));
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  return ret_val;
+}
+
+/**
+ * @brief Unlocks Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to unlock 
+ * @return bool  True if successful
+ */
+bool fbk_mutex_unlock(fbk_mutex_t *mutex)
+{
+  bool ret_val = true; 
+
+  if(mutex)
+  {
+    ret_val = (0 == pthread_mutex_unlock(mutex));
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  return ret_val;
+}
+
+
+/**
  * @brief Initializes Fly by Knight
  * 
  * @param fbk Fly by Knight instance data

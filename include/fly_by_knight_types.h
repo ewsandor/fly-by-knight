@@ -10,17 +10,59 @@
 #ifndef _FLY_BY_KNIGHT_TYPES_H_
 #define _FLY_BY_KNIGHT_TYPES_H_
 
+#include <pthread.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdint.h>
 
 #include <farewell_to_king_types.h>
 
+/**
+ * @brief Mutex to be used throughout Fly by Knight
+ * 
+ */
+typedef pthread_mutex_t fbk_mutex_t;
 
 /**
  * @brief Type for scoring games in millipawns.  + White advantage, - Black advantage
  * 
  */
 typedef int_fast32_t fbk_score_t;
+
+/**
+ * @brief Count of Move Tree nodes
+ * 
+ */
+typedef uint_fast16_t fbk_move_tree_node_count_t;
+
+/**
+ * @brief Move Tree node structure
+ * 
+ */
+typedef struct fbk_move_tree_node_struct fbk_move_tree_node_s;
+struct fbk_move_tree_node_struct{
+
+  /* Lock for accessing and modifying node */
+  fbk_mutex_t                 lock;
+
+  /* Move represented by this node, invalid if root node*/
+  ftk_move_s                  move;
+
+  /* TRUE if this node has been evaluated */
+  bool                        evaluated;
+  /* Score considering this node alone */
+  fbk_score_t                 base_score;
+  /* Score considering this node and child moves */
+  fbk_score_t                 compound_score;
+
+  /* Parent node pointer, NULL if root node */
+  fbk_move_tree_node_s       *parent;
+  /* Number of child nodes, only valid after node is evaluated */ 
+  fbk_move_tree_node_count_t  child_count;
+  /* Array of 'child_count' child nodes */
+  fbk_move_tree_node_s       *child;
+};
 
 /**
  * @brief Chess communication protocol enum

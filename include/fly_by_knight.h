@@ -22,4 +22,28 @@
  */
 void fbk_exit(int return_code);
 
+/**
+ * @brief Initialize Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to init
+ * @return bool  True if successful
+ */
+bool fbk_mutex_init(fbk_mutex_t *mutex);
+
+/**
+ * @brief Locks Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to lock 
+ * @return bool  True if successful
+ */
+bool fbk_mutex_lock(fbk_mutex_t *mutex);
+
+/**
+ * @brief Unlocks Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to unlock 
+ * @return bool  True if successful
+ */
+bool fbk_mutex_unlock(fbk_mutex_t *mutex);
+
 #endif //_FLY_BY_KNIGHT_H_
