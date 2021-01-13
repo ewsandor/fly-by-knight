@@ -45,6 +45,6 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
  * @param node Node to evaluate
  * @param game Game representing this node (Assumes move is already applied)
  */
-void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, const ftk_game_s * game);
+void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
 
 #endif //_FLY_BY_KNIGHT_MOVE_TREE_H_

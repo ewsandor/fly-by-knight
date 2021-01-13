@@ -61,7 +61,7 @@ bool fbk_apply_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
   move = node->move;
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 
-  result = ftk_move_forward(game, &move);
+  result =ftk_move_backward_quick(game, &move);
 
   return (FTK_SUCCESS == result);
 }
@@ -84,7 +84,7 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
   move = node->move;
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 
-  result = ftk_move_backward(game, &move);
+  result = ftk_move_backward_quick(game, &move);
 
   return (FTK_SUCCESS == result);
 }
@@ -95,7 +95,7 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
  * @param node Node to evaluate
  * @param game Game representing this node (Assumes move is already applied)
  */
-void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, const ftk_game_s * game)
+void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
 {
   unsigned int i;
   bool evaluated_now = false;
@@ -105,6 +105,7 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, const ftk_game_s *
 
   if(false == node->evaluated)
   {
+    ftk_update_board_masks(game);
     /* Score position, compound == base as no child nodes evaluated */
     node->base_score = fbk_score_game(game);
     node->compound_score = node->base_score;
