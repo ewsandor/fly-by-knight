@@ -19,6 +19,32 @@
  * @param parent Parent node, NULL if root
  * @param move   Move to init node with, NULL if root
  */
-void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s * parent, ftk_move_s * move);
+void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s * parent, const ftk_move_s * move);
+
+/**
+ * @brief Applies move to given game
+ * 
+ * @param node Node to apply
+ * @param game Game to modify with move tree node
+ * @return     True if successful
+ */
+bool fbk_apply_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
+
+/**
+ * @brief Reverts move from given game
+ * 
+ * @param node Node to undo
+ * @param game Game to modify with move tree node
+ * @return     True if successful
+ */
+bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
+
+/**
+ * @brief Evaluates node represented by given game
+ * 
+ * @param node Node to evaluate
+ * @param game Game representing this node (Assumes move is already applied)
+ */
+void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, const ftk_game_s * game);
 
 #endif //_FLY_BY_KNIGHT_MOVE_TREE_H_
