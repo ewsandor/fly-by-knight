@@ -31,6 +31,14 @@ void fbk_exit(int return_code);
 bool fbk_mutex_init(fbk_mutex_t *mutex);
 
 /**
+ * @brief Destroy Fly by Knight Mutex
+ * 
+ * @param mutex  Mutex to destroy
+ * @return bool  True if successful
+ */
+bool fbk_mutex_destroy(fbk_mutex_t *mutex);
+
+/**
  * @brief Locks Fly by Knight Mutex
  * 
  * @param mutex  Mutex to lock 

@@ -64,6 +64,17 @@ struct fbk_move_tree_node_struct{
   fbk_move_tree_node_s       *child;
 };
 
+typedef struct fbk_move_tree_struct fbk_move_tree_s;
+struct fbk_move_tree_struct
+{
+  /* Root node of tree */
+  fbk_move_tree_node_s *root;
+
+  /* Current active node of tree */
+  fbk_move_tree_node_s *current;
+};
+
+
 /**
  * @brief Chess communication protocol enum
  * 
@@ -154,7 +165,7 @@ typedef struct
 typedef struct
 {
   /* Active communication protocol */
-  fbk_protocol_e protocol;
+  fbk_protocol_e      protocol;
 
   /* Active protocol data */
   fbk_protocol_data_u protocol_data;
@@ -163,7 +174,10 @@ typedef struct
   fbk_engine_config_s config;
 
   /* Game state */
-  ftk_game_s game;
+  ftk_game_s          game;
+
+  /* Move tree for current game */
+  fbk_move_tree_s     move_tree;
 
 } fbk_instance_s;
 

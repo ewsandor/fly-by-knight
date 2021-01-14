@@ -7,6 +7,8 @@
  Move Tree manipulation for Fly by Knight
 */
 
+#include <string.h>
+
 #include <farewell_to_king.h>
 
 #include "fly_by_knight.h"
@@ -41,6 +43,37 @@ void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s *
   }
   
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+}
+
+/**
+ * @brief Releases memory for node and all child nodes
+ * 
+ * @param node 
+ */
+void fbk_delete_move_tree_node(fbk_move_tree_node_s * node)
+{
+  unsigned int i;
+
+  FBK_ASSERT_MSG(node != NULL, "Null node passed");
+
+  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+
+  node->evaluated = false;
+
+  if(node->evaluated)
+  {
+    for(i = 0; i < node->child_count; i++)
+    {
+      fbk_delete_move_tree_node(&node->child[i]);
+    }
+
+    free(node->child);
+  }
+
+  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+  FBK_ASSERT_MSG(true == fbk_mutex_destroy(&node->lock), "Failed to destroy node mutex");
+
+  memset(node, 0, sizeof(fbk_move_tree_node_s));
 }
 
 /**
