@@ -137,3 +137,36 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
     ftk_delete_move_list(&move_list);
   }
 }
+
+/**
+ * @brief Returns child node for given move, NULL if no child node for move or current node is not evaluated
+ * 
+ * @param current_node 
+ * @param move 
+ * @return fbk_move_tree_node_s* 
+ */
+fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * current_node, ftk_move_s * move)
+{
+  unsigned int i;
+  fbk_move_tree_node_s * ret_node = NULL;
+
+  if(move && FTK_MOVE_VALID(*move))
+  {
+    FBK_ASSERT_MSG(true == fbk_mutex_lock(&current_node->lock), "Failed to lock node mutex");
+    if(current_node->evaluated)
+    {
+      for(i = 0; ((i < current_node->child_count) && (ret_node == NULL)); i++)
+      {
+        FBK_ASSERT_MSG(true == fbk_mutex_lock(&current_node->child[i].lock), "Failed to lock node mutex");
+        if(FTK_COMPARE_MOVES(current_node->child[i].move, *move))
+        {
+          ret_node = &current_node->child[i];
+        }
+        FBK_ASSERT_MSG(true == fbk_mutex_unlock(&current_node->child[i].lock), "Failed to unlock node mutex");
+      }
+    }
+    FBK_ASSERT_MSG(true == fbk_mutex_unlock(&current_node->lock), "Failed to unlock node mutex");
+  }
+
+  return ret_node;
+}
