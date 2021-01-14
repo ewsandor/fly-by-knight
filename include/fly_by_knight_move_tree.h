@@ -22,6 +22,13 @@
 void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s * parent, const ftk_move_s * move);
 
 /**
+ * @brief Releases memory for node and all child nodes
+ * 
+ * @param node 
+ */
+void fbk_delete_move_tree_node(fbk_move_tree_node_s * node);
+
+/**
  * @brief Applies move to given game
  * 
  * @param node Node to apply
@@ -46,6 +53,13 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
  * @param game Game representing this node (Assumes move is already applied)
  */
 void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
+
+/**
+ * @brief Clears evaluation and deletes all child nodes
+ * 
+ * @param node 
+ */
+void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node);
 
 /**
  * @brief Returns child node for given move, NULL if no child node for move or current node is not evaluated

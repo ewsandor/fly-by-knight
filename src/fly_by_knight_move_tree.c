@@ -52,25 +52,8 @@ void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s *
  */
 void fbk_delete_move_tree_node(fbk_move_tree_node_s * node)
 {
-  unsigned int i;
+  fbk_unevaluate_move_tree_node(node);
 
-  FBK_ASSERT_MSG(node != NULL, "Null node passed");
-
-  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-
-  node->evaluated = false;
-
-  if(node->evaluated)
-  {
-    for(i = 0; i < node->child_count; i++)
-    {
-      fbk_delete_move_tree_node(&node->child[i]);
-    }
-
-    free(node->child);
-  }
-
-  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
   FBK_ASSERT_MSG(true == fbk_mutex_destroy(&node->lock), "Failed to destroy node mutex");
 
   memset(node, 0, sizeof(fbk_move_tree_node_s));
@@ -169,6 +152,37 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
     /* Cleanup if evaluated in this call, else evaluated previously */
     ftk_delete_move_list(&move_list);
   }
+}
+
+/**
+ * @brief Clears evaluation and deletes all child nodes
+ * 
+ * @param node 
+ */
+void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
+{
+  unsigned int i;
+
+  FBK_ASSERT_MSG(node != NULL, "Null node passed");
+
+  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+
+  node->evaluated = false;
+  node->base_score = 0;
+  node->compound_score = 0;
+
+  if(node->evaluated)
+  {
+    for(i = 0; i < node->child_count; i++)
+    {
+      fbk_delete_move_tree_node(&node->child[i]);
+    }
+
+    node->child_count = 0;
+    free(node->child);
+  }
+
+  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }
 
 /**
