@@ -54,4 +54,19 @@ bool fbk_mutex_lock(fbk_mutex_t *mutex);
  */
 bool fbk_mutex_unlock(fbk_mutex_t *mutex);
 
+/**
+ * @brief Begins a new standard game.  Resets move tree and setups up game
+ * 
+ * @param fbk 
+ */
+void fbk_begin_standard_game(fbk_instance_s * fbk);
+
+/**
+ * @brief Commits move to game and updates move tree
+ * 
+ * @param fbk 
+ * @param move 
+ */
+bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move);
+
 #endif //_FLY_BY_KNIGHT_H_

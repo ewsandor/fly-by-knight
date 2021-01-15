@@ -208,7 +208,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   else if(strcmp("new", input) == 0)
   {
     //TODO stop ongoing analysis, reset decision maker, flush analysis
-    ftk_begin_standard_game(&fbk->game);
+    fbk_begin_standard_game(fbk);
 
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
     fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
@@ -227,8 +227,10 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strncmp("setboard", input, 8) == 0)
   {
+    /* TODO stop analysis and flush */
     if(input_length > 9)
     {
+      fbk_begin_standard_game(fbk);
       ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[9]);
       FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[9], ftk_result);
     }
@@ -272,9 +274,13 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
         {
           FBK_DEBUG_MSG(FBK_DEBUG_LOW, "processing move: %s", move_string);
           input_handled = true;
-          move = ftk_move_piece(&fbk->game, target, source, pawn_promotion);
+          move = ftk_stage_move(&fbk->game, target, source, pawn_promotion);
 
-          if(FTK_XX == move.source || FTK_XX == move.target)
+          if(FTK_MOVE_VALID(move))
+          {
+            FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+          }
+          else
           {
             FBK_OUTPUT_MSG("Illegal move: %s\n", move_string);
           }
@@ -409,7 +415,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
       if(FTK_MOVE_VALID(move))
       {
         /* Commit move */
-        ftk_move_forward(&fbk->game, &move);
+        FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
         ftk_move_to_xboard_string(&move, move_output);
       }
 

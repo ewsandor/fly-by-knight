@@ -11,6 +11,8 @@
 
 #include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
+#include "fly_by_knight_error.h"
+#include "fly_by_knight_move_tree.h"
 
 fbk_score_t fbk_score_potential_capture_value(ftk_type_e piece_type)
 {
@@ -233,4 +235,28 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
   }
    
   return score;
+}
+
+/**
+ * @brief Evaluates all children of node
+ * 
+ * @param node 
+ * @param game 
+ */
+void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_s game)
+{
+  unsigned int i;
+  FBK_ASSERT_MSG(node != NULL, "NULL node passed");
+
+  fbk_evaluate_move_tree_node(node, &game);
+
+  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  FBK_ASSERT_MSG(true == node->evaluated, "Failed to evaluate node");
+  for(i = 0; i < node->child_count; i++)
+  {
+    FBK_ASSERT_MSG(fbk_apply_move_tree_node(&node->child[i], &game), "Failed to apply node %u", i);
+    fbk_evaluate_move_tree_node(&node->child[i], &game);
+    FBK_ASSERT_MSG(fbk_undo_move_tree_node(&node->child[i], &game),  "Failed to undo node %u", i);
+  }
+  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }

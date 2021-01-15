@@ -68,7 +68,7 @@ typedef struct fbk_move_tree_struct fbk_move_tree_s;
 struct fbk_move_tree_struct
 {
   /* Root node of tree */
-  fbk_move_tree_node_s *root;
+  fbk_move_tree_node_s  root;
 
   /* Current active node of tree */
   fbk_move_tree_node_s *current;

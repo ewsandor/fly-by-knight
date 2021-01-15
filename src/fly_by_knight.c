@@ -22,6 +22,7 @@
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"
+#include "fly_by_knight_move_tree.h"
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_version.h"
 
@@ -113,6 +114,58 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex)
   return ret_val;
 }
 
+/**
+ * @brief Begins a new standard game.  Resets move tree and setups up game
+ * 
+ * @param fbk 
+ */
+void fbk_begin_standard_game(fbk_instance_s * fbk)
+{
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
+
+  /* TODO stop and flush analysis */
+
+  fbk_delete_move_tree_node(&fbk->move_tree.root);
+
+  ftk_begin_standard_game(&fbk->game);
+
+  fbk_init_move_tree_node(&fbk->move_tree.root, NULL, NULL);
+  fbk->move_tree.current = &fbk->move_tree.root;
+}
+
+/**
+ * @brief Commits move to game and updates move tree
+ * 
+ * @param fbk 
+ * @param move 
+ */
+bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
+{
+  bool ret_val = true;
+  fbk_move_tree_node_s *node;
+
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
+  FBK_ASSERT_MSG(move != NULL, "NULL move pointer passed.");
+
+  /* Evalute this node if not evaluated to generate child nodes */
+  fbk_evaluate_move_tree_node(fbk->move_tree.current, &fbk->game);
+
+  /* Find node for given move */
+  node = fbk_get_move_tree_node_for_move(fbk->move_tree.current, move);
+
+  if(node)
+  {
+    /* Commit move */
+    ftk_move_forward(&fbk->game, move);
+    fbk->move_tree.current = node;
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  return ret_val;
+}
 
 /**
  * @brief Initializes Fly by Knight
@@ -132,7 +185,7 @@ void init(fbk_instance_s * fbk)
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
 
-  ftk_begin_standard_game(&fbk->game);
+  fbk_begin_standard_game(fbk);
 }
 
 /**

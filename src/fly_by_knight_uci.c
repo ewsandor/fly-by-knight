@@ -12,6 +12,7 @@
 #include <farewell_to_king.h>
 #include <farewell_to_king_strings.h>
 
+#include "fly_by_knight.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_uci.h"
@@ -37,9 +38,9 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
   else if(strncmp("startpos moves", input, 14) == 0)
   {
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "startpos received: %s", &input[15]);
-    ftk_begin_standard_game(&fbk->game);
+    fbk_begin_standard_game(fbk);
 
-    uint i, move_string_idx = 0;
+    unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
     ftk_position_t target, source;
     ftk_type_e     pawn_promotion;
@@ -116,7 +117,7 @@ bool fbk_process_uci_input(fbk_instance_s *fbk, char * input)
   else if(strcmp("ucinewgame", input) == 0)
   {
     //TODO stop ongoing analysis, reset decision maker, flush analysis
-    ftk_begin_standard_game(&fbk->game);
+    fbk_begin_standard_game(fbk);
   }
   else if(strcmp("go", input) == 0)
   {

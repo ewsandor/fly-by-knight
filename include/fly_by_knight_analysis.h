@@ -20,4 +20,12 @@
  */
 fbk_score_t fbk_score_game(const ftk_game_s * game);
 
+/**
+ * @brief Evaluates all children of node
+ * 
+ * @param node 
+ * @param game 
+ */
+void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_s game);
+
 #endif //_FLY_BY_KNIGHT_ANALYSIS_H_

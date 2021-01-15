@@ -28,6 +28,8 @@ void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s *
 {
   FBK_ASSERT_MSG(node != NULL, "NULL node passed");
 
+  memset(node, 0, sizeof(fbk_move_tree_node_s));
+
   FBK_ASSERT_MSG(true == fbk_mutex_init(&node->lock), "Failed to init node mutex");
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
 
@@ -77,7 +79,7 @@ bool fbk_apply_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
   move = node->move;
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 
-  result =ftk_move_backward_quick(game, &move);
+  result = ftk_move_forward_quick(game, &move);
 
   return (FTK_SUCCESS == result);
 }
