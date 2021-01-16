@@ -168,6 +168,41 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
 }
 
 /**
+ * @brief Undoes move based on FBK move tree
+ * 
+ * @param fbk 
+ * @return true if successful
+ * @return false if cannot undo move
+ */
+bool fbk_undo_move(fbk_instance_s * fbk)
+{
+  bool ret_val = true;
+  fbk_mutex_t * node_lock;
+
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
+  FBK_ASSERT_MSG(fbk->move_tree.current != NULL, "NULL current move tree node.");
+
+  node_lock = &fbk->move_tree.current->lock;
+
+  FBK_ASSERT_MSG(true == fbk_mutex_lock(node_lock), "Failed to lock node mutex");
+
+  if(fbk->move_tree.current->parent != NULL &&
+     FTK_MOVE_VALID(fbk->move_tree.current->move))
+  {
+    ret_val = (FTK_SUCCESS == ftk_move_backward(&fbk->game, &fbk->move_tree.current->move));
+    fbk->move_tree.current = fbk->move_tree.current->parent;
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  FBK_ASSERT_MSG(true == fbk_mutex_unlock(node_lock), "Failed to unlock node mutex");
+
+  return ret_val;
+}
+
+/**
  * @brief Initializes Fly by Knight
  * 
  * @param fbk Fly by Knight instance data

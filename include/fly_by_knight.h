@@ -69,4 +69,13 @@ void fbk_begin_standard_game(fbk_instance_s * fbk);
  */
 bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move);
 
+/**
+ * @brief Undoes move based on FBK move tree
+ * 
+ * @param fbk 
+ * @return true if successful
+ * @return false if cannot undo move
+ */
+bool fbk_undo_move(fbk_instance_s * fbk);
+
 #endif //_FLY_BY_KNIGHT_H_

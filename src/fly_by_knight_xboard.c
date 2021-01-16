@@ -243,6 +243,15 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     fbk->config.opponent_type = FBK_OPPONENT_COMPUTER;
   }
+  else if(strncmp("undo", input, 4) == 0)
+  {
+    FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
+  }
+  else if(strncmp("remove", input, 6) == 0)
+  {
+    FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
+    FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
+  }
   else
   {
     unsigned int i, move_string_idx = 0;
