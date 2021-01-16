@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.13.4)
 project (fly_by_knight)
 
+option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
+
 option (BUILD_DEBUG "Build Fly by Knight with debug symbols enabled." ON)
 
 if(BUILD_DEBUG)
