@@ -37,7 +37,5 @@ $ ./fly_by_knight
 Fly by Knight supports the xboard chess protocol compatible with many popular chess GUIs including xboard: https://www.gnu.org/software/xboard/.
 
 ## References
-xboard Protocol:
-https://www.gnu.org/software/xboard/engine-intf.html
-UCI Protocol:
-http://wbec-ridderkerk.nl/html/UCIProtocol.html
+- xboard Protocol: https://www.gnu.org/software/xboard/engine-intf.html
+- UCI Protocol: http://wbec-ridderkerk.nl/html/UCIProtocol.html
