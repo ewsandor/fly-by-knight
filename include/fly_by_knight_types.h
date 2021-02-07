@@ -131,6 +131,14 @@ typedef uint8_t fbk_depth_t;
 
 #define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
 
+/**
+ * @brief Type for analysis breadth
+ * 
+ */
+typedef uint8_t fbk_breadth_t;
+
+#define FBK_DEFAULT_MAX_SEARCH_BREADTH 0
+
 typedef enum
 {
   FBK_OPPONENT_UNKNOWN,
