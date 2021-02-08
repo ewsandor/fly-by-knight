@@ -19,6 +19,7 @@
 #include <farewell_to_king.h>
 #include <farewell_to_king_strings.h>
 
+#include "fly_by_knight_analysis.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"
@@ -219,6 +220,8 @@ void init(fbk_instance_s * fbk)
   fbk->config.random           = false;
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
+
+  FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
 
   fbk_begin_standard_game(fbk);
 }

@@ -92,6 +92,11 @@ typedef struct
 /* Root structure for Fly by Knight analysis data */
 typedef struct 
 {
+  /* Indicates if analysis data has been initialized */
+  bool                      initialized;
+
+  fbk_instance_s           *fbk;
+
   /* Indicates analysis has been requested and is active */
   bool                      analysis_active;
 

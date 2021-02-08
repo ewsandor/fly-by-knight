@@ -13,6 +13,14 @@
 #include "fly_by_knight_types.h"
 
 /**
+ * @brief Initialized Fly by Knight analysis data
+ * 
+ * @param fbk 
+ * @return true if successful
+ */
+bool fbk_init_analysis_data(fbk_instance_s *fbk);
+
+/**
  * @brief Score game position for white or black advantage
  * 
  * @param game      to analyze

@@ -7,12 +7,18 @@
  Gama analysis for Fly by Knight
 */
 
+#include <string.h>
+
 #include <farewell_to_king.h>
 
 #include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
+#include "fly_by_knight_analysis_types.h"
+#include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
+
+fbk_analysis_data_s fbk_analaysis_data = {0};
 
 fbk_score_t fbk_score_potential_capture_value(ftk_type_e piece_type)
 {
@@ -259,4 +265,33 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
     FBK_ASSERT_MSG(fbk_undo_move_tree_node(&node->child[i], &game),  "Failed to undo node %u", i);
   }
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+}
+
+/**
+ * @brief Initialized Fly by Knight analysis data
+ * 
+ * @param fbk 
+ * @return true if successful
+ */
+bool fbk_init_analysis_data(fbk_instance_s *fbk)
+{
+  bool ret_val = true;
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Initializing analysis data");
+
+  if(false == fbk_analaysis_data.initialized)
+  {
+    memset(&fbk_analaysis_data, 0, sizeof(fbk_analysis_data_s));
+
+    fbk_analaysis_data.fbk = fbk;
+
+    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analaysis_data.analysis_stats.lock), "Failed to initialize analysis stats");
+  }
+  else
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis data already initialized");
+    ret_val = false;
+  }
+
+  return ret_val;
 }
