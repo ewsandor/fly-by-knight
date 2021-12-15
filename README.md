@@ -14,7 +14,7 @@ Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol w
 ## Usage
 
 ### Dependencies
-- Farewell to King Chess Library: https://git.sandorlabs.us/edward/farewell-to-king.
+- Farewell to King Chess Library: https://git.sandorlaboratories.com/edward/farewell-to-king.
 - POSIX for threading.
 
 ### Building
