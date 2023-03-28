@@ -1,13 +1,9 @@
-cmake_minimum_required (VERSION 3.13.4)
+cmake_minimum_required (VERSION 3.26)
 project (fly_by_knight)
 
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
 
-option (BUILD_DEBUG "Build Fly by Knight with debug symbols enabled." ON)
-
-if(BUILD_DEBUG)
-  set(CMAKE_BUILD_TYPE Debug)
-endif(BUILD_DEBUG)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DFBK_DEBUG_BUILD")
 
 if (MSVC)
     # warning level 4 and all warnings as errors
@@ -17,9 +13,23 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
-subdirs(src)
-set(HEADERS "${CMAKE_SOURCE_DIR}/include")
-include_directories(${HEADERS})
+add_executable(fly_by_knight  src/fly_by_knight.c 
+                              src/fly_by_knight_analysis.c
+                              src/fly_by_knight_debug.c
+                              src/fly_by_knight_io.c
+                              src/fly_by_knight_move_tree.c
+                              src/fly_by_knight_pick.c
+                              src/fly_by_knight_uci.c
+                              src/fly_by_knight_xboard.c)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+target_include_directories(fly_by_knight PRIVATE include)
+
+add_subdirectory(lib/farewell-to-king EXCLUDE_FROM_ALL)
+if(BUILD_FTK_SHARED)
+  target_link_libraries(fly_by_knight PRIVATE farewell_to_king_shared)
+else()
+  target_link_libraries(fly_by_knight PRIVATE farewell_to_king)
+endif()
+
 find_package(Threads REQUIRED)
+target_link_libraries(fly_by_knight PRIVATE Threads::Threads)
