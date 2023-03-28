@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.26)
-project (fly_by_knight)
+project (flybyknight)
 
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
 
@@ -13,7 +13,7 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
-add_executable(fly_by_knight  src/fly_by_knight.c 
+add_executable(flybyknight  src/fly_by_knight.c 
                               src/fly_by_knight_analysis.c
                               src/fly_by_knight_debug.c
                               src/fly_by_knight_io.c
@@ -22,14 +22,14 @@ add_executable(fly_by_knight  src/fly_by_knight.c
                               src/fly_by_knight_uci.c
                               src/fly_by_knight_xboard.c)
 
-target_include_directories(fly_by_knight PRIVATE include)
+target_include_directories(flybyknight PRIVATE include)
 
 add_subdirectory(lib/farewell-to-king EXCLUDE_FROM_ALL)
 if(BUILD_FTK_SHARED)
-  target_link_libraries(fly_by_knight PRIVATE farewell_to_king_shared)
+  target_link_libraries(flybyknight PRIVATE farewelltoking_shared)
 else()
-  target_link_libraries(fly_by_knight PRIVATE farewell_to_king)
+  target_link_libraries(flybyknight PRIVATE farewelltoking)
 endif()
 
 find_package(Threads REQUIRED)
-target_link_libraries(fly_by_knight PRIVATE Threads::Threads)
+target_link_libraries(flybyknight PRIVATE Threads::Threads)
