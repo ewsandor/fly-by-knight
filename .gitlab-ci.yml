@@ -16,6 +16,9 @@ default:
   tags:
     - docker
 
+variables:
+  GIT_STRATEGY: clone
+
 stages:          # List of stages for jobs, and their order of execution
   - build
   - test
