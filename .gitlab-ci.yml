@@ -23,7 +23,8 @@ stages:          # List of stages for jobs, and their order of execution
 .apt_dependencies: &apt_dependencies
   - echo "Installing dependencies..."
   - apt update
-  - apt install -y --no-install-recommends gcc g++ make cmake git
+  - apt install -y --no-install-recommends gcc g++ make cmake git apt-transport-https ca-certificates
+  - sudo update-ca-certificates
   - echo "Installing dependencies complete."
 
 .build_step: &build_step
