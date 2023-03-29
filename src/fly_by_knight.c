@@ -246,10 +246,12 @@ void fbk_exit(int return_code)
  */
 void display_help(bool user_requested, bool exit_fbk)
 {
-  printf( "Usage: fly_by_knight [OPTION]...\n"
-          "Chess engine following the UCI protocol\n"
-          "  -d#, --debug=#  start with debug logging level [0(disabled) - 9(maximum)]\n"
-          "  -h, --help      display this help and exit\n");
+  printf( "Usage: flybyknight [OPTION]...\n"
+          "Chess engine following the xboard protocol with the UCI protocol in mind.\n"
+          "  -d#,        --debug=#       start with debug logging level [0(disabled) - 9(maximum)]\n"
+          "  -h,         --help          display this help and exit\n"
+          "  -l <path>,  --log=<path>    log output to file at given 'path'\n"
+          "  -v,         --version       display version information and exit\n");
   
   if(exit_fbk)
   {
