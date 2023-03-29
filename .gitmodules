@@ -1,3 +1,4 @@
 [submodule "lib/farewell-to-king"]
   path = lib/farewell-to-king
   url = https://git.sandorlaboratories.com/edward/farewell-to-king.git
+  branch = main
