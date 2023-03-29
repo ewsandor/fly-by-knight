@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.26)
+cmake_minimum_required (VERSION 3.18)
 project (flybyknight)
 
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)

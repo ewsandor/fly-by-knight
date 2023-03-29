@@ -83,7 +83,7 @@ build-ubuntu:
       - /builds/edward/fly-by-knight/build/flybyknight
       - /builds/edward/fly-by-knight/build-debug/flybyknight
 
--fedora:
+fedora:
   stage: build
   image: fedora:latest
   script:
