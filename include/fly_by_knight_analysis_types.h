@@ -107,7 +107,7 @@ typedef struct
   fbk_worker_thread_count_t worker_thread_count;
 
   /* Array of worker threads */
-  fbk_worker_thread_data_s  worker_thread_data;
+  fbk_worker_thread_data_s  *worker_thread_data;
 
   /* Queue of analysis jobs for worker threads*/
   fbk_analysis_job_queue_s  job_queue;

@@ -40,15 +40,15 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "startpos received: %s", &input[15]);
     fbk_begin_standard_game(fbk);
 
-    unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
     ftk_position_t target, source;
     ftk_type_e     pawn_promotion;
     ftk_castle_e   castle;
     ftk_move_s     move;
 
-    for(i = 15; true; i++)
+    for(unsigned int i = 15; true; i++)
     {
+      unsigned int move_string_idx = 0;
       if(input[i] != ' ' && input[i] != '\0')
       {
         FBK_ASSERT_MSG(move_string_idx < FTK_MOVE_STRING_SIZE, "move string exceeded max size: %s", move_string);

@@ -3,7 +3,7 @@ project (flybyknight)
 
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DFBK_DEBUG_BUILD")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DFBK_DEBUG_BUILD")
 
 if (MSVC)
     # warning level 4 and all warnings as errors

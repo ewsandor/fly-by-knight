@@ -29,8 +29,10 @@ void fbk_open_log_file(const char * log_path);
 
 /**
  * @brief Close log file
+ * 
+ * @param safe Triggers a clean exit on error if true.  Use false to silently continue on error (in case safe exit is already triggered).
  */
-void fbk_close_log_file();
+void fbk_close_log_file(bool safe);
 
 /**
  * @brief Thread for handling IO

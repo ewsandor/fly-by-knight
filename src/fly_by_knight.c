@@ -148,7 +148,7 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
   FBK_ASSERT_MSG(move != NULL, "NULL move pointer passed.");
 
-  /* Evalute this node if not evaluated to generate child nodes */
+  /* Evaluate this node if not evaluated to generate child nodes */
   fbk_evaluate_move_tree_node(fbk->move_tree.current, &fbk->game);
 
   /* Find node for given move */
@@ -233,7 +233,7 @@ void init(fbk_instance_s * fbk)
  */
 void fbk_exit(int return_code)
 {
-  fbk_close_log_file();
+  fbk_close_log_file(false);
 
   exit(return_code);
 }

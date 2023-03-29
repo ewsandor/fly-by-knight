@@ -60,7 +60,7 @@ void fbk_open_log_file(const char * log_path)
 /**
  * @brief Close log file
  */
-void fbk_close_log_file()
+void fbk_close_log_file(bool safe)
 {
   int result;
 
@@ -72,7 +72,10 @@ void fbk_close_log_file()
 
     result = fclose(fbk_log_file);
 
-    FBK_ASSERT_MSG(0 == result, "Failed to close log file (errno %d)", errno);
+    if(safe && (0 != result))
+    {
+      FBK_FATAL_MSG("Failed to close log file (errno %d)", errno);
+    }
   }
 }
 
@@ -90,7 +93,7 @@ void *fly_by_knight_io_thread(void *fbk_instance)
   void * fgets_result;
   char input_buffer[FBK_INPUT_BUFFER_SIZE];
   char output_buffer[FBK_INPUT_BUFFER_SIZE];
-  size_t strlength;
+  size_t str_length;
 
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
 
@@ -118,14 +121,14 @@ void *fly_by_knight_io_thread(void *fbk_instance)
 
 
     // Strip trailing newline
-    strlength = strlen(input_buffer);
-    if(strlength > 0)
+    str_length = strlen(input_buffer);
+    if(str_length > 0)
     {
-      FBK_ASSERT_MSG(strlength < FBK_INPUT_BUFFER_SIZE, "Invalid string");
+      FBK_ASSERT_MSG(str_length < FBK_INPUT_BUFFER_SIZE, "Invalid string");
 
-      if('\n' == input_buffer[strlength-1])
+      if('\n' == input_buffer[str_length-1])
       {
-        input_buffer[strlength-1] = '\0';
+        input_buffer[str_length-1] = '\0';
       }
     }
 

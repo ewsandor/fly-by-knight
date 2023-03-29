@@ -18,7 +18,7 @@
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
 
-fbk_analysis_data_s fbk_analaysis_data = {0};
+fbk_analysis_data_s fbk_analysis_data = {0};
 
 fbk_score_t fbk_score_potential_capture_value(ftk_type_e piece_type)
 {
@@ -279,13 +279,13 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
 
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Initializing analysis data");
 
-  if(false == fbk_analaysis_data.initialized)
+  if(false == fbk_analysis_data.initialized)
   {
-    memset(&fbk_analaysis_data, 0, sizeof(fbk_analysis_data_s));
+    memset(&fbk_analysis_data, 0, sizeof(fbk_analysis_data_s));
 
-    fbk_analaysis_data.fbk = fbk;
+    fbk_analysis_data.fbk = fbk;
 
-    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analaysis_data.analysis_stats.lock), "Failed to initialize analysis stats");
+    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_stats.lock), "Failed to initialize analysis stats");
   }
   else
   {
