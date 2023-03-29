@@ -33,3 +33,5 @@ endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(flybyknight PRIVATE Threads::Threads)
+
+install(TARGETS flybyknight)
