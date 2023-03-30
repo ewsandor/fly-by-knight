@@ -3,12 +3,18 @@
 //Created by Edward Sandor 2011-2012.
 //Read the README for more.
 
+//#define BOOST_THREAD_LIBRARY
+
 #include <iostream>
 #include <string>
 #include <stdlib.h>
 #include <fstream>
 #include <queue>
+#ifdef BOOST_THREAD_LIBRARY
 #include <boost/thread.hpp>
+#else
+#include <pthread.h>
+#endif
 #include <ctime>
 #include "game.hpp"
 #include "main.hpp"
@@ -28,11 +34,28 @@ bool ponder = false;
 bool analyze = false;
 bool pondB4 = false;
 
+#ifdef BOOST_THREAD_LIBRARY
+void inputQueuer(){
+#else
+void *inputQueuer(void*){
+#endif
+	for(;;){
+		string input;
+		getline(cin, input);
+		inputQueue.push(input);
+	}
+}
+
 int main(int argc, char* argv[]){
 
 	handleOutput("feature myname=\"Fly By Knight 0.3.5\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
 
+	#ifdef BOOST_THREAD_LIBRARY
 	boost::thread inputQueuerThread(inputQueuer);
+	#else
+	pthread_t inputQueuerThread = {0};
+	pthread_create(&inputQueuerThread, nullptr, inputQueuer, nullptr);
+	#endif
 
 	string input = "";
 	string last = input;
@@ -54,13 +77,6 @@ int main(int argc, char* argv[]){
 
 
 	return 0;
-}
-void inputQueuer(){
-	for(;;){
-		string input;
-		getline(cin, input);
-		inputQueue.push(input);
-	}
 }
 
 bool handleInput(string input){  

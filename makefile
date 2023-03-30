@@ -1,10 +1,12 @@
 all: flybyknight
 
 flybyknight: main.o board.o game.o piece.o moveTree.o
-	g++ -I $(BOOST_ROOT) -std=c++11 -Wall -g board.o game.o piece.o main.o moveTree.o -o flybyknight -lboost_thread -pthread
+#	g++ -I $(BOOST_ROOT) -std=c++11 -Wall -g board.o game.o piece.o main.o moveTree.o -o flybyknight -lboost_thread -pthread
+	g++ -std=c++11 -Wall -g board.o game.o piece.o main.o moveTree.o -o flybyknight -pthread
 
 main.o: main.cpp
-	g++ -I $(BOOST_ROOT) -std=c++11 -Wall -g -c main.cpp -lboost_thread -pthread
+#	g++ -I $(BOOST_ROOT) -std=c++11 -Wall -g -c main.cpp -lboost_thread -pthread
+	g++ -std=c++11 -Wall -g -c main.cpp -pthread
 
 board.o: board.cpp
 	g++ -Wall -g -c board.cpp 

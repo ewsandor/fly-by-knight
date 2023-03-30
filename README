@@ -22,9 +22,7 @@ https://git.sandorlaboratories.com/edward/fly-by-knight/-/tree/rewrite
 	Fly By Knight is an amateur chess engine currently implementing the xboard/winboard chess protocol.  The code is written in C++.  Main development and support is for the x86_64 Linux Kernel.  The code is written as portable as possible for easy porting to Windows and other kernels.
 
 	- Requires g++ to compile with Make
-	- Requires Boost C++ Compiled Libraries >= 1.51.0
-		-$BOOT_ROOT set to boost directory
-		-http://www.boost.org/
+	- Depends on the POSIX pthread library
 	- Simply type 'make' to compile.
 	- To run with the command line interface type 'make run'
 	- If xboard is installed, the engine can be run with xboard by typing 'make runxboard'
