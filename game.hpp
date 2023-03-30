@@ -32,6 +32,7 @@ class Game{
 
 	public:
 		//std::vector<std::vector<change_t> > changes; //to be replaced with moveTree
+		int bkIndex;
 		bool post;
 		int nodes;
 		Piece * enpasantable;
@@ -39,6 +40,9 @@ class Game{
 		MoveTree * moveTree;
 		std::vector<Move *> analysisQueue;
 		int searchClock;
+		bool draw;
+		std::string book;
+		bool onBook;
 
 		Game();
 
@@ -56,6 +60,7 @@ class Game{
 		bool inCheck(Piece * checkie);
 		bool inCheckmate(Piece * matey);
 		bool inStalemate(Piece * matey);
+		bool inDraw();
 		bool causesCheck(Piece * piece, int mov);
 		bool modSquare(std::string mod, int color);
 		bool endGame();
@@ -75,6 +80,10 @@ class Game{
 		void commitMove();
 		void findChoices(Move * mov);
 		void stepAnalysis();
+		bool recordGameToBook(std::string result);
+		Move * getBookMove();
+		bool openBook();
+		bool openBook(std::string loc);
 	private:
 		bool inMate(Piece * matey);
 };

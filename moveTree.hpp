@@ -32,13 +32,17 @@ class Move{
 				std::vector<change_t> changes;
 				std::vector<Move *> choices;
 				void sortScores();
+				void sortBkScores();
 				Move * getBest();
 				double adjustedScore();
 				void updateAdjuster();
 				double getScore();
 				void setScore(double s);
-				bool capture;
+				Piece * capture;
 				bool pawnMove;
+				double bookWins;
+				double bookTotal;
+				double nxtBootTotal;
 
 				Move();
 				Move(Move * p);

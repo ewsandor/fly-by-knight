@@ -9,7 +9,9 @@
 #include <vector>
 #include <ctime>
 #include <stack>
-#include<cmath>
+#include <cmath>
+#include <fstream>
+#include <regex>
 #include "main.hpp"
 #include "game.hpp"
 #include "board.hpp"
@@ -19,10 +21,12 @@ using namespace std;
 
 
 Game::Game(){
+	book = "";
 	post = true;
 	board = new Board(this);
 	moveTree = new MoveTree(this);
 	resetGame();
+	openBook();
 }
 
 void Game::clear(){
@@ -45,6 +49,7 @@ void Game::clear(){
 
 void Game::resetGame(){
 	//reverse tree to move 0
+	bkIndex = 0;
 	nodes = 0;
 	enpasantable = NULL;
 	playAs = BLACK;  
@@ -58,6 +63,8 @@ void Game::resetGame(){
 	analysisQueue.clear();
 	analysisQueue.push_back(moveTree->root);
 	searchClock = clock();
+	draw = false;
+	onBook = true;
 }
 
 void Game::setupBoard(){
@@ -236,6 +243,9 @@ bool Game::inStalemate(Piece * matey){
 
 	return inMate(matey);
 }
+bool Game::inDraw(){
+	return draw;
+}
 bool Game::inMate(Piece * matey){
 	vector <Piece *> pieces;
 
@@ -379,16 +389,16 @@ bool Game::causesCheck(Piece * piece, int mov){
 }
 bool Game::endGame(){
 	if(inCheckmate(getKing(BLACK))){
-		handleOutput("1-0 {White mates}");
+		handleOutput("1-0 {White Mates}");
 		handleInput("force");
 		return true;
 	}
 	else if(inCheckmate(getKing(WHITE))){
-		handleOutput("0-1 {Black mates}");
+		handleOutput("0-1 {Black Mates}");
 		handleInput("force");
 		return true;
 	}
-	else if((getTurn() == BLACK && inStalemate(getKing(BLACK))) || (getTurn() == WHITE && inCheckmate(getKing(WHITE)))){
+	else if((moveTree->actual->turn%2==BLACK && inStalemate(getKing(BLACK))) || (moveTree->actual->turn%2==WHITE && inCheckmate(getKing(WHITE)))){
 		handleOutput("1/2-1/2 {Stalemate}");
 		handleInput("force");
 		return true;
@@ -411,7 +421,7 @@ void Game::addChange(change_t change){
 	//add to move tree's changes instaed of game's
 	moveTree->current->changes.push_back(change);
 	if(change.captured)
-		moveTree->current->capture=true;
+		moveTree->current->capture=change.moded;
 	if(change.moded != NULL && (change.moded->toShortString().compare("p") == 0 || change.moded->toShortString().compare("P") == 0)
 		&& change.oldLoc!=change.newLoc)
 		moveTree->current->pawnMove=true;
@@ -469,10 +479,6 @@ bool Game::moveForward(){
 	return (moveTree->current->choices.size() != 1)? false:moveForward(moveTree->current->choices[0]);
 }
 bool Game::moveForward(Move * mov){
-	//fix to use moveTrees changes
-	//stop if multiple options...
-	//if(place >= changes.size()) return false;
-	//done ?
 	if(mov == NULL || mov->parent != moveTree->current)
 		return false;
 
@@ -519,15 +525,22 @@ void Game::commitMove(){
 
 double Game::evaluateBoard(){
 
+	if(moveTree->current->evaluated)
+		return moveTree->current->getScore();
+
 	double score = 0.0;
 	
 	
 	if(moveTree->current->pawnMove)
-		if(moveTree->actual->turn%2 == WHITE)
-			score-=10;
+		if(moveTree->current->turn%2 == WHITE)
+			score-=20;
 		else
-			score+=10;
-
+			score+=20;
+	if(moveTree->current->capture != NULL)
+		if(moveTree->actual->turn%2 == WHITE)
+			score-=13*moveTree->current->capture->getValue();
+		else
+			score+=13*moveTree->current->capture->getValue();
 	if(this->inCheckmate(this->whiteKing)){
 		score -= 3900;
 	}
@@ -547,13 +560,15 @@ double Game::evaluateBoard(){
 		//score += (mute * moves.size());
 		score += (mute * (pieces[i]->getValue()) * 100);
 		if(pieces[i] != pieces[i]->getGame()->getKing(pieces[i]->getColor())){
-			score += mute * 70 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
+			score += mute * 50 *(Board::squareVal(pieces[i]->getX(), pieces[i]->getY()));
 		}
 	}
 
+	moveTree->current->evaluated = true;
 	return score;
 }
 void Game::stepAnalysis(){
+
 	while(analysisQueue.size() > 0 && analysisQueue[0]->turn < moveTree->actual->turn)
 		analysisQueue.erase(analysisQueue.begin());
 	
@@ -562,7 +577,6 @@ void Game::stepAnalysis(){
 		analysisQueue.push_back(moveTree->actual);
 		move(moveTree->actual);
 		findChoices(moveTree->actual);
-		moveTree->actual->evaluated = true;
 		moveTree->actual->setScore(evaluateBoard());
 		for(unsigned int i = 0; i < moveTree->actual->choices.size(); i++){
 			analysisQueue.push_back(moveTree->actual->choices[i]);
@@ -709,8 +723,6 @@ void Game::findChoices(Move * mov){
 			move(t);
 			//if(!t->evaluated){
 				t->setScore(evaluateBoard());
-				t->evaluated = true;
-				
 			/*Move * up = t;			
 			while(up->parent != NULL){
 				up->updateAdjuster();
@@ -721,5 +733,187 @@ void Game::findChoices(Move * mov){
 	move(curMove);
 
 }
+bool Game::recordGameToBook(string result){
+	int win = -99;
+	if(result.find("0-1")==0)
+		win=BLACK;
+	else if(result.find("1-0")==0)
+		win=WHITE;
+	else if(result.find("1/2-1/2") == 0)
+		win=NONE;
+	else
+		return false;
+		
 
+	
+	stack<Move *> tree;
+	tree.push(moveTree->actual);
+	while(tree.top()->parent != NULL)
+		tree.push(tree.top()->parent);
 
+	int index = book.find("M");
+	
+	//only deals with single digit number at the moment
+	while(index != -1 && tree.size() > 0 && tree.top()->turn < 10 && tree.top()->turn <= (unsigned int) book.at(index+3)-48){
+		if(tree.top()->turn == book.at(index+1)-48 && tree.top()->id.find(book.substr(index+3,4))==0){
+			bool updated = false;
+			int st = book.find(":",index + 1);
+			int en = book.find(":", st+1);
+			st = en;
+			en = book.find(":", st+1);
+			string counts = book.substr(st+1, en-st-1);
+			int countsi = stoi(counts);
+			if(win==WHITE)
+				book.replace(st+1, en-st-1, to_string((long double)countsi+1));
+			st=book.find(":", st+1);
+			en=book.find(":", st+1);
+			counts = book.substr(st+1, en-st-1);
+			countsi = stoi(counts);
+			if(win==BLACK)
+				book.replace(st+1, en-st-1, to_string((long double)countsi+1));
+			st=book.find(":", st+1);
+			en=book.find("M", st+1);
+			counts = book.substr(st+1, en-st-1);
+			countsi = stoi(counts);
+			if(win==NONE)				
+				book.replace(st+1, en-st-1, to_string((long double)countsi+1));
+			//implement update to outcomes here
+			tree.pop();
+		}
+		index = book.find("M", index +1);
+	}
+	while(tree.size() > 0 && tree.top()->turn < 10){
+		string entry = "M";
+		entry.append(to_string((long double)tree.top()->turn));
+		entry.append(":");
+		entry.append(tree.top()->id);
+		entry.append(":");
+		entry.append(to_string((long double)(win==WHITE?1:0)));
+		entry.append(":");
+		entry.append(to_string((long double)(win==BLACK?1:0)));
+		entry.append(":");
+		entry.append(to_string((long double)(win==NONE?1:0)));
+		if(index == -1)
+			book = book + entry;
+		else
+			book = book.substr(0,index) + entry + book.substr(index);
+		tree.pop();
+		if(index != -1)
+			index = book.find("M", index +1);
+	}
+
+	//cout << bkstr << endl;
+	ofstream booko;
+	booko.open("book.fbk", ofstream::out | ofstream::trunc);
+	if(booko.is_open()){
+		booko << book << endl;
+	}
+	booko.close();
+	return true;
+}
+
+bool Game::openBook(){
+	return openBook("book.fbk");
+}
+bool Game::openBook(string loc){
+	book = "";
+	ifstream booki;
+	booki.open(loc, ifstream::in);
+	if(booki.is_open()){
+		string tmp;
+		getline(booki,tmp);
+		book=book+tmp;
+	}
+	booki.close();
+	return booki.is_open();
+}
+
+Move * Game::getBookMove(){	
+	if(!onBook)
+		return NULL;
+
+	findChoices(moveTree->current);
+
+	stack<Move *> tree;
+	tree.push(moveTree->current);
+	while(tree.top()->parent != NULL)
+		tree.push(tree.top()->parent);
+
+	int index = book.find("M");
+	
+	//only deals with single digit number at the moment
+	while(index != -1 && tree.size() > 0 && tree.top()->turn < 10 && tree.top()->turn <= (unsigned int) book.at(index+3)-48){
+		if(tree.top()->turn == book.at(index+1)-48 && tree.top()->id.find(book.substr(index+3,4))==0){
+			if(tree.top() == moveTree->current)
+				break;
+			tree.pop();
+		}
+		index = book.find("M", index +1);
+	}
+
+	/*bkIndex = book.find("M", bkIndex+1);
+	while(bkIndex >= 0 && book.at(bkIndex+1)-48 >= moveTree->current->turn && moveTree->current->id.find(book.substr(bkIndex+3,4)) != 0){
+		bkIndex = book.find("M", bkIndex+1);
+	}*/
+	/*if(index < 0){
+		onBook = false;
+		return NULL;
+	}*/
+
+	index = book.find("M", index+1);
+	while(index > 0 && book.at(index+1)-48 > moveTree->current->turn){
+		if(book.at(index+1)-48-1 == moveTree->current->turn){
+			Move * tmp = moveTree->current->getChoice(book.substr(index+3,4));
+			if(tmp != NULL){
+
+			int wwins = 0;
+			int bwins = 0;
+			int draws = 0;
+
+			int st = book.find(":",index + 1);
+			int en = book.find(":", st+1);
+			st = en;
+			en = book.find(":", st+1);
+			string counts = book.substr(st+1, en-st-1);
+			wwins = stoi(counts);
+			st=book.find(":", st+1);
+			en=book.find(":", st+1);
+			counts = book.substr(st+1, en-st-1);
+			bwins = stoi(counts);
+			st=book.find(":", st+1);
+			en=book.find("M", st+1);
+			counts = book.substr(st+1, en-st-1);
+			draws = stoi(counts);
+			int total = wwins + bwins + draws;
+			tmp->bookWins = .5*draws + (tmp->turn%2 == WHITE?bwins:wwins);
+			tmp->bookTotal = total;
+			moveTree->current->nxtBootTotal+=total;
+			}
+		}
+		index = book.find("M", index+1);
+	}
+
+	if(moveTree->current->nxtBootTotal == 0)
+		onBook = false;
+
+	if(!onBook)
+		return NULL;
+
+	moveTree->current->sortBkScores();
+
+	if(post){
+		string think = "0 0 0 0 (";
+		for(int i = 0; i < 5; i++){
+			if(i > 0)
+				think.append(", ");
+			think.append(moveTree->current->choices[i]->id);
+			think.append(" ");
+			think.append(to_string((long double)((int)(.5+((long double) moveTree->current->choices[i]->bookWins/moveTree->current->nxtBootTotal * 1000)))/10));			
+			think.append("%");
+		}
+		think.append(")");
+		handleOutput(think);
+	}
+
+	return moveTree->current->choices[0];
+}
