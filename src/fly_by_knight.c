@@ -7,8 +7,8 @@
  Main file for Fly by Knight
 */
 
+#include <getopt.h>
 #include <pthread.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -232,6 +232,8 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
   fbk->config.worker_threads   = arguments->worker_threads;
 
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW,      "Allowing %u worker threads.", fbk->config.worker_threads);
+
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
 
   fbk_begin_standard_game(fbk);
@@ -257,13 +259,15 @@ void fbk_exit(int return_code)
  */
 void display_help(bool user_requested, bool exit_fbk)
 {
-  printf( "Usage: flybyknight [OPTION]...\n"
+  FILE * output_stream = (user_requested?stdout:stderr);
+  fprintf(output_stream,
+          "Usage: flybyknight [OPTION]...\n"
           "Chess engine following the xboard protocol with the UCI protocol in mind.\n"
           "  -d#,        --debug=#       start with debug logging level [0(disabled) - 9(maximum)]\n"
           "  -h,         --help          display this help and exit\n"
           "  -j#,        --jobs=#        start with given number of worker threads\n"
           "  -l [path],  --log=[path]    log output to file at given 'path'\n"
-          "  -v,         --version       display version information and exit\n");
+          "  -v,         --version       display complete version information\n");
   
   if(exit_fbk)
   {
@@ -322,7 +326,7 @@ void fbk_set_random_number_seed(unsigned int seed)
  * @param argv      argv from main()
  * @param arguments Output structure of parsed arguments
  */
-void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
+void parse_arguments(int argc, char *argv[], fbk_arguments_s *arguments)
 {
   int i;
   bool version_details_requested = false;
@@ -338,69 +342,70 @@ void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
   memset(arguments, 0, sizeof(fbk_arguments_s));
   arguments->worker_threads = 1;
 
-  for(i = 1; i < argc; i++)
+  int option;
+  int option_index = 0;
+  static struct option long_options[] = {
+      {"debug",   required_argument, 0,  'd' },
+      {"jobs",    required_argument, 0,  'j' },
+      {"log",     required_argument, 0,  'l' },
+      {"help",    no_argument,       0,  'h' },
+      {"version", no_argument,       0,  'v' },
+      {0,         0,                 0,   0  }
+  };
+
+  bool argument_error = false;
+  while(!argument_error && ((option = getopt_long(argc, argv, "d:j:l:hv", long_options, &option_index)) != -1))
   {
-    if(strncmp(argv[i], "-d", 2) == 0 || strncmp(argv[i], "--debug=", 8) == 0)
+    switch(option)
     {
-      fbk_debug_level_t debug = FBK_DEBUG_DISABLED;
-      if(strncmp(argv[i], "-d", 2) == 0)
+      case 'd':
       {
-        debug = argv[i][2] - '0';
+        int debug = atoi(optarg);
+        if((debug > FBK_DEBUG_MIN) || (debug < FBK_DEBUG_DISABLED))
+        {
+          argument_error = true;
+        }
+        else
+        {
+          fbk_set_debug_level(debug);
+        }
+        break;
       }
-      else if(strncmp(argv[i], "--debug=", 8) == 0)
+      case 'j':
       {
-        debug = argv[i][8] - '0';
+        arguments->worker_threads = atoi(optarg);
+        if(arguments->worker_threads < 1)
+        {
+          FBK_ERROR_MSG("At least 1 worker thread is required but argument passed %u.", arguments->worker_threads);
+          argument_error = true;
+        }
+        break;
       }
-
-      if(debug > 9)
+      case 'l':
       {
-        display_help(false, true);
+        fbk_open_log_file(optarg);
+        break;
       }
-      else
+      case 'h':
       {
-        fbk_set_debug_level(debug);
+        display_help(true, true);
+        break;
+      }
+      case 'v':
+      {
+        version_details_requested = true;
+        break;
+      }
+      default:
+      {
+        argument_error = true;
+        break;
       }
     }
-    else if(strncmp(argv[i], "-j", 2) == 0 || strncmp(argv[i], "--jobs=", 7) == 0)
-    {
-      if(strncmp(argv[i], "-j", 2) == 0)
-      {
-        arguments->worker_threads = argv[i][2] - '0';
-      }
-      else if(strncmp(argv[i], "--jobs=", 7) == 0)
-      {
-        arguments->worker_threads = argv[i][8] - '0';
-      }
-
-      if(arguments->worker_threads > 9)
-      {
-        display_help(false, true);
-      }
-    }
-    else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--log") == 0)
-    {
-      if(i + 1 < argc)
-      {
-        i++;
-        fbk_open_log_file(argv[i]);
-      }
-      else
-      {
-        display_help(false, true);
-      }
-    }
-    else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
-    {
-      display_help(true, true);
-    }
-    else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0)
-    {
-      version_details_requested = true;
-    }
-    else
-    {
-      display_help(false, true);
-    }
+  }
+  if(argument_error)
+  {
+    display_help(false, true);
   }
 
   // Log command and arguments
@@ -413,16 +418,12 @@ void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
 
   /* Log version details */
   display_version_details(version_details_requested);
-
   /* Set random number seed */
   fbk_set_random_number_seed(random_seed);
 }
 
-int main(int argc, char ** argv)
+int main(int argc, char *argv[])
 {
-  fbk_arguments_s arguments;
-  fbk_instance_s fbk_instance;
-
   /* Introduce Fly by Knight */
   printf(FLY_BY_KNIGHT_INTRO "\n");
 
@@ -431,17 +432,12 @@ int main(int argc, char ** argv)
   signal(SIGTERM, handle_signal);
 
   /* Parse command arguments */
-  parse_arguments(argc, (const char **) argv, &arguments);
+  fbk_arguments_s arguments;
+  parse_arguments(argc, argv, &arguments);
 
   /* Initialize Fly by Knight root structure */
+  fbk_instance_s fbk_instance;
   init(&fbk_instance, &arguments);
-
-  /*
-  int presult;
-  pthread_t io_thread;
-  presult = pthread_create(&io_thread, NULL, fly_by_knight_io_thread, &fbk_instance);
-  FBK_ASSERT_MSG(0 == presult, "Failed to start IO thread, presult %d", presult);
-  */
 
   /* Start IO handler on main thread, analysis to be done on separate threads */
   fly_by_knight_io_thread(&fbk_instance);

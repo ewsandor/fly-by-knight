@@ -14,8 +14,6 @@
 
 #include "fly_by_knight_io.h"
 
-typedef uint8_t fbk_debug_level_t;
-
 typedef enum
 {
   FBK_DEBUG_DISABLED = 0,
@@ -31,12 +29,12 @@ typedef enum
  * 
  * @param new_debug_level 
  */
-void fbk_set_debug_level(fbk_debug_level_t new_debug_level);
+void fbk_set_debug_level(fbk_debug_level_e new_debug_level);
 
 /**
  * @brief Returns current debug logging level 
  */
-fbk_debug_level_t fbk_get_debug_level();
+fbk_debug_level_e fbk_get_debug_level();
 
 /**
  * @brief Log debug message to STDOUT and logfile if current logging level is set
