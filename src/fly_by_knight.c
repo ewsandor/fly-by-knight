@@ -204,15 +204,25 @@ bool fbk_undo_move(fbk_instance_s * fbk)
 }
 
 /**
+ * @brief Parsed argument data
+ * 
+ */
+typedef struct 
+{
+  unsigned int worker_threads;
+} fbk_arguments_s;
+
+/**
  * @brief Initializes Fly by Knight
  * 
- * @param fbk Fly by Knight instance data
- * @param debug true if debug logging should be enabled
+ * @param fbk       Fly by Knight instance data
+ * @param arguments Arguments parsed from command line
  */
-void init(fbk_instance_s * fbk)
+void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
 {
-  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
-  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Initializing Fly by Knight");
+  FBK_ASSERT_MSG(fbk != NULL,       "NULL fbk_instance pointer passed.");
+  FBK_ASSERT_MSG(arguments != NULL, "NULL arguments pointer passed.");
+  FBK_DEBUG_MSG(FBK_DEBUG_MED,      "Initializing Fly by Knight");
 
   memset(fbk, 0, sizeof(fbk_instance_s));
   fbk->protocol = FBK_PROTOCOL_UNDEFINED;
@@ -220,6 +230,7 @@ void init(fbk_instance_s * fbk)
   fbk->config.random           = false;
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
+  fbk->config.worker_threads   = arguments->worker_threads;
 
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
 
@@ -250,7 +261,8 @@ void display_help(bool user_requested, bool exit_fbk)
           "Chess engine following the xboard protocol with the UCI protocol in mind.\n"
           "  -d#,        --debug=#       start with debug logging level [0(disabled) - 9(maximum)]\n"
           "  -h,         --help          display this help and exit\n"
-          "  -l <path>,  --log=<path>    log output to file at given 'path'\n"
+          "  -j#,        --jobs=#        start with given number of worker threads\n"
+          "  -l [path],  --log=[path]    log output to file at given 'path'\n"
           "  -v,         --version       display version information and exit\n");
   
   if(exit_fbk)
@@ -304,16 +316,6 @@ void fbk_set_random_number_seed(unsigned int seed)
 } 
 
 /**
- * @brief Parsed argument data
- * 
- */
-typedef struct 
-{
-  /* Argument params as needed */
-  void * placeholder;
-} fbk_arguments_s;
-
-/**
  * @brief Parses arguments passed with command
  * 
  * @param argc      argc from main()
@@ -323,7 +325,6 @@ typedef struct
 void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
 {
   int i;
-  fbk_debug_level_t debug = FBK_DEBUG_DISABLED;
   bool version_details_requested = false;
   time_t curr_time;
   unsigned int random_seed;
@@ -335,11 +336,13 @@ void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
   FBK_ASSERT_MSG(arguments != NULL, "Empty arguments structure passed");
 
   memset(arguments, 0, sizeof(fbk_arguments_s));
+  arguments->worker_threads = 1;
 
   for(i = 1; i < argc; i++)
   {
     if(strncmp(argv[i], "-d", 2) == 0 || strncmp(argv[i], "--debug=", 8) == 0)
     {
+      fbk_debug_level_t debug = FBK_DEBUG_DISABLED;
       if(strncmp(argv[i], "-d", 2) == 0)
       {
         debug = argv[i][2] - '0';
@@ -356,6 +359,22 @@ void parse_arguments(int argc, const char ** argv, fbk_arguments_s *arguments)
       else
       {
         fbk_set_debug_level(debug);
+      }
+    }
+    else if(strncmp(argv[i], "-j", 2) == 0 || strncmp(argv[i], "--jobs=", 7) == 0)
+    {
+      if(strncmp(argv[i], "-j", 2) == 0)
+      {
+        arguments->worker_threads = argv[i][2] - '0';
+      }
+      else if(strncmp(argv[i], "--jobs=", 7) == 0)
+      {
+        arguments->worker_threads = argv[i][8] - '0';
+      }
+
+      if(arguments->worker_threads > 9)
+      {
+        display_help(false, true);
       }
     }
     else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--log") == 0)
@@ -408,14 +427,14 @@ int main(int argc, char ** argv)
   printf(FLY_BY_KNIGHT_INTRO "\n");
 
   /* Configure signal handlers */
-  signal(SIGINT,  SIG_IGN);
+  signal(SIGINT,  handle_signal);
   signal(SIGTERM, handle_signal);
 
   /* Parse command arguments */
   parse_arguments(argc, (const char **) argv, &arguments);
 
   /* Initialize Fly by Knight root structure */
-  init(&fbk_instance);
+  init(&fbk_instance, &arguments);
 
   /*
   int presult;

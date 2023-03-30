@@ -44,16 +44,34 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
 {
   FBK_UNUSED(fbk);
 
-  FBK_OUTPUT_MSG("feature "
-                 "debug=1 "
-                 "ping=1 "
-                 "setboard=1 "
-                 "time=0 "
-                 "draw=0 "
-                 "analyze=0 "
-                 "myname=\"" FLY_BY_KNIGHT_NAME_VER "\" "
-                 "colors=0 "
-                 "done=1\n"
+  FBK_OUTPUT_MSG("feature done=0\n"
+                 "feature ping=1\n"
+                 "feature setboard=1\n"
+                 "feature playother=1\n"
+                 "feature san=0\n"
+                 "feature usermove=0\n"
+                 "feature time=0\n"
+                 "feature draw=0\n"
+                 "feature sigint=0\n"
+                 "feature sigterm=0\n"
+                 "feature reuse=1\n"
+                 "feature analyze=0\n"
+                 "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
+                 "feature variants=\"normal\"\n"
+                 "feature colors=0\n"
+                 "feature ics=0\n"
+                 "feature name=0\n"
+                 "feature pause=0\n"
+                 "feature nps=0\n"
+                 "feature debug=1\n"
+                 "feature memory=0\n"
+                 "feature smp=1\n"
+               //"feature egt=null\n"
+               //"feature option=null\n"
+                 "feature exclude=0\n"
+                 "feature setscore=0\n"
+                 "feature highlight=0\n"
+                 "feature done=1\n"
                 );
 }
 
@@ -256,7 +274,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
-    ftk_position_t target, source;
+    ftk_square_e   target, source;
     ftk_type_e     pawn_promotion;
     ftk_castle_e   castle;
     ftk_move_s     move;
@@ -332,7 +350,7 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   }
   else if(3 == input_length)
   {
-    ftk_position_t mod_square = ftk_string_to_position(&input[1]);
+    ftk_square_e mod_square = ftk_string_to_position(&input[1]);
     
     if(mod_square != FTK_XX)
     {

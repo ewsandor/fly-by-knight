@@ -41,7 +41,7 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
     fbk_begin_standard_game(fbk);
 
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
-    ftk_position_t target, source;
+    ftk_square_e target, source;
     ftk_type_e     pawn_promotion;
     ftk_castle_e   castle;
     ftk_move_s     move;

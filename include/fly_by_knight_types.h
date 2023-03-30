@@ -164,6 +164,9 @@ typedef struct
   /* Current opponent type */
   fbk_opponent_type_e opponent_type;
 
+  /* Number of worker threads */
+  unsigned int        worker_threads;
+
 } fbk_engine_config_s;
 
 /**

@@ -146,7 +146,7 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
 
   int legal_move_count;
   ftk_board_mask_t capture_mask;
-  ftk_position_t   capture_square;
+  ftk_square_e   capture_square;
   unsigned int white_king_not_moved  = 0;
   unsigned int white_rooks_not_moved = 0;
   unsigned int black_king_not_moved  = 0;
