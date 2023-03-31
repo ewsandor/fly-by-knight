@@ -36,4 +36,11 @@ fbk_score_t fbk_score_game(const ftk_game_s * game);
  */
 void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_s game);
 
+/**
+ * @brief Updates the configured number of worker threads
+ * 
+ * @param count new number of worker threads to allow
+*/
+void fbk_update_worker_thread_count(unsigned int count);
+
 #endif //_FLY_BY_KNIGHT_ANALYSIS_H_

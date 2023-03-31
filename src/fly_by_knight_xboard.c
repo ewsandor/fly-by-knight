@@ -12,6 +12,7 @@
 #include <farewell_to_king.h>
 #include <farewell_to_king_strings.h>
 
+#include "fly_by_knight_analysis.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_pick.h"
@@ -58,9 +59,9 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature analyze=0\n"
                  "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
                  "feature variants=\"normal\"\n"
-                 "feature colors=0\n"
+                 "feature colors=1\n"
                  "feature ics=0\n"
-                 "feature name=0\n"
+                 "feature name=1\n"
                  "feature pause=0\n"
                  "feature nps=0\n"
                  "feature debug=1\n"
@@ -205,6 +206,17 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     // TODO start analysis
     fbk->protocol_data.xboard.ponder = true;
+  }
+  else if(strncmp("cores", input, 5) == 0)
+  {
+    if(input_length > 6)
+    {
+      fbk_update_worker_thread_count(atoi(&input[6]));
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
   }
   else if(strncmp("name", input, 4) == 0)
   {

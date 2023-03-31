@@ -58,8 +58,8 @@ typedef uint_fast16_t fbk_worker_thread_count_t;
 /* Data for worker threads */
 typedef struct 
 {
-  /* Lock for accessing thread data */
-  fbk_mutex_t lock;
+  /*Identifier for this worker thread */
+  unsigned int thread_id;
 
   /* True if analysis is allowed, else thread should stop analysis ASAP */
   bool analysis_allowed;

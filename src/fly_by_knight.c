@@ -230,11 +230,9 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk->config.random           = false;
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
-  fbk->config.worker_threads   = arguments->worker_threads;
-
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW,      "Allowing %u worker threads.", fbk->config.worker_threads);
 
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
+  fbk_update_worker_thread_count(arguments->worker_threads);
 
   fbk_begin_standard_game(fbk);
 }

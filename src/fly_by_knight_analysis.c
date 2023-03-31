@@ -279,6 +279,8 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
 
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Initializing analysis data");
 
+  FBK_ASSERT_MSG(fbk != NULL, "NULL FBK instance passed");
+
   if(false == fbk_analysis_data.initialized)
   {
     memset(&fbk_analysis_data, 0, sizeof(fbk_analysis_data_s));
@@ -294,4 +296,86 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
   }
 
   return ret_val;
+}
+
+static void worker_thread_cleanup(void * arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
+  fbk_worker_thread_data_s *worker_thread_data = (fbk_worker_thread_data_s *) arg;
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Cleaning up worker thread %u.", worker_thread_data->thread_id);
+}
+
+static void * worker_thread_f(void * arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
+  fbk_worker_thread_data_s *worker_thread_data = (fbk_worker_thread_data_s *) arg;
+
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u started.", worker_thread_data->thread_id);
+
+  pthread_cleanup_push(worker_thread_cleanup, worker_thread_data);
+
+  for(;;)
+  {
+    pthread_testcancel();
+  }
+
+  pthread_cleanup_pop(0);
+}
+/**
+ * @brief Updates the configured number of worker threads
+ * 
+ * @param count new number of worker threads to allow
+*/
+void fbk_update_worker_thread_count(unsigned int count)
+{
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Configuring %u worker threads.", count);
+
+  if(count < 1)
+  {
+    FBK_ERROR_MSG("At least 1 worker thread is required but %u is requested.  Falling back to 1 worker thread", count);
+    fbk_analysis_data.fbk->config.worker_threads = 1;
+  }
+  else
+  {
+    fbk_analysis_data.fbk->config.worker_threads = count;
+  }
+
+  if(fbk_analysis_data.fbk->config.worker_threads > fbk_analysis_data.worker_thread_count)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Allocating memory for new worker thread(s).");
+    /* Allocate additional worker thread data entries */
+    fbk_analysis_data.worker_thread_data = realloc(fbk_analysis_data.worker_thread_data, sizeof(fbk_worker_thread_data_s)*fbk_analysis_data.fbk->config.worker_threads);
+    FBK_ASSERT_MSG(fbk_analysis_data.worker_thread_data != NULL, "Realloc for %u worker threads failed.\n", fbk_analysis_data.fbk->config.worker_threads);
+
+    for(unsigned int i = fbk_analysis_data.worker_thread_count; i < fbk_analysis_data.fbk->config.worker_threads; i++)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Creating worker thread %u.", i);
+      /* Configure each new entry */
+      memset(&fbk_analysis_data.worker_thread_data[i], 0, sizeof(fbk_worker_thread_data_s));
+      fbk_analysis_data.worker_thread_data[i].thread_id        = i;
+      fbk_analysis_data.worker_thread_data[i].analysis_allowed = fbk_analysis_data.analysis_active;
+      pthread_create(&fbk_analysis_data.worker_thread_data[i].worker_thread, NULL, worker_thread_f, &fbk_analysis_data.worker_thread_data[i]);
+    }
+  }
+  else if(fbk_analysis_data.fbk->config.worker_threads < fbk_analysis_data.worker_thread_count)
+  {
+    for(unsigned int i = fbk_analysis_data.fbk->config.worker_threads; i < fbk_analysis_data.worker_thread_count; i++)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Cancelling worker thread %u.", i);
+      /* Trigger cancellation for all excess worker threads */
+      pthread_cancel(fbk_analysis_data.worker_thread_data[i].worker_thread);
+    }
+    for(unsigned int i = fbk_analysis_data.fbk->config.worker_threads; i < fbk_analysis_data.worker_thread_count; i++)
+    {
+      /* Wait for all excess worker threads to finish cancellation */
+      FBK_ASSERT_MSG(0 == pthread_join(fbk_analysis_data.worker_thread_data[i].worker_thread, NULL), 
+                    "Failed to join worker thread %u.", i);
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u cancelled.", i);
+    }
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Releasing memory for excess worker thread(s).");
+    fbk_analysis_data.worker_thread_data = realloc(fbk_analysis_data.worker_thread_data, sizeof(fbk_worker_thread_data_s)*fbk_analysis_data.fbk->config.worker_threads);
+    FBK_ASSERT_MSG(fbk_analysis_data.worker_thread_data != NULL, "Realloc for %u worker threads failed.\n", fbk_analysis_data.fbk->config.worker_threads);
+  }
+
+  fbk_analysis_data.worker_thread_count = fbk_analysis_data.fbk->config.worker_threads;
 }
