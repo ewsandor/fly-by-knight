@@ -48,14 +48,25 @@ typedef struct
 
   /* Number of queued jobs */
   fbk_analysis_job_count_t job_count;
-  
   /* Root job of queue */
-  fbk_analysis_job_queue_node_s * next_job;
+  fbk_analysis_job_queue_node_s *next_job;
+  /* Back of job queue*/
+  fbk_analysis_job_queue_node_s *last_job;
 
 } fbk_analysis_job_queue_s;
 
 /* Type for counting worker threads */
 typedef uint_fast16_t fbk_worker_thread_count_t;
+
+typedef struct 
+{
+  /* Analysis check protection*/
+  fbk_mutex_t    lock;
+  pthread_cond_t analysis_started_cond;
+  /* Indicates analysis has been requested and is active */
+  bool           analysis_active;
+
+} fbk_analysis_state_s;
 
 /* Data for worker threads */
 typedef struct 
@@ -66,14 +77,12 @@ typedef struct
   /* Pointer to job queue associated with this worker thread */
   fbk_analysis_job_queue_s *job_queue;
 
-  /* True if analysis is allowed, else thread should stop analysis ASAP */
-  bool analysis_allowed;
-
-  /* True if thread has stopped all analysis and may be killed */
-  bool analysis_stopped;
+  /* Analysis state information */
+  fbk_analysis_state_s * analysis_state;
 
   /* Thread Handle */
   pthread_t worker_thread;
+
 } fbk_worker_thread_data_s;
 
 typedef uint_fast32_t fbk_analysis_node_count_t;
@@ -93,7 +102,6 @@ typedef struct
 
 } fbk_analysis_stats_s;
 
-
 /* Root structure for Fly by Knight analysis data */
 typedef struct 
 {
@@ -102,8 +110,8 @@ typedef struct
 
   fbk_instance_s           *fbk;
 
-  /* Indicates analysis has been requested and is active */
-  bool                      analysis_active;
+  /* Analysis state information */
+  fbk_analysis_state_s      analysis_state;
 
   /* Analysis statistics */
   fbk_analysis_stats_s      analysis_stats;

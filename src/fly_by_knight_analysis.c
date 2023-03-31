@@ -287,10 +287,17 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
 
     fbk_analysis_data.fbk = fbk;
 
-    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_stats.lock), "Failed to initialize analysis stats");
+    /* Initialize analysis state */
+    fbk_analysis_data.analysis_state.analysis_active = false;
+    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_state.lock), "Failed to initialize analysis state lock");
+    FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.analysis_state.analysis_started_cond, NULL), "Failed to initialize analysis_started condition");
 
-    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.job_queue.lock), "Failed to initialize analysis stats");
-    FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.job_queue.new_job_available, NULL), "Failed to initialize analysis stats");
+    /* Initialize job queue */
+    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.job_queue.lock), "Failed to initialize job queue lock");
+    FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.job_queue.new_job_available, NULL), "Failed to initialize job queue condition");
+
+    /* Initialize stats */
+    FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_stats.lock), "Failed to initialize analysis stats lock");
   }
   else
   {
@@ -308,13 +315,22 @@ static void worker_thread_cleanup(void * arg)
   FBK_DEBUG_MSG(FBK_DEBUG_MED, "Cleaning up worker thread %u.", worker_thread_data->thread_id);
 }
 
-static void worker_thread_job_queue_cleanup(void * arg)
+static void worker_thread_job_queue_cleanup(void *arg)
 {
   FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
   fbk_worker_thread_data_s *worker_thread_data = (fbk_worker_thread_data_s *) arg;
-  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u releasing job queue mutex for cancellation.", worker_thread_data->thread_id);
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u releasing job queue mutex for thread cancellation.", worker_thread_data->thread_id);
   fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
 }
+
+static void worker_thread_analysis_state_cleanup(void *arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
+  fbk_worker_thread_data_s *worker_thread_data = (fbk_worker_thread_data_s *) arg;
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u releasing analysis state mutex for thread cancellation.", worker_thread_data->thread_id);
+  fbk_mutex_unlock(&worker_thread_data->analysis_state->lock);
+}
+
 
 static void * worker_thread_f(void * arg)
 {
@@ -327,6 +343,19 @@ static void * worker_thread_f(void * arg)
 
   while(1)
   {
+    /* Check if analysis is active */
+    fbk_mutex_lock(&worker_thread_data->analysis_state->lock);
+    pthread_cleanup_push(worker_thread_analysis_state_cleanup, worker_thread_data);
+    while(!worker_thread_data->analysis_state->analysis_active)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u waiting for analysis to start.", worker_thread_data->thread_id);
+      FBK_ASSERT_MSG(0 == pthread_cond_wait(&worker_thread_data->analysis_state->analysis_started_cond, &worker_thread_data->analysis_state->lock),
+        "Failed Waiting for analysis started condition.");
+    }
+    pthread_cleanup_pop(0);
+    fbk_mutex_unlock(&worker_thread_data->analysis_state->lock);
+
+    /* Claim an analysis job */
     fbk_mutex_lock(&worker_thread_data->job_queue->lock);
     pthread_cleanup_push(worker_thread_job_queue_cleanup, worker_thread_data);
     while(worker_thread_data->job_queue->next_job == NULL)
@@ -382,9 +411,9 @@ void fbk_update_worker_thread_count(unsigned int count)
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Creating worker thread %u.", i);
       /* Configure each new entry */
       memset(&fbk_analysis_data.worker_thread_data[i], 0, sizeof(fbk_worker_thread_data_s));
-      fbk_analysis_data.worker_thread_data[i].thread_id        = i;
-      fbk_analysis_data.worker_thread_data[i].job_queue        = &fbk_analysis_data.job_queue;
-      fbk_analysis_data.worker_thread_data[i].analysis_allowed = fbk_analysis_data.analysis_active;
+      fbk_analysis_data.worker_thread_data[i].thread_id      = i;
+      fbk_analysis_data.worker_thread_data[i].job_queue      = &fbk_analysis_data.job_queue;
+      fbk_analysis_data.worker_thread_data[i].analysis_state = &fbk_analysis_data.analysis_state;
       pthread_create(&fbk_analysis_data.worker_thread_data[i].worker_thread, NULL, worker_thread_f, &fbk_analysis_data.worker_thread_data[i]);
     }
   }
