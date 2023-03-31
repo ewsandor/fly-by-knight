@@ -43,6 +43,8 @@ typedef struct
 {
   /* Lock for accessing the queue */
   fbk_mutex_t lock;
+  /* Condition when new job is available*/
+  pthread_cond_t new_job_available;
 
   /* Number of queued jobs */
   fbk_analysis_job_count_t job_count;
@@ -60,6 +62,9 @@ typedef struct
 {
   /*Identifier for this worker thread */
   unsigned int thread_id;
+
+  /* Pointer to job queue associated with this worker thread */
+  fbk_analysis_job_queue_s *job_queue;
 
   /* True if analysis is allowed, else thread should stop analysis ASAP */
   bool analysis_allowed;
