@@ -4,21 +4,13 @@
  Edward Sandor
  January 2021
  
- Gama analysis for Fly by Knight
+ Core game analysis for Fly by Knight
 */
 
-#ifndef _FLY_BY_KNIGHT_ANALYSIS_H_
-#define _FLY_BY_KNIGHT_ANALYSIS_H_
+#ifndef __FLY_BY_KNIGHT_ANALYSIS_H__
+#define __FLY_BY_KNIGHT_ANALYSIS_H__
 
 #include "fly_by_knight_types.h"
-
-/**
- * @brief Initialized Fly by Knight analysis data
- * 
- * @param fbk 
- * @return true if successful
- */
-bool fbk_init_analysis_data(fbk_instance_s *fbk);
 
 /**
  * @brief Score game position for white or black advantage
@@ -29,6 +21,21 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk);
 fbk_score_t fbk_score_game(const ftk_game_s * game);
 
 /**
+ * @brief Evaluates node represented by given game
+ * 
+ * @param node Node to evaluate
+ * @param game Game representing this node (Assumes move is already applied)
+ */
+void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
+
+/**
+ * @brief Clears evaluation and deletes all child nodes
+ * 
+ * @param node 
+ */
+void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node);
+
+/**
  * @brief Evaluates all children of node
  * 
  * @param node 
@@ -36,11 +43,4 @@ fbk_score_t fbk_score_game(const ftk_game_s * game);
  */
 void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_s game);
 
-/**
- * @brief Updates the configured number of worker threads
- * 
- * @param count new number of worker threads to allow
-*/
-void fbk_update_worker_thread_count(unsigned int count);
-
-#endif //_FLY_BY_KNIGHT_ANALYSIS_H_
+#endif //__FLY_BY_KNIGHT_ANALYSIS_H__

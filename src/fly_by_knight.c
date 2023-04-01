@@ -20,6 +20,7 @@
 #include <farewell_to_king_strings.h>
 
 #include "fly_by_knight_analysis.h"
+#include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"

@@ -7,8 +7,8 @@
  Move Tree manipulation for Fly by Knight
 */
 
-#ifndef _FLY_BY_KNIGHT_MOVE_TREE_H_
-#define _FLY_BY_KNIGHT_MOVE_TREE_H_
+#ifndef __FLY_BY_KNIGHT_MOVE_TREE_H__
+#define __FLY_BY_KNIGHT_MOVE_TREE_H__
 
 #include "fly_by_knight_types.h"
 
@@ -45,21 +45,6 @@ bool fbk_apply_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
  * @return     True if successful
  */
 bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
-
-/**
- * @brief Evaluates node represented by given game
- * 
- * @param node Node to evaluate
- * @param game Game representing this node (Assumes move is already applied)
- */
-void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
-
-/**
- * @brief Clears evaluation and deletes all child nodes
- * 
- * @param node 
- */
-void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node);
 
 /**
  * @brief Returns child node for given move, NULL if no child node for move or current node is not evaluated

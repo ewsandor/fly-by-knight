@@ -16,7 +16,6 @@
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
 
-
 /**
  * @brief Initializes node with given move.  If NULL move passed, 
  * 
@@ -105,86 +104,6 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
   result = ftk_move_backward_quick(game, &move);
 
   return (FTK_SUCCESS == result);
-}
-
-/**
- * @brief Evaluates node represented by given game
- * 
- * @param node Node to evaluate
- * @param game Game representing this node (Assumes move is already applied)
- */
-void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
-{
-  unsigned int i;
-  bool evaluated_now = false;
-  ftk_move_list_s move_list;
-
-  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-
-  if(false == node->evaluated)
-  {
-    ftk_update_board_masks(game);
-    /* Score position, compound == base as no child nodes evaluated */
-    node->base_score = fbk_score_game(game);
-    node->compound_score = node->base_score;
-
-    /* Init child nodes */
-    ftk_get_move_list(game, &move_list);
-    node->child_count = move_list.count;
-
-    if(node->child_count > 0)
-    {
-      node->child = malloc(node->child_count*sizeof(fbk_move_tree_node_s));
-
-      for(i = 0; i < node->child_count; i++)
-      {
-        fbk_init_move_tree_node(&node->child[i], node, &move_list.move[i]);
-      }
-    }
-    /* else - mate in X logic? */
-
-    evaluated_now = true;
-    node->evaluated = true;
-  }
-
-  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
-
-  if(evaluated_now)
-  {
-    /* Cleanup if evaluated in this call, else evaluated previously */
-    ftk_delete_move_list(&move_list);
-  }
-}
-
-/**
- * @brief Clears evaluation and deletes all child nodes
- * 
- * @param node 
- */
-void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
-{
-  unsigned int i;
-
-  FBK_ASSERT_MSG(node != NULL, "Null node passed");
-
-  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-
-  node->evaluated = false;
-  node->base_score = 0;
-  node->compound_score = 0;
-
-  if(node->evaluated)
-  {
-    for(i = 0; i < node->child_count; i++)
-    {
-      fbk_delete_move_tree_node(&node->child[i]);
-    }
-
-    node->child_count = 0;
-    free(node->child);
-  }
-
-  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }
 
 /**
