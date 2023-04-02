@@ -19,7 +19,7 @@ static void worker_thread_analysis_state_cleanup(void *arg)
 {
   FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
   fbk_analysis_state_s *analysis_state = (fbk_analysis_state_s *) arg;
-  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %lu releasing analysis state mutex for thread cancellation.", pthread_self());
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread 0x%lx releasing analysis state mutex for thread cancellation.", pthread_self());
   fbk_mutex_unlock(&analysis_state->lock);
 }
 
@@ -30,7 +30,7 @@ static void wait_for_analysis_start(fbk_analysis_state_s *analysis_state)
     pthread_cleanup_push(worker_thread_analysis_state_cleanup, &analysis_state->lock);
     while(!analysis_state->analysis_active)
     {
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Thread %lu waiting for analysis to start.", pthread_self());
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Thread 0x%lx waiting for analysis to start.", pthread_self());
       FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_state->analysis_started_cond, &analysis_state->lock),
         "Failed Waiting for analysis started condition.");
     }
@@ -48,7 +48,7 @@ static void * worker_manager_thread_f(void * arg)
   FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
   fbk_analysis_data_s *analysis_data = (fbk_analysis_data_s *) arg;
 
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting worker thread manager with ID %lu.", pthread_self());
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting worker thread manager with ID 0x%lx.", pthread_self());
 
   while(1)
   {
@@ -138,7 +138,7 @@ static void * worker_thread_f(void * arg)
   FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
   fbk_worker_thread_data_s *worker_thread_data = (fbk_worker_thread_data_s *) arg;
 
-  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u started with ID %lu.", worker_thread_data->thread_index, pthread_self());
+  FBK_DEBUG_MSG(FBK_DEBUG_MED, "Worker thread %u started with ID 0x%lx.", worker_thread_data->thread_index, pthread_self());
 
   pthread_cleanup_push(worker_thread_cleanup, worker_thread_data);
 
@@ -151,7 +151,7 @@ static void * worker_thread_f(void * arg)
     pthread_cleanup_push(worker_thread_job_queue_cleanup, worker_thread_data);
     while(worker_thread_data->job_queue->next_job == NULL)
     {
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u waiting for job.", worker_thread_data->thread_index);
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread 0x%u waiting for job.", worker_thread_data->thread_index);
       FBK_ASSERT_MSG(0 == pthread_cond_wait(&worker_thread_data->job_queue->new_job_available, &worker_thread_data->job_queue->lock),
         "Failed Waiting for new data available condition.");
     }
