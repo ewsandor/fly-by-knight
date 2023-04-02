@@ -17,9 +17,9 @@ Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol w
 
 ### Dependencies
 - Farewell to King Chess Library: https://git.sandorlaboratories.com/edward/farewell-to-king.
-- POSIX for threading.
+- POSIX Thread (pthread) Library.
 
-### Building
+### Building and Running
 ```
 $ cd fly-by-knight
 $ mkdir build
@@ -27,12 +27,7 @@ $ cd build
 $ cmake ..
 $ make
 # make install
-```
-
-### Running
-```
-$ cd fly-by-knight/build/src/
-$ ./fly_by_knight
+$ flybyknight
 ```
 
 ### GUI
