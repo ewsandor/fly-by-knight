@@ -45,6 +45,8 @@ typedef struct
   fbk_mutex_t lock;
   /* Condition when new job is available*/
   pthread_cond_t new_job_available;
+  /* Condition when new job is available*/
+  pthread_cond_t job_claimed;
 
   /* Number of queued jobs */
   fbk_analysis_job_count_t job_count;
@@ -71,8 +73,8 @@ typedef struct
 /* Data for worker threads */
 typedef struct 
 {
-  /*Identifier for this worker thread */
-  unsigned int thread_id;
+  /*Index for this worker thread */
+  unsigned int thread_index;
 
   /* Pointer to job queue associated with this worker thread */
   fbk_analysis_job_queue_s *job_queue;
@@ -115,6 +117,9 @@ typedef struct
 
   /* Analysis statistics */
   fbk_analysis_stats_s      analysis_stats;
+
+  /* Manager thread to manage analysis worker threads */
+  pthread_t                 worker_manager_thread;
 
   /* Worker thread count */
   fbk_worker_thread_count_t worker_thread_count;

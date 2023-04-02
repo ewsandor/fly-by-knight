@@ -194,5 +194,6 @@ void *fly_by_knight_io_thread(void *fbk_instance)
 
   fbk_exit(0);
 
+  FBK_NO_RETURN
   return NULL;
 }

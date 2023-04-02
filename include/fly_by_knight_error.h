@@ -33,5 +33,6 @@
 #endif
 
 #define FBK_FATAL_MSG(msg, ...)             FBK_FATAL_MSG_CODE((128+SIGABRT), msg, ##__VA_ARGS__)
+#define FBK_NO_RETURN                       FBK_FATAL_MSG_CODE((128+SIGABRT), "This function should never return.")
 
 #endif //_FLY_BY_KNIGHT_ERROR_H_
