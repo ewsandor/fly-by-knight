@@ -162,8 +162,10 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("go", input) == 0)
   {
-    //TODO start analysis and decision maker 
     fbk->protocol_data.xboard.play_as = fbk->game.turn;
+
+    //TODO start analysis and decision maker 
+    fbk_start_analysis(fbk->move_tree.current);
   }
   else if(strcmp("playother", input) == 0)
   {

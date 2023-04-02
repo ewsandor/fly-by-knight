@@ -63,10 +63,13 @@ typedef uint_fast16_t fbk_worker_thread_count_t;
 typedef struct 
 {
   /* Analysis check protection*/
-  fbk_mutex_t    lock;
-  pthread_cond_t analysis_started_cond;
+  fbk_mutex_t           lock;
+  pthread_cond_t        analysis_started_cond;
   /* Indicates analysis has been requested and is active */
-  bool           analysis_active;
+  bool                  analysis_active;
+
+  /* Root node for analysis */
+  fbk_move_tree_node_s *root_node;
 
 } fbk_analysis_state_s;
 
@@ -125,7 +128,7 @@ typedef struct
   fbk_worker_thread_count_t worker_thread_count;
 
   /* Array of worker threads */
-  fbk_worker_thread_data_s  *worker_thread_data;
+  fbk_worker_thread_data_s  **worker_thread_data;
 
   /* Queue of analysis jobs for worker threads*/
   fbk_analysis_job_queue_s  job_queue;
@@ -148,5 +151,16 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk);
  * @param count new number of worker threads to allow
 */
 void fbk_update_worker_thread_count(unsigned int count);
+
+/**
+ * @brief Starts analysis at given move tree node
+ * @param node Move tree node of interest
+*/
+void fbk_start_analysis(fbk_move_tree_node_s * node);
+
+/**
+ * @brief Stops analysis and blocks until all analysis has stopped
+*/
+void fbk_stop_analysis();
 
 #endif /* __FLY_BY_KNIGHT_ANALYSIS_WORKER_H__ */

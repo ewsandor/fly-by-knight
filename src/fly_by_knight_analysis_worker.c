@@ -8,6 +8,7 @@
 */
 
 #include <string.h>
+#include <unistd.h>
 
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
@@ -38,6 +39,37 @@ static void wait_for_analysis_start(fbk_analysis_state_s *analysis_state)
     fbk_mutex_unlock(&analysis_state->lock);
 }
 
+/**
+ * @brief Logic to add job to back of job queue.  Assumed caller has lock.
+ * @param queue   queue to append
+ * @param new_job new job to append
+*/
+void push_job_to_job_queue(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * new_job)
+{
+
+  FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
+  FBK_ASSERT_MSG(new_job != NULL, "NULL job passed.");
+
+  /* Ensure end of queue is NULL */
+  new_job->next_job = NULL;
+
+  if(queue->job_count > 0)
+  {
+    /* Add to linked list */
+    queue->last_job->next_job = new_job;
+    queue->last_job = new_job;
+  }
+  else
+  {
+    /* Init root job */
+    queue->next_job = new_job;
+    queue->last_job = new_job;
+  }
+
+  queue->job_count++;
+  FBK_ASSERT_MSG(0 == pthread_cond_signal(&queue->new_job_available), "Failed to signal new job is available.");
+}
+
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
 /**
  * @brief Main thread for worker manager thread
@@ -55,16 +87,19 @@ static void * worker_manager_thread_f(void * arg)
     wait_for_analysis_start(&analysis_data->analysis_state);
 
     fbk_mutex_lock(&analysis_data->job_queue.lock);
-    while(analysis_data->job_queue.job_count > WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
+    while(analysis_data->job_queue.job_count >= WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
     {
       /* Wait for some jobs to be claimed before queueing new jobs */
       FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_data->job_queue.job_claimed, &analysis_data->job_queue.lock),
         "Failed to check condition that a job has been claimed");
     }
 
-    /* Add job to queue here */
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Pushing job to job queue.");
+    fbk_analysis_job_queue_node_s *new_job = malloc(sizeof(fbk_analysis_job_queue_node_s));
+    FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
+    /* Fill job info here... */
+    push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
-    FBK_ASSERT_MSG(0 == pthread_cond_signal(&analysis_data->job_queue.new_job_available), "Failed to signal new job is available.");
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
   }
 
@@ -155,14 +190,15 @@ static void * worker_thread_f(void * arg)
       FBK_ASSERT_MSG(0 == pthread_cond_wait(&worker_thread_data->job_queue->new_job_available, &worker_thread_data->job_queue->lock),
         "Failed Waiting for new data available condition.");
     }
-    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-    pthread_cleanup_pop(0);
 
     /* Claim job and set pthread cancellation cleanup callback */
+
+    pthread_cleanup_pop(0);
     fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
     /* Process job */
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job.", worker_thread_data->thread_index);
+    sleep(1); /* Simulate job */
     
     /* Report job done or cancelled and remove pthread cancellation callback */
   }
@@ -196,19 +232,22 @@ void fbk_update_worker_thread_count(unsigned int count)
     /* Spawn worker threads */
 
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Allocating memory for new worker thread(s).");
-    /* Allocate additional worker thread data entries */
-    fbk_analysis_data.worker_thread_data = realloc(fbk_analysis_data.worker_thread_data, sizeof(fbk_worker_thread_data_s)*fbk_analysis_data.fbk->config.worker_threads);
-    FBK_ASSERT_MSG(fbk_analysis_data.worker_thread_data != NULL, "Realloc for %u worker threads failed.\n", fbk_analysis_data.fbk->config.worker_threads);
+    /* Allocate additional worker thread data pointers */
+    fbk_analysis_data.worker_thread_data = realloc(fbk_analysis_data.worker_thread_data, sizeof(fbk_worker_thread_data_s*)*fbk_analysis_data.fbk->config.worker_threads);
+    FBK_ASSERT_MSG(fbk_analysis_data.worker_thread_data != NULL, "Realloc for %u worker thread pointers failed.\n", fbk_analysis_data.fbk->config.worker_threads);
 
     for(unsigned int i = fbk_analysis_data.worker_thread_count; i < fbk_analysis_data.fbk->config.worker_threads; i++)
     {
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Creating worker thread %u.", i);
       /* Configure each new entry */
-      memset(&fbk_analysis_data.worker_thread_data[i], 0, sizeof(fbk_worker_thread_data_s));
-      fbk_analysis_data.worker_thread_data[i].thread_index      = i;
-      fbk_analysis_data.worker_thread_data[i].job_queue      = &fbk_analysis_data.job_queue;
-      fbk_analysis_data.worker_thread_data[i].analysis_state = &fbk_analysis_data.analysis_state;
-      FBK_ASSERT_MSG(0 == pthread_create(&fbk_analysis_data.worker_thread_data[i].worker_thread, NULL, worker_thread_f, &fbk_analysis_data.worker_thread_data[i]),
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Creating worker thread %u.", i);
+      /* Allocate thread data */
+      fbk_analysis_data.worker_thread_data[i]=calloc(1, sizeof(fbk_worker_thread_data_s));
+      FBK_ASSERT_MSG(fbk_analysis_data.worker_thread_data[i] != NULL, "Alloc for worker threads %u failed.\n", i);
+      /* Configured thread data */
+      fbk_analysis_data.worker_thread_data[i]->thread_index   = i;
+      fbk_analysis_data.worker_thread_data[i]->job_queue      = &fbk_analysis_data.job_queue;
+      fbk_analysis_data.worker_thread_data[i]->analysis_state = &fbk_analysis_data.analysis_state;
+      FBK_ASSERT_MSG(0 == pthread_create(&fbk_analysis_data.worker_thread_data[i]->worker_thread, NULL, worker_thread_f, fbk_analysis_data.worker_thread_data[i]),
         "Failed to create worker thread %u", i);
     }
   }
@@ -220,15 +259,16 @@ void fbk_update_worker_thread_count(unsigned int count)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Cancelling worker thread %u.", i);
       /* Trigger cancellation for all excess worker threads */
-      FBK_ASSERT_MSG(0 == pthread_cancel(fbk_analysis_data.worker_thread_data[i].worker_thread),
+      FBK_ASSERT_MSG(0 == pthread_cancel(fbk_analysis_data.worker_thread_data[i]->worker_thread),
         "Failed to trigger cancel for worker thread %u", i);
     }
     for(unsigned int i = fbk_analysis_data.fbk->config.worker_threads; i < fbk_analysis_data.worker_thread_count; i++)
     {
       /* Wait for all excess worker threads to finish cancellation */
-      FBK_ASSERT_MSG(0 == pthread_join(fbk_analysis_data.worker_thread_data[i].worker_thread, NULL), 
+      FBK_ASSERT_MSG(0 == pthread_join(fbk_analysis_data.worker_thread_data[i]->worker_thread, NULL), 
                     "Failed to join worker thread %u.", i);
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u cancelled.", i);
+      free(fbk_analysis_data.worker_thread_data[i]);
     }
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Releasing memory for excess worker thread(s).");
     fbk_analysis_data.worker_thread_data = realloc(fbk_analysis_data.worker_thread_data, sizeof(fbk_worker_thread_data_s)*fbk_analysis_data.fbk->config.worker_threads);
@@ -236,4 +276,21 @@ void fbk_update_worker_thread_count(unsigned int count)
   }
 
   fbk_analysis_data.worker_thread_count = fbk_analysis_data.fbk->config.worker_threads;
+}
+
+void fbk_start_analysis(fbk_move_tree_node_s * node)
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+  fbk_analysis_data.analysis_state.analysis_active = true;
+  fbk_analysis_data.analysis_state.root_node       = node;
+  pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_started_cond);
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
+}
+
+void fbk_stop_analysis()
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+  fbk_analysis_data.analysis_state.analysis_active = false;
+  fbk_analysis_data.analysis_state.root_node       = NULL;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 }
