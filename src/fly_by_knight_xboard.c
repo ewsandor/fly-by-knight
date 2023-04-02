@@ -59,7 +59,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature analyze=0\n"
                  "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
                  "feature variants=\"normal\"\n"
-                 "feature colors=1\n"
+                 "feature colors=0\n"
                  "feature ics=0\n"
                  "feature name=1\n"
                  "feature pause=0\n"
@@ -157,21 +157,17 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("force", input) == 0)
   {
-    //TODO stop ongoing analysis, reset decision maker
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
   }
   else if(strcmp("go", input) == 0)
   {
     fbk->protocol_data.xboard.play_as = fbk->game.turn;
-
-    //TODO start analysis and decision maker 
-    fbk_start_analysis(fbk->move_tree.current);
   }
   else if(strcmp("playother", input) == 0)
   {
-    //TODO start analysis if pondering enabled
-    fbk->protocol_data.xboard.play_as = (FTK_COLOR_WHITE == fbk->game.turn)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
+   fbk->protocol_data.xboard.play_as = (FTK_COLOR_WHITE == fbk->game.turn)?FTK_COLOR_BLACK:FTK_COLOR_WHITE;
   }
+  /* Disable 'color' support for now, deprecated in xboard protocol 2 and requires the move tree to be rebuilt if engine is playing non-standard rules (e.g. black goes first)
   else if(strcmp("white", input) == 0)
   {
     //stop clock
@@ -183,7 +179,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
     //stop clock
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
     fbk->game.turn                    = FTK_COLOR_WHITE;
-  }
+  }*/
   else if(strcmp("?", input) == 0)
   {
     //Force decision maker
@@ -206,7 +202,6 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("hard", input) == 0)
   {
-    // TODO start analysis
     fbk->protocol_data.xboard.ponder = true;
   }
   else if(strncmp("cores", input, 5) == 0)
@@ -409,6 +404,19 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   return input_handled;
 }
 
+void manage_xboard_analysis(fbk_instance_s * fbk)
+{
+  if( (FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode) &&
+      ((fbk->game.turn == fbk->protocol_data.xboard.play_as) || fbk->protocol_data.xboard.ponder))
+  {
+    fbk_start_analysis(fbk->move_tree.current);
+  }
+  else
+  {
+    fbk_stop_analysis();
+  }
+}
+
 /**
  * @brief Process input string with xboard protocol
  * 
@@ -439,28 +447,35 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
   }
 
+  manage_xboard_analysis(fbk);
+
   game_result = ftk_check_for_game_end(&fbk->game);
   if(FTK_END_NOT_OVER == game_result)
   {
     fbk->protocol_data.xboard.result_reported = false;
 
-    /* Temporary logic to return random move */
-    if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
+    if(FBK_XBOARD_MODE_NORMAL ==fbk->protocol_data.xboard.mode)
     {
-      ftk_move_s move;
-      /* Null move by default */
-      char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
-
-      move = fbk_get_best_move(fbk);
-
-      if(FTK_MOVE_VALID(move))
+      /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
+      if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
       {
-        /* Commit move */
-        FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
-        ftk_move_to_xboard_string(&move, move_output);
-      }
+        ftk_move_s move;
+        /* Null move by default */
+        char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
 
-      FBK_OUTPUT_MSG("move %s\n", move_output);
+        move = fbk_get_best_move(fbk);
+
+        if(FTK_MOVE_VALID(move))
+        {
+          /* Commit move */
+          FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+          ftk_move_to_xboard_string(&move, move_output);
+        }
+
+        FBK_OUTPUT_MSG("move %s\n", move_output);
+
+        manage_xboard_analysis(fbk);
+      }
     }
   }
   else if(false == fbk->protocol_data.xboard.result_reported)
@@ -492,7 +507,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 
     fbk->protocol_data.xboard.result_reported = true;
   }
-  
+
 
   return input_handled;
 }
