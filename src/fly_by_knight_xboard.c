@@ -413,7 +413,7 @@ void manage_xboard_analysis(fbk_instance_s * fbk)
   }
   else
   {
-    fbk_stop_analysis();
+    fbk_stop_analysis(false);
   }
 }
 

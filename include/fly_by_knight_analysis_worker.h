@@ -49,9 +49,11 @@ typedef struct
   pthread_cond_t new_job_available;
   /* Condition when new job is available*/
   pthread_cond_t job_claimed;
+  /* Condition when new job processing is stopped (either successfully or in failure) */
+  pthread_cond_t job_ended;
 
   /* Number of queued jobs */
-  fbk_analysis_job_count_t job_count;
+  fbk_analysis_job_count_t       job_count;
   /* Root job of queue */
   fbk_analysis_job_queue_node_s *next_job;
   /* Back of job queue*/
@@ -165,7 +167,8 @@ void fbk_start_analysis(fbk_move_tree_node_s * node);
 
 /**
  * @brief Stops analysis and blocks until all analysis has stopped
+ * @param clear_pending_jobs option to clear the job queue after stopping
 */
-void fbk_stop_analysis();
+void fbk_stop_analysis(bool clear_pending_jobs);
 
 #endif /* __FLY_BY_KNIGHT_ANALYSIS_WORKER_H__ */

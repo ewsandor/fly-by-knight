@@ -145,6 +145,7 @@ static void job_finished(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queu
   fbk_mutex_lock(&queue->lock);
   FBK_ASSERT_MSG(queue->active_job_count > 0, "Unexpected for job to finish with no active jobs");
   queue->active_job_count--;
+  pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
 }
 
@@ -165,9 +166,38 @@ static void job_aborted(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue
   /* Put job back in queue */
   push_job_to_job_queue_front(queue, job);
   queue->active_job_count--;
+  pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
 }
 
+/**
+ * @brief Logic to clear pending jobs from job queue.
+ * @param queue queue to clear
+*/
+static void clear_job_queue(fbk_analysis_job_queue_s * queue)
+{
+  FBK_ASSERT_MSG(queue != NULL, "NULL job queue passed.");
+
+  fbk_mutex_lock(&queue->lock);
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Clearing job queue.");
+
+  FBK_ASSERT_MSG(0 == queue->active_job_count, "Attempting to clear job queue while %lu jobs are still active", queue->active_job_count);
+
+  fbk_analysis_job_queue_node_s * job = queue->next_job;
+
+  while(NULL != job)
+  {
+    fbk_analysis_job_queue_node_s * job_tmp = job->next_job;
+    free(job);
+    job = job_tmp;
+    queue->job_count--;
+  }
+  FBK_ASSERT_MSG(0 == queue->job_count, "Unexpected number (%lu) of jobs remaining after clearing queue.", queue->job_count);
+  queue->next_job = NULL;
+  queue->last_job = NULL;
+  pthread_cond_broadcast(&queue->job_claimed);
+  fbk_mutex_unlock(&queue->lock);
+}
 
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
 /**
@@ -237,6 +267,7 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
     FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.job_queue.lock), "Failed to initialize job queue lock");
     FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.job_queue.new_job_available, NULL), "Failed to initialize job queue condition");
     FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.job_queue.job_claimed, NULL), "Failed to initialize job claimed condition");
+    FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.job_queue.job_ended, NULL),   "Failed to initialize job ended condition");
 
     /* Initialize stats */
     FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_stats.lock), "Failed to initialize analysis stats lock");
@@ -412,16 +443,42 @@ void fbk_update_worker_thread_count(unsigned int count)
 void fbk_start_analysis(fbk_move_tree_node_s * node)
 {
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+
+  if(fbk_analysis_data.analysis_state.root_node != node)
+  {
+    fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
+    fbk_stop_analysis(true);
+    fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+  }
+
   fbk_analysis_data.analysis_state.analysis_active = true;
   fbk_analysis_data.analysis_state.root_node       = node;
   pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_started_cond);
+
   fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 }
 
-void fbk_stop_analysis()
+void fbk_stop_analysis(bool clear_pending_jobs)
 {
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+  /* Disable analysis */
   fbk_analysis_data.analysis_state.analysis_active = false;
   fbk_analysis_data.analysis_state.root_node       = NULL;
   fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
+  fbk_mutex_lock(&fbk_analysis_data.job_queue.lock);
+  /* Block for all analysis to stop */
+  while(fbk_analysis_data.job_queue.active_job_count > 0)
+  {
+    pthread_cond_wait(&fbk_analysis_data.job_queue.job_ended, &fbk_analysis_data.job_queue.lock);
+  }
+  fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");
+
+  if(clear_pending_jobs)
+  {
+    clear_job_queue(&fbk_analysis_data.job_queue);
+  }
 }
