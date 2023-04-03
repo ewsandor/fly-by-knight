@@ -256,7 +256,6 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
     ftk_update_board_masks(game);
     /* Score position, compound == base as no child nodes evaluated */
     node->base_score = fbk_score_game(game);
-    node->compound_score = node->base_score;
 
     /* Init child nodes */
     ftk_move_list_s move_list = {0};
@@ -296,7 +295,6 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
 
   node->evaluated = false;
   node->base_score = 0;
-  node->compound_score = 0;
 
   if(node->evaluated)
   {

@@ -53,8 +53,8 @@ struct fbk_move_tree_node_struct{
   bool                        evaluated;
   /* Score considering this node alone */
   fbk_score_t                 base_score;
-  /* Score considering this node and child moves */
-  fbk_score_t                 compound_score;
+
+  /* TODO - Add best path info */
 
   /* Parent node pointer, NULL if root node */
   fbk_move_tree_node_s       *parent;

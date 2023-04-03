@@ -229,6 +229,7 @@ static void * worker_manager_thread_f(void * arg)
     FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
     /* Fill job info here... */
     new_job->job.job_id = job_id++;
+    new_job->job.game   = &analysis_data->analysis_state.game;
     push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
@@ -440,8 +441,11 @@ void fbk_update_worker_thread_count(unsigned int count)
   fbk_analysis_data.worker_thread_count = fbk_analysis_data.fbk->config.worker_threads;
 }
 
-void fbk_start_analysis(fbk_move_tree_node_s * node)
+void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
 {
+  FBK_ASSERT_MSG(game != NULL, "NULL game passed.");
+  FBK_ASSERT_MSG(node != NULL, "NULL node passed.");
+
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
 
   if(fbk_analysis_data.analysis_state.root_node != node)
@@ -451,8 +455,9 @@ void fbk_start_analysis(fbk_move_tree_node_s * node)
     fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
   }
 
-  fbk_analysis_data.analysis_state.analysis_active = true;
-  fbk_analysis_data.analysis_state.root_node       = node;
+  fbk_analysis_data.analysis_state.analysis_active =  true;
+  fbk_analysis_data.analysis_state.root_node       =  node;
+  fbk_analysis_data.analysis_state.game            = *game;
   pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_started_cond);
 
   fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);

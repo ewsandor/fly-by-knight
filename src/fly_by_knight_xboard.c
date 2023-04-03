@@ -409,7 +409,7 @@ void manage_xboard_analysis(fbk_instance_s * fbk)
   if( (FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode) &&
       ((fbk->game.turn == fbk->protocol_data.xboard.play_as) || fbk->protocol_data.xboard.ponder))
   {
-    fbk_start_analysis(fbk->move_tree.current);
+    fbk_start_analysis(&fbk->game, fbk->move_tree.current);
   }
   else
   {

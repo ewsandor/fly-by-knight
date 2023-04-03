@@ -17,6 +17,8 @@ typedef struct
 {
   /* Identifier for job */
   unsigned int           job_id;
+  /* Reference game to begin analysis on */
+  const ftk_game_s      *game;
   /* Node to begin analysis on */
   fbk_move_tree_node_s * node;
   /* Maximum depth to search */
@@ -77,6 +79,8 @@ typedef struct
 
   /* Root node for analysis */
   fbk_move_tree_node_s *root_node;
+  /* Reference game for analysis */
+  ftk_game_s            game;
 
 } fbk_analysis_state_s;
 
@@ -163,7 +167,7 @@ void fbk_update_worker_thread_count(unsigned int count);
  * @brief Starts analysis at given move tree node
  * @param node Move tree node of interest
 */
-void fbk_start_analysis(fbk_move_tree_node_s * node);
+void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node);
 
 /**
  * @brief Stops analysis and blocks until all analysis has stopped
