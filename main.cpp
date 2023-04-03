@@ -48,7 +48,11 @@ void *inputQueuer(void*){
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.3.5\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
+	handleOutput("feature myname=\"Fly By Knight 0.4.1"
+#ifdef FBK_DEBUG_BUILD
+" <debug "__DATE__ " " __TIME__">"
+#endif
+	"\" sigint=0 sigterm=0 ping=1 time=0 colors=0");
 
 	#ifdef BOOST_THREAD_LIBRARY
 	boost::thread inputQueuerThread(inputQueuer);
