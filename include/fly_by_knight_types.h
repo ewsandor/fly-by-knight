@@ -25,6 +25,11 @@
 typedef pthread_mutex_t fbk_mutex_t;
 
 /**
+ * @brief Type to indicate thread index through Fly by Knight
+*/
+typedef unsigned int fbk_thread_index_t;
+
+/**
  * @brief Type for scoring games in millipawns.  + White advantage, - Black advantage
  * 
  */

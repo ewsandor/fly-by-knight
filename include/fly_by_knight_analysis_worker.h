@@ -12,6 +12,31 @@
 
 #include "fly_by_knight_types.h"
 
+typedef enum
+{
+  FBK_ANALYSIS_JOB_COMPLETE,
+  FBK_ANALYSIS_JOB_ABORTED,
+
+} fbk_analysis_job_result_e;
+
+/* Data to be returned by job processing logic */
+typedef struct 
+{
+  fbk_analysis_job_result_e result;
+
+} fbk_analysis_job_result_s;
+
+/* Data to be passed between recursive calls of job processing logic */
+typedef struct 
+{
+  /* Thread index processing this job for logging */
+  fbk_thread_index_t thread_index;
+
+  /* Indicates if this is the top call or a recursive call */
+  bool               top_call;
+
+} fbk_analysis_job_context_s;
+
 /* Job details for worker thread to analyze game */
 typedef struct 
 {
@@ -88,7 +113,7 @@ typedef struct
 typedef struct 
 {
   /*Index for this worker thread */
-  unsigned int thread_index;
+  fbk_thread_index_t        thread_index;
 
   /* Pointer to job queue associated with this worker thread */
   fbk_analysis_job_queue_s *job_queue;

@@ -341,6 +341,39 @@ static void worker_thread_job_cleanup_f(void *arg)
   job_aborted(job_cleanup->queue, job_cleanup->job);
 }
 
+/**
+ * @brief Initialization logic for job context to be called before every process job
+*/
+static void init_job_context(fbk_analysis_job_context_s * context, fbk_thread_index_t thread_index)
+{
+  FBK_ASSERT_MSG(context != NULL,    "NULL job context passed.");
+  memset(context, 0, sizeof(fbk_analysis_job_context_s));
+  context->thread_index = thread_index;
+  context->top_call     = true;
+}
+
+/**
+ * @brief Main analysis job processing function
+ * @param job    job configuration and details
+ * @param result output structure recording job result
+*/
+static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context_s * context, fbk_analysis_job_result_s * result)
+{
+  FBK_ASSERT_MSG(job != NULL,     "NULL job passed.");
+  FBK_ASSERT_MSG(context != NULL, "NULL job context passed.");
+  FBK_ASSERT_MSG(result != NULL,  "NULL result buffer passed.");
+
+  if(context->top_call)
+  {
+    /* Init result */
+    memset(result, 0, sizeof(fbk_analysis_job_result_s));
+    result->result = FBK_ANALYSIS_JOB_COMPLETE;
+  }
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job %u.", context->thread_index, job->job_id);
+  sleep(1); /* Simulate job */
+}
+
 static void * worker_thread_f(void * arg)
 {
   FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
@@ -380,12 +413,25 @@ static void * worker_thread_f(void * arg)
     pthread_cleanup_push(worker_thread_job_cleanup_f, &worker_thread_job_cleanup);
 
     /* Process job */
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job %u.", worker_thread_data->thread_index, job->job.job_id);
-    sleep(1); /* Simulate job */
+    fbk_analysis_job_context_s job_context;
+    fbk_analysis_job_result_s  job_result;
+    init_job_context(&job_context, worker_thread_data->thread_index);
+    process_job(&job->job, &job_context, &job_result);
 
+    /* Disable PThread cancellation while cleaning up */
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    if(FBK_ANALYSIS_JOB_COMPLETE == job_result.result)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
+      job_finished(worker_thread_data->job_queue, job);
+    }
+    else
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u failed job %u with result %u.", worker_thread_data->thread_index, job->job.job_id, job_result.result);
+      job_aborted(worker_thread_data->job_queue, job);
+    }
     pthread_cleanup_pop(0);
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
-    job_finished(worker_thread_data->job_queue, job);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   }
 
   pthread_cleanup_pop(0);
@@ -438,8 +484,7 @@ void fbk_update_worker_thread_count(unsigned int count)
   }
   else if(fbk_analysis_data.fbk->config.worker_threads < fbk_analysis_data.worker_thread_count)
   {
-    /* Kill worker threads */
-
+    /* Kill excess worker threads */
     for(unsigned int i = fbk_analysis_data.fbk->config.worker_threads; i < fbk_analysis_data.worker_thread_count; i++)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Cancelling worker thread %u.", i);
@@ -492,7 +537,6 @@ void fbk_stop_analysis(bool clear_pending_jobs)
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
   /* Disable analysis */
   fbk_analysis_data.analysis_state.analysis_active = false;
-  fbk_analysis_data.analysis_state.root_node       = NULL;
   fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
