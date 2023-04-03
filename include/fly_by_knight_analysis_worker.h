@@ -15,6 +15,8 @@
 /* Job details for worker thread to analyze game */
 typedef struct 
 {
+  /* Identifier for job */
+  unsigned int           job_id;
   /* Node to begin analysis on */
   fbk_move_tree_node_s * node;
   /* Maximum depth to search */
@@ -54,6 +56,9 @@ typedef struct
   fbk_analysis_job_queue_node_s *next_job;
   /* Back of job queue*/
   fbk_analysis_job_queue_node_s *last_job;
+
+  /* Number of active jobs popped from the queue but not yet freed */
+  fbk_analysis_job_count_t active_job_count;
 
 } fbk_analysis_job_queue_s;
 

@@ -40,11 +40,11 @@ static void wait_for_analysis_start(fbk_analysis_state_s *analysis_state)
 }
 
 /**
- * @brief Logic to add job to back of job queue.  Assumed caller has lock.
+ * @brief Logic to add job to back of job queue.  Assumes caller has lock.
  * @param queue   queue to append
  * @param new_job new job to append
 */
-void push_job_to_job_queue(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * new_job)
+static void push_job_to_job_queue(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * new_job)
 {
 
   FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
@@ -70,6 +70,105 @@ void push_job_to_job_queue(fbk_analysis_job_queue_s * queue, fbk_analysis_job_qu
   FBK_ASSERT_MSG(0 == pthread_cond_signal(&queue->new_job_available), "Failed to signal new job is available.");
 }
 
+/**
+ * @brief Logic to add job to front of job queue.  Assumes caller has lock.
+ * @param queue   queue to append
+ * @param new_job new job to append
+*/
+static void push_job_to_job_queue_front(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * new_job)
+{
+  FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
+  FBK_ASSERT_MSG(new_job != NULL, "NULL job passed.");
+
+  /* Ensure end of queue is NULL */
+  new_job->next_job = NULL;
+
+  if(queue->job_count > 0)
+  {
+    /* Add to linked list */
+    new_job->next_job = queue->next_job;
+    queue->next_job = new_job;
+  }
+  else
+  {
+    /* Init root job */
+    queue->next_job = new_job;
+    queue->last_job = new_job;
+  }
+
+  queue->job_count++;
+  FBK_ASSERT_MSG(0 == pthread_cond_signal(&queue->new_job_available), "Failed to signal new job is available.");
+}
+
+/**
+ * @brief Returns the next job in the job queue or NULL if no jobs are available.  Assumes caller has lock.
+ * @param queue Job queue to pop from.
+*/
+static fbk_analysis_job_queue_node_s * pop_job_from_job_queue(fbk_analysis_job_queue_s * queue)
+{
+  fbk_analysis_job_queue_node_s * ret_val = NULL;
+
+  FBK_ASSERT_MSG(queue != NULL, "NULL job queue passed.");
+
+  if(queue->job_count > 0)
+  {
+    ret_val = queue->next_job;
+    queue->next_job = queue->next_job->next_job;
+
+    queue->job_count--;
+    queue->active_job_count++;
+
+    if(queue->job_count == 0)
+    {
+      FBK_ASSERT_MSG(ret_val == queue->last_job, "All jobs claimed, but returned job is not the last job");
+      FBK_ASSERT_MSG(NULL == queue->next_job, "All jobs claimed, but last job is not pointing to NULL");
+      queue->last_job = NULL;
+    }
+    
+    pthread_cond_signal(&queue->job_claimed);
+  }
+
+  return ret_val;
+}
+
+/**
+ * @brief Cleans up job after successfully processing
+ * @param queue   queue to book-keep
+ * @param job     job to cleanup
+*/
+static void job_finished(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * job)
+{
+  FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
+  FBK_ASSERT_MSG(job != NULL, "NULL job passed.");
+
+  free(job);
+  fbk_mutex_lock(&queue->lock);
+  FBK_ASSERT_MSG(queue->active_job_count > 0, "Unexpected for job to finish with no active jobs");
+  queue->active_job_count--;
+  fbk_mutex_unlock(&queue->lock);
+}
+
+/**
+ * @brief Requeue job if aborted
+ * @param queue   queue to requeue job to
+ * @param job     job to requeue
+*/
+static void job_aborted(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * job)
+{
+  FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
+  FBK_ASSERT_MSG(job != NULL, "NULL job passed.");
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Requeueing aborted job %u.", job->job.job_id);
+
+  fbk_mutex_lock(&queue->lock);
+  FBK_ASSERT_MSG(queue->active_job_count > 0, "Unexpected for job to abort with no active jobs");
+  /* Put job back in queue */
+  push_job_to_job_queue_front(queue, job);
+  queue->active_job_count--;
+  fbk_mutex_unlock(&queue->lock);
+}
+
+
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
 /**
  * @brief Main thread for worker manager thread
@@ -81,6 +180,7 @@ static void * worker_manager_thread_f(void * arg)
   fbk_analysis_data_s *analysis_data = (fbk_analysis_data_s *) arg;
 
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting worker thread manager with ID 0x%lx.", pthread_self());
+  unsigned int job_id = 0;
 
   while(1)
   {
@@ -98,6 +198,7 @@ static void * worker_manager_thread_f(void * arg)
     fbk_analysis_job_queue_node_s *new_job = malloc(sizeof(fbk_analysis_job_queue_node_s));
     FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
     /* Fill job info here... */
+    new_job->job.job_id = job_id++;
     push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
@@ -167,6 +268,24 @@ static void worker_thread_job_queue_cleanup(void *arg)
   fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
 }
 
+typedef struct
+{
+  unsigned int worker_thread_index;
+  fbk_analysis_job_queue_s      * queue;
+  fbk_analysis_job_queue_node_s * job;
+} worker_thread_job_cleanup_s;
+
+static void worker_thread_job_cleanup_f(void *arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL worker thread data passed.");
+  worker_thread_job_cleanup_s * job_cleanup = (worker_thread_job_cleanup_s *)arg;
+  FBK_ASSERT_MSG(job_cleanup->queue != NULL, "NULL job queue passed.");
+  FBK_ASSERT_MSG(job_cleanup->job   != NULL, "NULL job passed.");
+  
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u aborting active job %u.", job_cleanup->worker_thread_index, job_cleanup->job->job.job_id);
+
+  job_aborted(job_cleanup->queue, job_cleanup->job);
+}
 
 static void * worker_thread_f(void * arg)
 {
@@ -181,6 +300,7 @@ static void * worker_thread_f(void * arg)
   {
     wait_for_analysis_start(worker_thread_data->analysis_state);
 
+    fbk_analysis_job_queue_node_s * job = NULL;
     /* Claim an analysis job */
     fbk_mutex_lock(&worker_thread_data->job_queue->lock);
     pthread_cleanup_push(worker_thread_job_queue_cleanup, worker_thread_data);
@@ -192,15 +312,26 @@ static void * worker_thread_f(void * arg)
     }
 
     /* Claim job and set pthread cancellation cleanup callback */
-
+    job = pop_job_from_job_queue(worker_thread_data->job_queue);
+    FBK_ASSERT_MSG(NULL != job, "Failed to pop job from job queue");
     pthread_cleanup_pop(0);
     fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
+    
+    worker_thread_job_cleanup_s worker_thread_job_cleanup = 
+      {
+        .worker_thread_index = worker_thread_data->thread_index,
+        .queue               = worker_thread_data->job_queue,
+        .job                 = job,
+      };
+    pthread_cleanup_push(worker_thread_job_cleanup_f, &worker_thread_job_cleanup);
 
     /* Process job */
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job.", worker_thread_data->thread_index);
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job %u.", worker_thread_data->thread_index, job->job.job_id);
     sleep(1); /* Simulate job */
-    
-    /* Report job done or cancelled and remove pthread cancellation callback */
+
+    pthread_cleanup_pop(0);
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
+    job_finished(worker_thread_data->job_queue, job);
   }
 
   pthread_cleanup_pop(0);
