@@ -10,9 +10,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "fly_by_knight_analysis.h"
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
+#include "fly_by_knight_move_tree.h"
 
 fbk_analysis_data_s fbk_analysis_data = {0};
 
@@ -200,6 +202,7 @@ static void clear_job_queue(fbk_analysis_job_queue_s * queue)
 }
 
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
+#define WORKER_MANAGER_JOB_INITIAL_DEPTH 2
 /**
  * @brief Main thread for worker manager thread
  * @param arg pointer to main analysis data structure
@@ -215,24 +218,43 @@ static void * worker_manager_thread_f(void * arg)
   while(1)
   {
     wait_for_analysis_start(&analysis_data->analysis_state);
+    fbk_move_tree_node_s * node = analysis_data->analysis_state.root_node;
 
-    fbk_mutex_lock(&analysis_data->job_queue.lock);
-    while(analysis_data->job_queue.job_count >= WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
+    FBK_DEBUG_MSG(FBK_DEBUG_MED, "Evaluating current move tree node.");
+    fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game);
+
+    fbk_depth_t depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
+
+    while((node != NULL) && (node == analysis_data->analysis_state.root_node))
     {
-      /* Wait for some jobs to be claimed before queueing new jobs */
-      FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_data->job_queue.job_claimed, &analysis_data->job_queue.lock),
-        "Failed to check condition that a job has been claimed");
+      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing jobs with depth %u.", depth);
+      for(unsigned int i = 0; (node != NULL) && (node == analysis_data->analysis_state.root_node) && (i < node->child_count); i++)
+      {
+        wait_for_analysis_start(&analysis_data->analysis_state);
+
+        fbk_mutex_lock(&analysis_data->job_queue.lock);
+        while(analysis_data->job_queue.job_count >= WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
+        {
+          /* Wait for some jobs to be claimed before queueing new jobs */
+          FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_data->job_queue.job_claimed, &analysis_data->job_queue.lock),
+            "Failed to check condition that a job has been claimed");
+        }
+
+        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Pushing job to job queue.");
+        fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
+        FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
+        /* Fill job info here... */
+        new_job->job.job_id = job_id++;
+        new_job->job.game   = analysis_data->analysis_state.game;
+        new_job->job.node   = &node->child[i];
+        FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node %u", i);
+        new_job->job.depth  = depth;
+        push_job_to_job_queue(&analysis_data->job_queue, new_job);
+
+        fbk_mutex_unlock(&analysis_data->job_queue.lock);
+      }
+      depth++;
     }
-
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Pushing job to job queue.");
-    fbk_analysis_job_queue_node_s *new_job = malloc(sizeof(fbk_analysis_job_queue_node_s));
-    FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
-    /* Fill job info here... */
-    new_job->job.job_id = job_id++;
-    new_job->job.game   = &analysis_data->analysis_state.game;
-    push_job_to_job_queue(&analysis_data->job_queue, new_job);
-
-    fbk_mutex_unlock(&analysis_data->job_queue.lock);
   }
 
   FBK_NO_RETURN
@@ -455,6 +477,7 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
     fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
   }
 
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting analysis.");
   fbk_analysis_data.analysis_state.analysis_active =  true;
   fbk_analysis_data.analysis_state.root_node       =  node;
   fbk_analysis_data.analysis_state.game            = *game;

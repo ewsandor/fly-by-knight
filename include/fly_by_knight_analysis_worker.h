@@ -18,7 +18,7 @@ typedef struct
   /* Identifier for job */
   unsigned int           job_id;
   /* Reference game to begin analysis on */
-  const ftk_game_s      *game;
+  ftk_game_s             game;
   /* Node to begin analysis on */
   fbk_move_tree_node_s * node;
   /* Maximum depth to search */
