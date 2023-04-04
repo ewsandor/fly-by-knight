@@ -68,6 +68,7 @@ struct fbk_move_tree_node_struct{
   fbk_move_tree_node_count_t  child_count;
   /* Array of 'child_count' child nodes */
   fbk_move_tree_node_s       *child;
+  size_t                      child_compressed_size;
   void                       *child_compressed;
 };
 

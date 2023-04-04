@@ -389,6 +389,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     context->top_call = false;
   }
 
+  fbk_decompress_move_tree_node(job->node);
   ftk_game_s game = job->game;
   fbk_evaluate_move_tree_node(job->node, &game);
 
