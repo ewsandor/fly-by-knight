@@ -247,7 +247,7 @@ static void * worker_manager_thread_f(void * arg)
 
       if(i < node->child_count)
       {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u.", job_id, depth);
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %lu.", job_id, depth);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
         FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
         /* Fill job info here... */

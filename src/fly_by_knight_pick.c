@@ -67,8 +67,8 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
   for(i = 0; i < fbk->move_tree.current->child_count; i++)
   {
     FBK_ASSERT_MSG(true == fbk_mutex_lock(&fbk->move_tree.current->child[i].lock), "Failed to lock node mutex");
-    FBK_ASSERT_MSG(fbk->move_tree.current->child[i].evaluated, "Node %u not evaluated", i);
-    move_score = fbk->move_tree.current->child[i].base_score;
+    FBK_ASSERT_MSG(fbk->move_tree.current->child[i].analysis_data.evaluated, "Node %u not evaluated", i);
+    move_score = fbk->move_tree.current->child[i].analysis_data.base_score;
     FBK_ASSERT_MSG(true == fbk_mutex_unlock(&fbk->move_tree.current->child[i].lock), "Failed to unlock node mutex");
 
     if(((FTK_COLOR_WHITE == fbk->game.turn) && (move_score > best_score)) ||

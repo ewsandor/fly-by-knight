@@ -251,11 +251,11 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
 
-  if(false == node->evaluated)
+  if(false == node->analysis_data.evaluated)
   {
     ftk_update_board_masks(game);
     /* Score position, compound == base as no child nodes evaluated */
-    node->base_score = fbk_score_game(game);
+    node->analysis_data.base_score = fbk_score_game(game);
 
     /* Init child nodes */
     ftk_move_list_s move_list = {0};
@@ -275,7 +275,7 @@ void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game)
 
     ftk_delete_move_list(&move_list);
 
-    node->evaluated = true;
+    node->analysis_data.evaluated = true;
   }
 
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
@@ -293,10 +293,10 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
 
-  node->evaluated = false;
-  node->base_score = 0;
+  node->analysis_data.evaluated = false;
+  node->analysis_data.base_score = 0;
 
-  if(node->evaluated)
+  if(node->analysis_data.evaluated)
   {
     for(i = 0; i < node->child_count; i++)
     {
@@ -323,7 +323,7 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
   fbk_evaluate_move_tree_node(node, &game);
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-  FBK_ASSERT_MSG(true == node->evaluated, "Failed to evaluate node");
+  FBK_ASSERT_MSG(true == node->analysis_data.evaluated, "Failed to evaluate node");
   for(i = 0; i < node->child_count; i++)
   {
     FBK_ASSERT_MSG(fbk_apply_move_tree_node(&node->child[i], &game), "Failed to apply node %u", i);
