@@ -18,7 +18,7 @@ Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol w
 ### Dependencies
 - Farewell to King Chess Library: https://git.sandorlaboratories.com/edward/farewell-to-king.
 - POSIX Thread (pthread) Library.
-- [zlib](https://zlib.net/) Compression Library.
+- [zlib](https://web.archive.org/web/20230404152038/https://zlib.net/) Compression Library.
 
 ### Building and Running
 ```
