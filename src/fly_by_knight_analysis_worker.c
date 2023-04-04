@@ -245,6 +245,8 @@ static void * worker_manager_thread_f(void * arg)
         fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game);
       }
 
+      fbk_mutex_lock(&node->lock);
+      fbk_decompress_move_tree_node(node, true);
       if(i < node->child_count)
       {
         FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %lu.", job_id, depth);
@@ -271,6 +273,7 @@ static void * worker_manager_thread_f(void * arg)
         FBK_DEBUG_MSG(FBK_DEBUG_LOW, "No child nodes to queue job.");
       }
     }
+    fbk_mutex_unlock(&node->lock);
     fbk_mutex_unlock(&analysis_data->analysis_state.lock);
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
   }
@@ -389,7 +392,8 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     context->top_call = false;
   }
 
-  fbk_decompress_move_tree_node(job->node);
+  fbk_mutex_lock(&job->node->lock);
+  fbk_decompress_move_tree_node(job->node, true);
   ftk_game_s game = job->game;
   fbk_evaluate_move_tree_node(job->node, &game);
 
@@ -406,8 +410,8 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
       FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
     }
   }
-
-  fbk_compress_move_tree_node(job->node);
+  fbk_compress_move_tree_node(job->node, true);
+  fbk_mutex_unlock(&job->node->lock);
 }
 
 static void * worker_thread_f(void * arg)
@@ -587,6 +591,7 @@ void fbk_stop_analysis(bool clear_pending_jobs)
   if(clear_pending_jobs)
   {
     clear_job_queue(&fbk_analysis_data.job_queue);
+    fbk_analysis_data.analysis_state.root_node = NULL;
   }
   fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");

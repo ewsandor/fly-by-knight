@@ -157,7 +157,9 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("force", input) == 0)
   {
+    fbk_stop_analysis(true);
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
+    fbk->protocol_data.xboard.ponder  = false;
   }
   else if(strcmp("go", input) == 0)
   {
@@ -198,6 +200,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("easy", input) == 0)
   {
+    fbk_stop_analysis(true);
     fbk->protocol_data.xboard.ponder = false;
   }
   else if(strcmp("hard", input) == 0)
@@ -234,7 +237,6 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("new", input) == 0)
   {
-    //TODO stop ongoing analysis, reset decision maker, flush analysis
     fbk_begin_standard_game(fbk);
 
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;

@@ -292,6 +292,7 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  fbk_decompress_move_tree_node(node, true);
 
   node->analysis_data.evaluated = false;
   node->analysis_data.base_score = 0;

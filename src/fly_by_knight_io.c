@@ -46,7 +46,7 @@ void fbk_open_log_file(const char * log_path)
     
     FBK_ASSERT_MSG(NULL == fbk_log_file, "Log handle already open.");
 
-    fbk_log_file = fopen(log_path, "a");
+    fbk_log_file = fopen(log_path, "w");
 
     if(NULL == fbk_log_file)
     {
