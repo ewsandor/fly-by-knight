@@ -157,6 +157,13 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node)
 
   if((node->child_count > 0) && (node->child != NULL))
   {
+    for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+    {
+      /* Invalidate child parent node as it may not be valid after decompressed (e.g. parent was also compressed) */
+      FBK_ASSERT_MSG(node->child[i].parent == node, "Child node (%p) parent is not this node (%p).", (void*)node->child[i].parent, (void*)node);
+      node->child[i].parent = NULL;
+    }
+
     FBK_ASSERT_MSG(node->child_compressed == NULL, "Both child and child compressed set.");
 
     /* allocate deflate state */
@@ -259,11 +266,19 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node)
 
     FBK_ASSERT_MSG(strm.avail_in == 0, "Incomplete inflate.");
     FBK_ASSERT_MSG(ret == Z_STREAM_END, "Inflate in bad state %u", ret);
+    FBK_ASSERT_MSG(output_bytes == node->child_count*sizeof(fbk_move_tree_node_s), "Unexpected inflation size %u.", output_bytes);
     
     free(node->child_compressed);
     node->child_compressed      = NULL;
     node->child_compressed_size = 0;
     inflateEnd(&strm);
+
+    for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+    {
+      /* Update child parent node as it may not be valid after decompressed (e.g. parent was also compressed) */
+      FBK_ASSERT_MSG(node->child[i].parent == NULL, "Parent node was not cleared; this node is at %p, but parent points at %p.", (void*) node, (void*) node->child[i].parent);
+      node->child[i].parent = node;
+    }
   }
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 

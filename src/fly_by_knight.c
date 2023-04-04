@@ -84,7 +84,12 @@ bool fbk_mutex_lock(fbk_mutex_t *mutex)
 
   if(mutex)
   {
-    ret_val = (0 == pthread_mutex_lock(mutex));
+    int rc = pthread_mutex_lock(mutex);
+    if(rc != 0)
+    {
+      FBK_ERROR_MSG_HARD("Error %d locking mutex.", rc);
+    }
+    ret_val = (0 == rc);
   }
   else
   {
@@ -106,7 +111,12 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex)
 
   if(mutex)
   {
-    ret_val = (0 == pthread_mutex_unlock(mutex));
+    int rc = pthread_mutex_unlock(mutex);
+    if(rc != 0)
+    {
+      FBK_ERROR_MSG_HARD("Error %d unlocking mutex.", rc);
+    }
+    ret_val = (0 == rc);
   }
   else
   {

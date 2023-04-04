@@ -26,7 +26,7 @@ stages:          # List of stages for jobs, and their order of execution
 .apt_dependencies: &apt_dependencies
   - echo "Installing dependencies..."
   - apt update
-  - apt install -y --no-install-recommends gcc g++ make cmake git apt-transport-https ca-certificates
+  - apt install -y --no-install-recommends gcc g++ make cmake git apt-transport-https ca-certificates zlib1g-dev
   - echo "Installing dependencies complete."
 
 .build_step: &build_step
@@ -91,7 +91,7 @@ fedora:
   image: fedora:latest
   script:
     - echo "Installing dependencies..."
-    - dnf install -y gcc gcc-c++ cmake git
+    - dnf install -y gcc gcc-c++ cmake git zlib-devel
     - echo "Installing dependencies complete."
     - *build_step
   artifacts:
