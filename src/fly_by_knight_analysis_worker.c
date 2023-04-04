@@ -254,11 +254,12 @@ static void * worker_manager_thread_f(void * arg)
         new_job->job.job_id = job_id++;
         new_job->job.game   = analysis_data->analysis_state.game;
         new_job->job.node   = &node->child[i];
-        FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %lu", i);
+        FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %u", i);
         new_job->job.depth  = depth;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
-        if(++i == node->child_count)
+        i++;
+        if(i == node->child_count)
         {
           i = 0;
           depth++;
@@ -266,13 +267,12 @@ static void * worker_manager_thread_f(void * arg)
       }
       else
       {
-        FBK_ASSERT_MSG(i == 0, "Unexpected iterator value %lu.", i);
+        FBK_ASSERT_MSG(i == 0, "Unexpected iterator value %u.", i);
         FBK_DEBUG_MSG(FBK_DEBUG_LOW, "No child nodes to queue job.");
       }
     }
     fbk_mutex_unlock(&analysis_data->analysis_state.lock);
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
-    depth++;
   }
 
   FBK_NO_RETURN
@@ -386,10 +386,25 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     /* Init result */
     memset(result, 0, sizeof(fbk_analysis_job_result_s));
     result->result = FBK_ANALYSIS_JOB_COMPLETE;
+    context->top_call = false;
   }
 
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job %u.", context->thread_index, job->job_id);
-  sleep(1); /* Simulate job */
+  ftk_game_s game = job->game;
+  fbk_evaluate_move_tree_node(job->node, &game);
+
+  if(job->depth > 0)
+  {
+    fbk_analysis_job_s sub_job = *job;
+    sub_job.depth--;
+    
+    for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
+    {
+      sub_job.node = &job->node->child[i];
+      FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
+      process_job(&sub_job, context, result);
+      FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+    }
+  }
 }
 
 static void * worker_thread_f(void * arg)
@@ -434,6 +449,8 @@ static void * worker_thread_f(void * arg)
     fbk_analysis_job_context_s job_context;
     fbk_analysis_job_result_s  job_result;
     init_job_context(&job_context, worker_thread_data->thread_index);
+
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u processing job %u.", worker_thread_data->thread_index, job->job.job_id);
     process_job(&job->job, &job_context, &job_result);
 
     /* Disable PThread cancellation while cleaning up */

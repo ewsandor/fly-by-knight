@@ -39,7 +39,7 @@ typedef int_fast32_t fbk_score_t;
  * @brief Count of Move Tree nodes
  * 
  */
-typedef uint_fast16_t fbk_move_tree_node_count_t;
+typedef uint8_t fbk_move_tree_node_count_t;
 
 /**
  * @brief Move Tree node structure
