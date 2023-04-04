@@ -173,14 +173,13 @@ static void job_aborted(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue
 }
 
 /**
- * @brief Logic to clear pending jobs from job queue.
+ * @brief Logic to clear pending jobs from job queue.  Assumes caller has lock.
  * @param queue queue to clear
 */
 static void clear_job_queue(fbk_analysis_job_queue_s * queue)
 {
   FBK_ASSERT_MSG(queue != NULL, "NULL job queue passed.");
 
-  fbk_mutex_lock(&queue->lock);
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Clearing job queue.");
 
   FBK_ASSERT_MSG(0 == queue->active_job_count, "Attempting to clear job queue while %lu jobs are still active", queue->active_job_count);
@@ -198,7 +197,6 @@ static void clear_job_queue(fbk_analysis_job_queue_s * queue)
   queue->next_job = NULL;
   queue->last_job = NULL;
   pthread_cond_broadcast(&queue->job_claimed);
-  fbk_mutex_unlock(&queue->lock);
 }
 
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
@@ -215,46 +213,66 @@ static void * worker_manager_thread_f(void * arg)
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting worker thread manager with ID 0x%lx.", pthread_self());
   unsigned int job_id = 0;
 
+  fbk_depth_t depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
+  fbk_move_tree_node_s * node = NULL;
+  fbk_move_tree_node_count_t i = 0;
+
   while(1)
   {
     wait_for_analysis_start(&analysis_data->analysis_state);
-    fbk_move_tree_node_s * node = analysis_data->analysis_state.root_node;
 
     FBK_DEBUG_MSG(FBK_DEBUG_MED, "Evaluating current move tree node.");
-    fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game);
 
-    fbk_depth_t depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
-
-    while((node != NULL) && (node == analysis_data->analysis_state.root_node))
+    fbk_mutex_lock(&analysis_data->job_queue.lock);
+    while(analysis_data->job_queue.job_count >= WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
     {
-      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing jobs with depth %u.", depth);
-      for(unsigned int i = 0; (node != NULL) && (node == analysis_data->analysis_state.root_node) && (i < node->child_count); i++)
+      /* Wait for some jobs to be claimed before queueing new jobs */
+      FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_data->job_queue.job_claimed, &analysis_data->job_queue.lock),
+        "Failed to check condition that a job has been claimed");
+    }
+
+    fbk_mutex_lock(&analysis_data->analysis_state.lock);
+    if(analysis_data->analysis_state.analysis_active)
+    {
+      /* Make sure analysis is still active */
+
+      if(node != analysis_data->analysis_state.root_node)
       {
-        wait_for_analysis_start(&analysis_data->analysis_state);
+        i     = 0;
+        depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
+        node  = analysis_data->analysis_state.root_node;
+        FBK_ASSERT_MSG(node != NULL, "Attempting analysis on NULL node.");
+        fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game);
+      }
 
-        fbk_mutex_lock(&analysis_data->job_queue.lock);
-        while(analysis_data->job_queue.job_count >= WORKER_MANAGER_QUEUED_JOBS_PER_WORKER*analysis_data->fbk->config.worker_threads)
-        {
-          /* Wait for some jobs to be claimed before queueing new jobs */
-          FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_data->job_queue.job_claimed, &analysis_data->job_queue.lock),
-            "Failed to check condition that a job has been claimed");
-        }
-
-        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Pushing job to job queue.");
+      if(i < node->child_count)
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u.", job_id, depth);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
         FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
         /* Fill job info here... */
         new_job->job.job_id = job_id++;
         new_job->job.game   = analysis_data->analysis_state.game;
         new_job->job.node   = &node->child[i];
-        FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node %u", i);
+        FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %lu", i);
         new_job->job.depth  = depth;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
-        fbk_mutex_unlock(&analysis_data->job_queue.lock);
+        if(++i == node->child_count)
+        {
+          i = 0;
+          depth++;
+        }
       }
-      depth++;
+      else
+      {
+        FBK_ASSERT_MSG(i == 0, "Unexpected iterator value %lu.", i);
+        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "No child nodes to queue job.");
+      }
     }
+    fbk_mutex_unlock(&analysis_data->analysis_state.lock);
+    fbk_mutex_unlock(&analysis_data->job_queue.lock);
+    depth++;
   }
 
   FBK_NO_RETURN
@@ -546,11 +564,11 @@ void fbk_stop_analysis(bool clear_pending_jobs)
   {
     pthread_cond_wait(&fbk_analysis_data.job_queue.job_ended, &fbk_analysis_data.job_queue.lock);
   }
-  fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");
-
   if(clear_pending_jobs)
   {
     clear_job_queue(&fbk_analysis_data.job_queue);
   }
+  fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");
+
 }

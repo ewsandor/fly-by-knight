@@ -22,6 +22,7 @@ Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol w
 ### Building and Running
 ```
 $ cd fly-by-knight
+$ git submodule update --init --recursive
 $ mkdir build
 $ cd build
 $ cmake ..
