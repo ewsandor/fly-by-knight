@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <farewell_to_king.h>
+#include <zlib.h>
 
 #include "fly_by_knight.h"
 #include "fly_by_knight_analysis.h"
@@ -137,4 +138,68 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
   }
 
   return ret_node;
+}
+
+bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node)
+{
+  bool ret_val = true;
+
+  FBK_ASSERT_MSG(node != NULL, "Null node passed");
+
+  if((node->child_count > 0) && (node->child != NULL))
+  {
+    FBK_ASSERT_MSG(node->child_compressed == NULL, "Both child and child compressed set.");
+
+    #define ZLIB_CHUNK_SIZE        (FBK_MOVE_TREE_MAX_NODE_COUNT*sizeof(fbk_move_tree_node_s))
+    #define ZLIB_COMPRESSION_LEVEL Z_DEFAULT_COMPRESSION
+    /* deflate memory usage (bytes) = (1 << (windowBits+2)) + (1 << (memLevel+9)) + 6 KB */
+    /* From zlib manual:
+        The windowBits parameter is the base two logarithm of the window size (the size of the history buffer). It should be in the range 8..15 for this version of the library. Larger values of this parameter result in better compression at the expense of memory usage. The default value is 15 if deflateInit is used instead.
+        For the current implementation of deflate(), a windowBits value of 8 (a window size of 256 bytes) is not supported. As a result, a request for 8 will result in 9 (a 512-byte window). In that case, providing 8 to inflateInit2() will result in an error when the zlib header with 9 is checked against the initialization of inflate(). The remedy is to not use 8 with deflateInit2() with this initialization, or at least in that case use 9 with inflateInit2(). */
+    #define ZLIB_WINDOW_BITS       15
+    #define ZLIB_MEM_LEVEL         (ZLIB_WINDOW_BITS-7)
+
+    /* allocate deflate state */
+    Bytef out[ZLIB_CHUNK_SIZE];
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree  = Z_NULL;
+    strm.opaque = Z_NULL;
+    int ret = deflateInit2(&strm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, ZLIB_WINDOW_BITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+
+    FBK_ASSERT_MSG(Z_OK == ret, "Error (%d) initializing deflate stream.\n", ret);
+
+    FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+    strm.avail_in = node->child_count*sizeof(fbk_move_tree_node_s);
+    strm.next_in = (Bytef*) node->child;
+
+    FBK_ASSERT_MSG(strm.avail_in < ZLIB_CHUNK_SIZE, "Child buffer larger than expected (%u bytes)", strm.avail_in);
+
+    unsigned int output_bytes = 0, next_output_index = 0;
+    do
+    {
+      strm.avail_out = ZLIB_CHUNK_SIZE;
+      strm.next_out  = out;
+
+      ret = deflate(&strm, Z_FINISH);    /* no bad return value */
+      FBK_ASSERT_MSG(ret != Z_STREAM_ERROR, "zlib deflate error.");  /* state not clobbered */
+
+      unsigned have = ZLIB_CHUNK_SIZE - strm.avail_out;
+      output_bytes += have;
+      node->child_compressed = (fbk_move_tree_node_s*) realloc(node->child_compressed, output_bytes);
+      memcpy(&((Bytef*)node->child_compressed)[next_output_index], out, have);
+      next_output_index += output_bytes;
+
+    } while(strm.avail_out == 0);
+
+    FBK_ASSERT_MSG(strm.avail_in == 0, "Incomplete deflate.");
+    FBK_ASSERT_MSG(ret == Z_STREAM_END, "Deflate in bad state %u", ret);
+
+    free(node->child);
+    node->child = NULL;
+    FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+    deflateEnd(&strm);
+  }
+
+  return ret_val;
 }

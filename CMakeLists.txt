@@ -34,5 +34,7 @@ endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(flybyknight PRIVATE Threads::Threads)
+find_package(ZLIB REQUIRED)
+target_link_libraries(flybyknight PRIVATE ZLIB::ZLIB)
 
 install(TARGETS flybyknight)
