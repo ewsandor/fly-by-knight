@@ -55,4 +55,18 @@ bool fbk_undo_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
  */
 fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * current_node, ftk_move_s * move);
 
+/**
+ * @brief Compresses given move tree node
+ * @param node Node to compress
+ * @return     True if successful
+*/
+bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node);
+
+/**
+ * @brief Decompresses given move tree node
+ * @param node Node to compress
+ * @return     True if successful
+*/
+bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node);
+
 #endif //_FLY_BY_KNIGHT_MOVE_TREE_H_

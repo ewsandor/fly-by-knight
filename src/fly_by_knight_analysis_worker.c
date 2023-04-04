@@ -389,6 +389,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     context->top_call = false;
   }
 
+  fbk_decompress_move_tree_node(job->node);
   ftk_game_s game = job->game;
   fbk_evaluate_move_tree_node(job->node, &game);
 
@@ -405,6 +406,8 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
       FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
     }
   }
+
+  fbk_compress_move_tree_node(job->node);
 }
 
 static void * worker_thread_f(void * arg)

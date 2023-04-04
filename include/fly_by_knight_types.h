@@ -35,6 +35,7 @@ typedef unsigned int fbk_thread_index_t;
  */
 typedef int_fast32_t fbk_score_t;
 
+#define FBK_MOVE_TREE_MAX_NODE_COUNT ((1<<8)-1)
 /**
  * @brief Count of Move Tree nodes
  * 
@@ -67,6 +68,8 @@ struct fbk_move_tree_node_struct{
   fbk_move_tree_node_count_t  child_count;
   /* Array of 'child_count' child nodes */
   fbk_move_tree_node_s       *child;
+  size_t                      child_compressed_size;
+  void                       *child_compressed;
 };
 
 typedef struct fbk_move_tree_struct fbk_move_tree_s;
