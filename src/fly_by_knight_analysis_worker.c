@@ -242,7 +242,7 @@ static void * worker_manager_thread_f(void * arg)
         depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
         node  = analysis_data->analysis_state.root_node;
         FBK_ASSERT_MSG(node != NULL, "Attempting analysis on NULL node.");
-        fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game);
+        fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game, false);
       }
 
       fbk_mutex_lock(&node->lock);
@@ -395,7 +395,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
   fbk_mutex_lock(&job->node->lock);
   fbk_decompress_move_tree_node(job->node, true);
   ftk_game_s game = job->game;
-  fbk_evaluate_move_tree_node(job->node, &game);
+  fbk_evaluate_move_tree_node(job->node, &game, true);
 
   if(job->depth > 0)
   {
