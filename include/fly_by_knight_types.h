@@ -35,12 +35,41 @@ typedef unsigned int fbk_thread_index_t;
  */
 typedef int_fast32_t fbk_score_t;
 
+/**
+ * @brief Type for analysis depth
+ * 
+ */
+typedef uint_fast16_t fbk_depth_t;
+#define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
+
+/**
+ * @brief Type for analysis breadth
+ * 
+ */
+typedef uint8_t fbk_breadth_t;
+#define FBK_DEFAULT_MAX_SEARCH_BREADTH 0
+
 #define FBK_MOVE_TREE_MAX_NODE_COUNT ((1<<8)-1)
 /**
  * @brief Count of Move Tree nodes
  * 
  */
 typedef uint8_t fbk_move_tree_node_count_t;
+
+typedef struct
+{
+  /* TRUE if this node has been evaluated */
+  bool                       evaluated;
+  /* Score considering this node alone */
+  fbk_score_t                base_score;
+  /* Min and Max child analysis depth */
+  fbk_depth_t                min_depth;
+  fbk_depth_t                max_depth;
+  /* Child node with best analysis */
+  fbk_score_t                best_child_score;
+  fbk_move_tree_node_count_t best_child_index;
+
+} fbk_move_tree_node_analysis_data_s;
 
 /**
  * @brief Move Tree node structure
@@ -50,26 +79,24 @@ typedef struct fbk_move_tree_node_struct fbk_move_tree_node_s;
 struct fbk_move_tree_node_struct{
 
   /* Lock for accessing and modifying node */
-  fbk_mutex_t                 lock;
+  fbk_mutex_t                         lock;
 
   /* Move represented by this node, invalid if root node*/
-  ftk_move_s                  move;
+  ftk_move_s                          move;
 
-  /* TRUE if this node has been evaluated */
-  bool                        evaluated;
-  /* Score considering this node alone */
-  fbk_score_t                 base_score;
+  /* Analysis data for this node */
+  fbk_move_tree_node_analysis_data_s  analysis_data;
 
-  /* TODO - Add best path info */
-
-  /* Parent node pointer, NULL if root node */
-  fbk_move_tree_node_s       *parent;
+  /* Parent node pointer, NULL if root node or compressed */
+  fbk_move_tree_node_s               *parent;
   /* Number of child nodes, only valid after node is evaluated */ 
-  fbk_move_tree_node_count_t  child_count;
-  /* Array of 'child_count' child nodes */
-  fbk_move_tree_node_s       *child;
-  size_t                      child_compressed_size;
-  void                       *child_compressed;
+  fbk_move_tree_node_count_t          child_count;
+  /* Array of 'child_count' child nodes, NULL if compressed */
+  fbk_move_tree_node_s               *child;
+  /* Size of compressed child data structure.  0 if not compressed */
+  size_t                              child_compressed_size;
+  /* Compressed array of child nodes.  NULL if not compressed */
+  void                               *child_compressed;
 };
 
 typedef struct fbk_move_tree_struct fbk_move_tree_s;
@@ -130,22 +157,6 @@ typedef union
   fbk_xboard_data_s xboard;
 
 } fbk_protocol_data_u;
-
-/**
- * @brief Type for analysis depth
- * 
- */
-typedef uint8_t fbk_depth_t;
-
-#define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
-
-/**
- * @brief Type for analysis breadth
- * 
- */
-typedef uint8_t fbk_breadth_t;
-
-#define FBK_DEFAULT_MAX_SEARCH_BREADTH 0
 
 typedef enum
 {

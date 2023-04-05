@@ -25,8 +25,11 @@ fbk_score_t fbk_score_game(const ftk_game_s * game);
  * 
  * @param node Node to evaluate
  * @param game Game representing this node (Assumes move is already applied)
+ * @param locked True if caller is holding the node's lock, else lock will be obtained
+ * 
+ * @return true if node was evaluated now, false if node is invalid or previously evaluated
  */
-void fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game);
+bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game, bool locked);
 
 /**
  * @brief Clears evaluation and deletes all child nodes

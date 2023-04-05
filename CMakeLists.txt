@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.18)
 project (flybyknight)
 
+option (ANALYSIS_NODE_COMPRESSION "ON to compress analysis nodes in RAM.  Turning this feature off removes the zlib dependency and may help debugging" ON)
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DFBK_DEBUG_BUILD")
@@ -34,7 +35,11 @@ endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(flybyknight PRIVATE Threads::Threads)
-find_package(ZLIB REQUIRED)
-target_link_libraries(flybyknight PRIVATE ZLIB::ZLIB)
+
+if(ANALYSIS_NODE_COMPRESSION)
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DFBK_ZLIB_COMPRESSION")
+  find_package(ZLIB REQUIRED)
+  target_link_libraries(flybyknight PRIVATE ZLIB::ZLIB)
+endif()
 
 install(TARGETS flybyknight)

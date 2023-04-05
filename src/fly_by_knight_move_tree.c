@@ -10,7 +10,9 @@
 #include <string.h>
 
 #include <farewell_to_king.h>
+#ifdef FBK_ZLIB_COMPRESSION
 #include <zlib.h>
+#endif
 
 #include "fly_by_knight.h"
 #include "fly_by_knight_analysis.h"
@@ -122,7 +124,8 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
   if(move && FTK_MOVE_VALID(*move))
   {
     FBK_ASSERT_MSG(true == fbk_mutex_lock(&current_node->lock), "Failed to lock node mutex");
-    if(current_node->evaluated)
+    fbk_decompress_move_tree_node(current_node, true);
+    if(current_node->analysis_data.evaluated)
     {
       for(i = 0; ((i < current_node->child_count) && (ret_node == NULL)); i++)
       {
@@ -148,12 +151,16 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
     For the current implementation of deflate(), a windowBits value of 8 (a window size of 256 bytes) is not supported. As a result, a request for 8 will result in 9 (a 512-byte window). In that case, providing 8 to inflateInit2() will result in an error when the zlib header with 9 is checked against the initialization of inflate(). The remedy is to not use 8 with deflateInit2() with this initialization, or at least in that case use 9 with inflateInit2(). */
 #define ZLIB_WINDOW_BITS       15
 #define ZLIB_MEM_LEVEL         (ZLIB_WINDOW_BITS-7)
-bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node)
+bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
   bool ret_val = true;
 
+#ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
-  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  if(!locked)
+  {
+    FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  }
 
   if((node->child_count > 0) && (node->child != NULL))
   {
@@ -206,17 +213,28 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node)
     node->child = NULL;
     deflateEnd(&strm);
   }
-  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+  if(!locked)
+  {
+    FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+  }
+#else
+  FBK_UNUSED(node);
+  FBK_UNUSED(locked);
+#endif /* FBK_ZLIB_COMPRESSION */
 
   return ret_val;
 }
 
-bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node)
+bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
   bool ret_val = true;
 
+#ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
-  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  if(!locked)
+  {
+    FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  }
 
   if((node->child_compressed_size > 0) && (node->child_compressed != NULL))
   {
@@ -280,7 +298,14 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node)
       node->child[i].parent = node;
     }
   }
-  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+  if(!locked)
+  {
+    FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+  }
+#else
+  FBK_UNUSED(node);
+  FBK_UNUSED(locked);
+#endif /* FBK_ZLIB_COMPRESSION */
 
   return ret_val;
 }

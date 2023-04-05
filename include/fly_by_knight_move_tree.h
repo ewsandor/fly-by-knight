@@ -57,16 +57,18 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
 
 /**
  * @brief Compresses given move tree node
- * @param node Node to compress
+ * @param node   Node to compress
+ * @param locked True if caller is holding the node's lock, else lock will be obtained
  * @return     True if successful
 */
-bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node);
+bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked);
 
 /**
  * @brief Decompresses given move tree node
- * @param node Node to compress
+ * @param node   Node to compress
+ * @param locked True if caller is holding the node's lock, else lock will be obtained
  * @return     True if successful
 */
-bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node);
+bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked);
 
 #endif //_FLY_BY_KNIGHT_MOVE_TREE_H_

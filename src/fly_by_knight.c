@@ -135,8 +135,8 @@ void fbk_begin_standard_game(fbk_instance_s * fbk)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
 
-  /* TODO stop and flush analysis */
-
+  //TODO stop ongoing analysis, reset decision maker, flush analysis
+  fbk_stop_analysis(true);
   fbk_delete_move_tree_node(&fbk->move_tree.root);
 
   ftk_begin_standard_game(&fbk->game);
@@ -160,7 +160,7 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
   FBK_ASSERT_MSG(move != NULL, "NULL move pointer passed.");
 
   /* Evaluate this node if not evaluated to generate child nodes */
-  fbk_evaluate_move_tree_node(fbk->move_tree.current, &fbk->game);
+  fbk_evaluate_move_tree_node(fbk->move_tree.current, &fbk->game, false);
 
   /* Find node for given move */
   node = fbk_get_move_tree_node_for_move(fbk->move_tree.current, move);
