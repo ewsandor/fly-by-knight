@@ -272,6 +272,7 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
     }
 
     node->analysis_data.best_child_index = node->child_count;
+    node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == game->turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
 
     ftk_delete_move_list(&move_list);
 

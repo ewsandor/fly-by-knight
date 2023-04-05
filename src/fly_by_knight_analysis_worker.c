@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
@@ -418,21 +419,36 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     fbk_analysis_job_s sub_job = *job;
     sub_job.depth--;
 
-    sub_job.node->analysis_data.max_depth =  0;
-    sub_job.node->analysis_data.min_depth = -1;
+    job->node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == job->game.turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
+    job->node->analysis_data.max_depth        =  0;
+    job->node->analysis_data.min_depth        = -1;
 
     for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
     {
       sub_job.node = &job->node->child[i];
       FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
       process_job(&sub_job, context, result);
-      if((i+1) < job->node->child_count)
-      {
-        /* Only undo move if there are additional child nodes to process, else game is no longer needed */
-        FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
-      }
+      FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
 
       FBK_ASSERT_MSG(true == job->node->child[i].analysis_data.evaluated, "Sub-job failed.");
+      if(job->node->child[i].analysis_data.best_child_index < job->node->child[i].child_count)
+      {
+        if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.best_child_score > job->node->analysis_data.best_child_score)) ||
+           ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.best_child_score < job->node->analysis_data.best_child_score)))
+        {
+          job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.best_child_score;
+          job->node->analysis_data.best_child_index = i;
+        }
+      }
+      else
+      {
+        if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.base_score > job->node->analysis_data.best_child_score)) ||
+           ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.base_score < job->node->analysis_data.best_child_score)))
+        {
+          job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.base_score;
+          job->node->analysis_data.best_child_index = i;
+        }
+      }
       if(job->node->child[i].analysis_data.min_depth < job->node->analysis_data.min_depth)
       {
         job->node->analysis_data.min_depth = job->node->child[i].analysis_data.min_depth;
