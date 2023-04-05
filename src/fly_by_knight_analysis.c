@@ -328,6 +328,7 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
   FBK_ASSERT_MSG(node != NULL, "NULL node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  fbk_decompress_move_tree_node(node, true);
   fbk_evaluate_move_tree_node(node, &game, true);
   FBK_ASSERT_MSG(true == node->analysis_data.evaluated, "Failed to evaluate node");
   for(i = 0; i < node->child_count; i++)

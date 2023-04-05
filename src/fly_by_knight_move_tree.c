@@ -122,6 +122,7 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
   if(move && FTK_MOVE_VALID(*move))
   {
     FBK_ASSERT_MSG(true == fbk_mutex_lock(&current_node->lock), "Failed to lock node mutex");
+    fbk_decompress_move_tree_node(current_node, true);
     if(current_node->analysis_data.evaluated)
     {
       for(i = 0; ((i < current_node->child_count) && (ret_node == NULL)); i++)

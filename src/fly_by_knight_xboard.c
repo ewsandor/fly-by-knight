@@ -256,7 +256,6 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strncmp("setboard", input, 8) == 0)
   {
-    /* TODO stop analysis and flush */
     if(input_length > 9)
     {
       fbk_begin_standard_game(fbk);
