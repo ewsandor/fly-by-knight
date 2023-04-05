@@ -26,19 +26,31 @@ static void worker_thread_analysis_state_cleanup(void *arg)
   fbk_mutex_unlock(&analysis_state->lock);
 }
 
-static void wait_for_analysis_start(fbk_analysis_state_s *analysis_state)
+/**
+ * @brief Wait for analysis to start.
+ * 
+ * @param analysis_state analysis context to check
+ * 
+ * @return true if waiting was required, false if analysis is already active
+*/
+static bool wait_for_analysis_start(fbk_analysis_state_s *analysis_state)
 {
-    /* Check if analysis is active */
-    fbk_mutex_lock(&analysis_state->lock);
-    pthread_cleanup_push(worker_thread_analysis_state_cleanup, &analysis_state->lock);
-    while(!analysis_state->analysis_active)
-    {
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Thread 0x%lx waiting for analysis to start.", pthread_self());
-      FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_state->analysis_started_cond, &analysis_state->lock),
-        "Failed Waiting for analysis started condition.");
-    }
-    pthread_cleanup_pop(0);
-    fbk_mutex_unlock(&analysis_state->lock);
+  bool ret_val = false;
+
+  /* Check if analysis is active */
+  fbk_mutex_lock(&analysis_state->lock);
+  pthread_cleanup_push(worker_thread_analysis_state_cleanup, &analysis_state->lock);
+  while(!analysis_state->analysis_active)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Thread 0x%lx waiting for analysis to start.", pthread_self());
+    ret_val = true;
+    FBK_ASSERT_MSG(0 == pthread_cond_wait(&analysis_state->analysis_started_cond, &analysis_state->lock),
+      "Failed Waiting for analysis started condition.");
+  }
+  pthread_cleanup_pop(0);
+  fbk_mutex_unlock(&analysis_state->lock);
+  
+  return ret_val;
 }
 
 /**
@@ -219,7 +231,10 @@ static void * worker_manager_thread_f(void * arg)
 
   while(1)
   {
-    wait_for_analysis_start(&analysis_data->analysis_state);
+    if(wait_for_analysis_start(&analysis_data->analysis_state))
+    {
+      node = NULL;
+    }
 
     FBK_DEBUG_MSG(FBK_DEBUG_MED, "Evaluating current move tree node.");
 
@@ -236,7 +251,8 @@ static void * worker_manager_thread_f(void * arg)
     {
       /* Make sure analysis is still active */
 
-      if(node != analysis_data->analysis_state.root_node)
+      if((node != analysis_data->analysis_state.root_node) ||
+         (false == node->analysis_data.evaluated))
       {
         i     = 0;
         depth = WORKER_MANAGER_JOB_INITIAL_DEPTH;
@@ -407,7 +423,11 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
       sub_job.node = &job->node->child[i];
       FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
       process_job(&sub_job, context, result);
-      FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+      if((i+1) < job->node->child_count)
+      {
+        /* Only undo move if there are additional child nodes to process, else game is no longer needed */
+        FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+      }
     }
   }
   fbk_compress_move_tree_node(job->node, true);
