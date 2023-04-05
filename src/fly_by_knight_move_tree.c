@@ -10,7 +10,9 @@
 #include <string.h>
 
 #include <farewell_to_king.h>
+#ifdef FBK_ZLIB_COMPRESSION
 #include <zlib.h>
+#endif
 
 #include "fly_by_knight.h"
 #include "fly_by_knight_analysis.h"
@@ -153,6 +155,7 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
   bool ret_val = true;
 
+#ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
   if(!locked)
   {
@@ -214,6 +217,10 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
   {
     FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
   }
+#else
+  FBK_UNUSED(node);
+  FBK_UNUSED(locked);
+#endif /* FBK_ZLIB_COMPRESSION */
 
   return ret_val;
 }
@@ -222,6 +229,7 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
   bool ret_val = true;
 
+#ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
   if(!locked)
   {
@@ -294,6 +302,10 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
   {
     FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
   }
+#else
+  FBK_UNUSED(node);
+  FBK_UNUSED(locked);
+#endif /* FBK_ZLIB_COMPRESSION */
 
   return ret_val;
 }

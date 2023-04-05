@@ -417,7 +417,10 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
   {
     fbk_analysis_job_s sub_job = *job;
     sub_job.depth--;
-    
+
+    sub_job.node->analysis_data.max_depth =  0;
+    sub_job.node->analysis_data.min_depth = -1;
+
     for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
     {
       sub_job.node = &job->node->child[i];
@@ -428,7 +431,20 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         /* Only undo move if there are additional child nodes to process, else game is no longer needed */
         FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
       }
+
+      FBK_ASSERT_MSG(true == job->node->child[i].analysis_data.evaluated, "Sub-job failed.");
+      if(job->node->child[i].analysis_data.min_depth < job->node->analysis_data.min_depth)
+      {
+        job->node->analysis_data.min_depth = job->node->child[i].analysis_data.min_depth;
+      }
+      if(job->node->child[i].analysis_data.max_depth > job->node->analysis_data.max_depth)
+      {
+        job->node->analysis_data.max_depth = job->node->child[i].analysis_data.max_depth;
+      }
     }
+
+    job->node->analysis_data.max_depth++;
+    job->node->analysis_data.min_depth++;
   }
   fbk_compress_move_tree_node(job->node, true);
   fbk_mutex_unlock(&job->node->lock);
