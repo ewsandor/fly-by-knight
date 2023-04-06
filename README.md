@@ -17,7 +17,7 @@ Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol w
 
 ### Dependencies
 #### Operating Systems
-Fly by Knight is mainly developed and tested on Linux compiled with GCC and CI jobs are maintained to verify compilation under Debian (amd64/arm), Ubuntu, and Fedora environments.  Dependencies are kept to a minimum so Fly by Knight may ideally be compiled on Windows (MinGW) or macOS, but these environments are not actively maintained.
+Fly by Knight is mainly developed and tested on Linux compiled with GCC and CI jobs are maintained to verify compilation under Debian (x86_64/arm64), Ubuntu, and Fedora environments.  Dependencies are kept to a minimum so Fly by Knight may ideally be compiled on Windows (MinGW) or macOS, but these environments are not actively maintained.
 #### Libraries
 - Farewell to King Chess Library: https://git.sandorlaboratories.com/edward/farewell-to-king.
 - POSIX Thread (pthread) Library.
