@@ -7,6 +7,8 @@
  Move picking and decision making for Fly by Knight
 */
 
+#include <unistd.h>
+
 #include <farewell_to_king.h>
 
 #include "fly_by_knight_algorithm_constants.h"
@@ -92,7 +94,13 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
 
 typedef struct
 {
-  fbk_instance_s *fbk;
+  fbk_instance_s      *fbk;
+
+  fbk_mutex_t          lock;
+  pthread_t            picker_thread;
+  pthread_cond_t       pick_started_cond;
+
+  bool                 picker_active;
 
   fbk_pick_callback_f  pick_cb;
   void                *pick_cb_user_data_ptr;
@@ -100,25 +108,59 @@ typedef struct
 } fbk_pick_data_s;
 fbk_pick_data_s pick_data = {0};
 
+void * picker_thread_f(void * arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL arg passed.");
+
+  fbk_pick_data_s * pick_data = (fbk_pick_data_s *) arg;
+
+  while(1)
+  {
+    fbk_mutex_lock(&pick_data->lock);
+    while(pick_data->picker_active == false)
+    {
+      pthread_cond_wait(&pick_data->pick_started_cond, &pick_data->lock);
+    }
+    fbk_mutex_unlock(&pick_data->lock);
+
+    sleep(1);
+  }
+}
+
 bool fbk_init_picker(fbk_instance_s *fbk)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk instance passed.");
 
+  fbk_mutex_init(&pick_data.lock);
+  pthread_cond_init(&pick_data.pick_started_cond, NULL);
+
   pick_data.fbk                   = fbk;
+
+  pick_data.picker_active         = false;
+
   pick_data.pick_cb               = NULL;
   pick_data.pick_cb_user_data_ptr = NULL;
-  
+
+  FBK_ASSERT_MSG(0 == pthread_create(&pick_data.picker_thread , NULL, picker_thread_f, &pick_data), "Failed to start picker thread.");
 
   return true;
 }
 
 void fbk_start_picker(fbk_pick_callback_f callback, void * user_data_ptr)
 {
+  fbk_mutex_lock(&pick_data.lock);
   pick_data.pick_cb               = callback;
   pick_data.pick_cb_user_data_ptr = user_data_ptr;
+  pick_data.picker_active         = true;
+  pthread_cond_broadcast(&pick_data.pick_started_cond);
+  fbk_mutex_unlock(&pick_data.lock);
 }
 
 void fbk_stop_picker()
 {
-
+  fbk_mutex_lock(&pick_data.lock);
+  pick_data.pick_cb               = NULL;
+  pick_data.pick_cb_user_data_ptr = NULL;
+  pick_data.picker_active         = true;
+  fbk_mutex_unlock(&pick_data.lock);
 }

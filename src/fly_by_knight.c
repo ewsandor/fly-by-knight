@@ -25,6 +25,7 @@
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"
 #include "fly_by_knight_move_tree.h"
+#include "fly_by_knight_pick.h"
 #include "fly_by_knight_types.h"
 #include "fly_by_knight_version.h"
 
@@ -246,6 +247,8 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk_update_worker_thread_count(arguments->worker_threads);
 
   fbk_begin_standard_game(fbk);
+
+  fbk_init_picker(fbk);
 }
 
 /**

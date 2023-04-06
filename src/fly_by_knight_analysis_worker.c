@@ -8,7 +8,6 @@
 */
 
 #include <string.h>
-#include <unistd.h>
 
 #include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
@@ -636,10 +635,9 @@ void fbk_stop_analysis(bool clear_pending_jobs)
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
     /* Disable analysis */
     fbk_analysis_data.analysis_state.analysis_active = false;
-    fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
-
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
   }
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 
   fbk_mutex_lock(&fbk_analysis_data.job_queue.lock);
   /* Block for all analysis to stop */
