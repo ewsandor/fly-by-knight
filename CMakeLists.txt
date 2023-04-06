@@ -6,12 +6,13 @@ option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King 
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DFBK_DEBUG_BUILD")
 
-if (MSVC)
-    # warning level 4 and all warnings as errors
-    add_compile_options(/W4 /WX)
-else()
-    # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Werror)
+# lots of warnings and all warnings as errors
+add_compile_options(-Wall -Wextra -pedantic -Werror)
+
+if(MINGW)
+# MinGW breaks many printf functions due to int size differences.  Disable these warning for now..."
+message(WARNING "MINGW Detected: Disabling C string format warnings...")
+add_compile_options(-Wformat=0)
 endif()
 
 add_executable(flybyknight  src/fly_by_knight.c 
