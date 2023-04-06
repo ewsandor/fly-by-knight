@@ -89,3 +89,36 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
     
   return best_move;
 }
+
+typedef struct
+{
+  fbk_instance_s *fbk;
+
+  fbk_pick_callback_f  pick_cb;
+  void                *pick_cb_user_data_ptr;
+
+} fbk_pick_data_s;
+fbk_pick_data_s pick_data = {0};
+
+bool fbk_init_picker(fbk_instance_s *fbk)
+{
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk instance passed.");
+
+  pick_data.fbk                   = fbk;
+  pick_data.pick_cb               = NULL;
+  pick_data.pick_cb_user_data_ptr = NULL;
+  
+
+  return true;
+}
+
+void fbk_start_picker(fbk_pick_callback_f callback, void * user_data_ptr)
+{
+  pick_data.pick_cb               = callback;
+  pick_data.pick_cb_user_data_ptr = user_data_ptr;
+}
+
+void fbk_stop_picker()
+{
+
+}

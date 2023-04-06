@@ -418,53 +418,24 @@ void manage_xboard_analysis(fbk_instance_s * fbk)
   }
 }
 
-/**
- * @brief Process input string with xboard protocol
- * 
- * @param fbk Fly by Knight instance data
- * @param input Input string from external process
- * @return true if input handled
- * @return false if input is not xboard
- */
-bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
+void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
 {
-  bool input_handled = true;
-  size_t input_length = strlen(input);
-  ftk_game_end_e game_result;
+  FBK_ASSERT_MSG(user_data != NULL,"NULL user data pointer passed");
+  fbk_instance_s *fbk = (fbk_instance_s *) user_data;
 
-  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
-  FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
-
-  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
-  {
-    input_handled = fbk_process_xboard_input_normal_mode(fbk, input, input_length);
-  }
-  else if(FBK_XBOARD_MODE_EDIT == fbk->protocol_data.xboard.mode)
-  {
-    input_handled = fbk_process_xboard_input_edit_mode(fbk, input, input_length);
-  }
-  else
-  {
-    FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
-  }
-
-  manage_xboard_analysis(fbk);
-
-  game_result = ftk_check_for_game_end(&fbk->game);
   if(FTK_END_NOT_OVER == game_result)
   {
     fbk->protocol_data.xboard.result_reported = false;
 
-    if(FBK_XBOARD_MODE_NORMAL ==fbk->protocol_data.xboard.mode)
+    if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
     {
       /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
       if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
       {
-        ftk_move_s move;
         /* Null move by default */
         char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
 
-        move = fbk_get_best_move(fbk);
+//        move = fbk_get_best_move(fbk);
 
         if(FTK_MOVE_VALID(move))
         {
@@ -508,7 +479,47 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 
     fbk->protocol_data.xboard.result_reported = true;
   }
+}
 
+/**
+ * @brief Process input string with xboard protocol
+ * 
+ * @param fbk Fly by Knight instance data
+ * @param input Input string from external process
+ * @return true if input handled
+ * @return false if input is not xboard
+ */
+bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
+{
+  bool input_handled = true;
+  size_t input_length = strlen(input);
+
+  FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
+  FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
+
+  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
+  {
+    input_handled = fbk_process_xboard_input_normal_mode(fbk, input, input_length);
+  }
+  else if(FBK_XBOARD_MODE_EDIT == fbk->protocol_data.xboard.mode)
+  {
+    input_handled = fbk_process_xboard_input_edit_mode(fbk, input, input_length);
+  }
+  else
+  {
+    FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
+  }
+
+  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
+  {
+    fbk_start_picker(fbk_xboard_pick_callback_f, (void*) fbk);
+  }
+  else
+  {
+    fbk_stop_picker();
+  }
+
+  manage_xboard_analysis(fbk);
 
   return input_handled;
 }

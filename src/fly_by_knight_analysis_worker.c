@@ -616,8 +616,11 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
     fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
   }
 
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting analysis.");
-  fbk_analysis_data.analysis_state.analysis_active =  true;
+  if(fbk_analysis_data.analysis_state.analysis_active == false)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting analysis.");
+    fbk_analysis_data.analysis_state.analysis_active =  true;
+  }
   fbk_analysis_data.analysis_state.root_node       =  node;
   fbk_analysis_data.analysis_state.game            = *game;
   pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_started_cond);
@@ -627,13 +630,17 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
 
 void fbk_stop_analysis(bool clear_pending_jobs)
 {
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
-  /* Disable analysis */
-  fbk_analysis_data.analysis_state.analysis_active = false;
-  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
+  if(fbk_analysis_data.analysis_state.analysis_active == true)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
+    /* Disable analysis */
+    fbk_analysis_data.analysis_state.analysis_active = false;
+    fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
+  }
+
   fbk_mutex_lock(&fbk_analysis_data.job_queue.lock);
   /* Block for all analysis to stop */
   while(fbk_analysis_data.job_queue.active_job_count > 0)

@@ -12,12 +12,29 @@
 
 #include "fly_by_knight_types.h"
 
+typedef void (*fbk_pick_callback_f)(ftk_game_end_e, ftk_move_s, void *);
+
 /**
- * @brief Returns the best move based on the current game
+ * @brief Logic to initialize the picking logic
  * 
- * @param fbk         Fly by Knight instance
- * @return ftk_move_s Best move
- */
-ftk_move_s fbk_get_best_move(fbk_instance_s *fbk);
+ * @param fbk Fly by Knight instance
+ * 
+ * @return true if successful
+*/
+bool fbk_init_picker(fbk_instance_s *fbk);
+
+/**
+ * @brief Start the picker logic
+ * 
+*/
+void fbk_start_picker(fbk_pick_callback_f, void * user_data_ptr);
+
+/**
+ * @brief Stop the picker logic and block until stop
+ * 
+*/
+void fbk_stop_picker();
+
+
 
 #endif //_FLY_BY_KNIGHT_PICK_H_
