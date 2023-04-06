@@ -26,8 +26,12 @@ bool fbk_init_picker(fbk_instance_s *fbk);
 /**
  * @brief Start the picker logic
  * 
+ * @param play_as       color to pick the best move for
+ * @param callback      callback to be called when a move is picked
+ * @param user_data_ptr pointer to be passed back in callback
+ * 
 */
-void fbk_start_picker(fbk_pick_callback_f, void * user_data_ptr);
+void fbk_start_picker(ftk_color_e play_as, fbk_pick_callback_f callback, void * user_data_ptr);
 
 /**
  * @brief Stop the picker logic and block until stop

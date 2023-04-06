@@ -427,28 +427,17 @@ void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, voi
   {
     fbk->protocol_data.xboard.result_reported = false;
 
-    if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
-    {
-      /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
-      if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
-      {
-        /* Null move by default */
-        char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
+    /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
+    FBK_ASSERT_MSG(fbk->protocol_data.xboard.play_as == fbk->game.turn, "Pick callback for wrong turn (%u/%u)", 
+      fbk->protocol_data.xboard.play_as, fbk->game.turn);
 
-//        move = fbk_get_best_move(fbk);
+    FBK_ASSERT_MSG(FTK_MOVE_VALID(move), "Picked move is invalid");
 
-        if(FTK_MOVE_VALID(move))
-        {
-          /* Commit move */
-          FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
-          ftk_move_to_xboard_string(&move, move_output);
-        }
+    /* Null move by default */
+    char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_xboard_string(&move, move_output);
 
-        FBK_OUTPUT_MSG("move %s\n", move_output);
-
-        manage_xboard_analysis(fbk);
-      }
-    }
+    FBK_OUTPUT_MSG("move %s\n", move_output);
   }
   else if(false == fbk->protocol_data.xboard.result_reported)
   {
@@ -479,6 +468,8 @@ void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, voi
 
     fbk->protocol_data.xboard.result_reported = true;
   }
+
+  manage_xboard_analysis(fbk);
 }
 
 /**
@@ -512,7 +503,7 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 
   if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
   {
-    fbk_start_picker(fbk_xboard_pick_callback_f, (void*) fbk);
+    fbk_start_picker(fbk->protocol_data.xboard.play_as, fbk_xboard_pick_callback_f, (void*) fbk);
   }
   else
   {
