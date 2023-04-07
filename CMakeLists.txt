@@ -24,6 +24,8 @@ add_executable(flybyknight  src/fly_by_knight.c
                               src/fly_by_knight_uci.c
                               src/fly_by_knight_xboard.c)
 
+set_property(TARGET flybyknight PROPERTY C_STANDARD 11)
+
 target_include_directories(flybyknight PRIVATE include)
 
 add_subdirectory(lib/farewell-to-king EXCLUDE_FROM_ALL)

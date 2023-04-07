@@ -7,6 +7,7 @@
  Core gama analysis for Fly by Knight
 */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <farewell_to_king.h>
@@ -339,4 +340,48 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
     FBK_ASSERT_MSG(fbk_undo_move_tree_node(&node->child[i], &game),  "Failed to undo node %u", i);
   }
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+}
+
+static int node_cmp(const void *a, const void *b)
+{
+  int ret_val = 0;
+
+  const fbk_move_tree_node_s *node_a = (fbk_move_tree_node_s *) a;
+  const fbk_move_tree_node_s *node_b = (fbk_move_tree_node_s *) b;
+
+  FBK_ASSERT_MSG(node_a->analysis_data.evaluated, "Node A not evaluated");
+  FBK_ASSERT_MSG(node_b->analysis_data.evaluated, "Node B not evaluated");
+  FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
+
+  ret_val = (node_a->analysis_data.base_score - node_b->analysis_data.base_score);
+
+  return ret_val;
+}
+
+void fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s** sorted_nodes)
+{
+  FBK_ASSERT_MSG(node != NULL,         "NULL node passed");
+  FBK_ASSERT_MSG(sorted_nodes != NULL, "NULL sorted_nodes buffer passed");
+
+  bool decompressed = fbk_decompress_move_tree_node(node, true);
+
+  /* Prep child nodes and initialize pointers */
+  for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+  {
+    sorted_nodes[i] = &node->child[i];
+    fbk_mutex_lock(&sorted_nodes[i]->lock);
+  }
+
+  qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_cmp);
+
+  /* Release pointers */
+  for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+  {
+    fbk_mutex_unlock(&sorted_nodes[i]->lock);
+  }
+
+  if(decompressed)
+  {
+    fbk_compress_move_tree_node(node, true);
+  }
 }
