@@ -172,7 +172,7 @@ void fbk_stop_picker()
   fbk_mutex_lock(&pick_data.lock);
   pick_data.pick_cb               = NULL;
   pick_data.pick_cb_user_data_ptr = NULL;
-  pick_data.picker_active         = true;
+  pick_data.picker_active         = false;
   pick_data.play_as               = FTK_COLOR_NONE;
   fbk_mutex_unlock(&pick_data.lock);
 }
