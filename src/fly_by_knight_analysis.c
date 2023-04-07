@@ -7,7 +7,6 @@
  Core gama analysis for Fly by Knight
 */
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <farewell_to_king.h>
@@ -346,19 +345,29 @@ static int node_cmp(const void *a, const void *b)
 {
   int ret_val = 0;
 
-  const fbk_move_tree_node_s *node_a = (fbk_move_tree_node_s *) a;
-  const fbk_move_tree_node_s *node_b = (fbk_move_tree_node_s *) b;
+  const fbk_move_tree_node_s *node_a = *((fbk_move_tree_node_s **) a);
+  const fbk_move_tree_node_s *node_b = *((fbk_move_tree_node_s **) b);
 
   FBK_ASSERT_MSG(node_a->analysis_data.evaluated, "Node A not evaluated");
   FBK_ASSERT_MSG(node_b->analysis_data.evaluated, "Node B not evaluated");
   FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
 
-  ret_val = (node_a->analysis_data.base_score - node_b->analysis_data.base_score);
+  fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
+                             (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
+  fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
+                             (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
+
+  ret_val = node_a_score-node_b_score;
+
+  if(node_a->move.turn == FTK_COLOR_BLACK)
+  {
+    ret_val *= -1;
+  }
 
   return ret_val;
 }
 
-void fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s** sorted_nodes)
+void fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
 {
   FBK_ASSERT_MSG(node != NULL,         "NULL node passed");
   FBK_ASSERT_MSG(sorted_nodes != NULL, "NULL sorted_nodes buffer passed");

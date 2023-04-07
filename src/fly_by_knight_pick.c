@@ -67,6 +67,12 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
 
   fbk_evaluate_move_tree_node_children(fbk->move_tree.current, fbk->game);
 
+  fbk_move_tree_node_s** sorted_nodes = malloc(fbk->move_tree.current->child_count * sizeof(fbk_move_tree_node_s*));
+  fbk_mutex_lock(&fbk->move_tree.current->lock);
+  fbk_sort_child_nodes(fbk->move_tree.current, sorted_nodes);
+  fbk_mutex_unlock(&fbk->move_tree.current->lock);
+  free(sorted_nodes);
+
   for(i = 0; i < fbk->move_tree.current->child_count; i++)
   {
     FBK_ASSERT_MSG(true == fbk_mutex_lock(&fbk->move_tree.current->child[i].lock), "Failed to lock node mutex");
