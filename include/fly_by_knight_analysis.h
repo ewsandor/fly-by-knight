@@ -52,6 +52,6 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
  * @param node         node to sort children
  * @param sorted_nodes output array of sorted node pointers.  Must be size of node->child_count node pointers
  */
-void fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[]);
+bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[]);
 
 #endif //__FLY_BY_KNIGHT_ANALYSIS_H__

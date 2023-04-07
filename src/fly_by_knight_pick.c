@@ -16,6 +16,7 @@
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
+#include "fly_by_knight_move_tree.h"
 #include "fly_by_knight_pick.h"
 
 /**
@@ -57,12 +58,31 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
 {
   FBK_ASSERT_MSG(NULL != fbk->move_tree.current, "Current move tree node NULL");
 
-  fbk_evaluate_move_tree_node_children(fbk->move_tree.current, fbk->game);
-
   fbk_move_tree_node_s** sorted_nodes = malloc(fbk->move_tree.current->child_count * sizeof(fbk_move_tree_node_s*));
   fbk_mutex_lock(&fbk->move_tree.current->lock);
-  fbk_sort_child_nodes(fbk->move_tree.current, sorted_nodes);
-  ftk_move_s best_move = sorted_nodes[fbk->move_tree.current->child_count-1]->move;
+
+  bool decompressed = fbk_decompress_move_tree_node(fbk->move_tree.current, true);
+
+  ftk_move_s best_move = {0};
+  ftk_invalidate_move(&best_move);
+
+  if(fbk->move_tree.current->child_count > 0)
+  {
+    if(fbk_sort_child_nodes(fbk->move_tree.current, sorted_nodes))
+    {
+      best_move = sorted_nodes[fbk->move_tree.current->child_count-1]->move;
+    }
+    else
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Failed to sort child nodes.  Returning invalid move.");
+    }
+  }
+
+  if(decompressed)
+  {
+    fbk_compress_move_tree_node(fbk->move_tree.current, true);
+  }
+
   fbk_mutex_unlock(&fbk->move_tree.current->lock);
   free(sorted_nodes);
    
@@ -114,9 +134,16 @@ void * picker_thread_f(void * arg)
     else if(FTK_END_NOT_OVER == game_result && (pick_data->fbk->game.turn == pick_data->play_as))
     {
       move = fbk_get_best_move(pick_data->fbk);
-
-      /* Commit move */
-      commit_move = true;
+      
+      if(FTK_MOVE_VALID(move))
+      {
+        /* Commit move */
+        commit_move = true;
+      }
+      else
+      {
+        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Could not find best move, not selecting any move yet.");
+      }
     }
 
     if((commit_move || report) && (pick_data->pick_cb != NULL))

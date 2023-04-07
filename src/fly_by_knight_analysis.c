@@ -329,7 +329,7 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
   FBK_ASSERT_MSG(node != NULL, "NULL node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-  fbk_decompress_move_tree_node(node, true);
+  bool decompressed = fbk_decompress_move_tree_node(node, true);
   fbk_evaluate_move_tree_node(node, &game, true);
   FBK_ASSERT_MSG(true == node->analysis_data.evaluated, "Failed to evaluate node");
   for(i = 0; i < node->child_count; i++)
@@ -337,6 +337,10 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
     FBK_ASSERT_MSG(fbk_apply_move_tree_node(&node->child[i], &game), "Failed to apply node %u", i);
     fbk_evaluate_move_tree_node(&node->child[i], &game, false);
     FBK_ASSERT_MSG(fbk_undo_move_tree_node(&node->child[i], &game),  "Failed to undo node %u", i);
+  }
+  if(decompressed)
+  {
+    fbk_compress_move_tree_node(node, true);
   }
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }
@@ -367,30 +371,39 @@ static int node_cmp(const void *a, const void *b)
   return ret_val;
 }
 
-void fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
+bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
 {
   FBK_ASSERT_MSG(node != NULL,         "NULL node passed");
   FBK_ASSERT_MSG(sorted_nodes != NULL, "NULL sorted_nodes buffer passed");
 
-  bool decompressed = fbk_decompress_move_tree_node(node, true);
+  bool ret_val = true;
+  fbk_move_tree_node_count_t nodes_locked = 0;
 
   /* Prep child nodes and initialize pointers */
   for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
   {
     sorted_nodes[i] = &node->child[i];
     fbk_mutex_lock(&sorted_nodes[i]->lock);
+    nodes_locked++;
+    if(false == sorted_nodes[i]->analysis_data.evaluated)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Child node %u is not yet analyzed (%u->%u).  Aborting sort.", i, sorted_nodes[i]->move.source, sorted_nodes[i]->move.target);
+      ret_val = false;
+      break;
+    }
   }
 
-  qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_cmp);
+  if(true == ret_val)
+  {
+    qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_cmp);
+  }
 
   /* Release pointers */
-  for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+  for(fbk_move_tree_node_count_t i = 0; (i < node->child_count) && (nodes_locked > 0); i++)
   {
     fbk_mutex_unlock(&sorted_nodes[i]->lock);
+    nodes_locked--;
   }
 
-  if(decompressed)
-  {
-    fbk_compress_move_tree_node(node, true);
-  }
+  return ret_val;
 }
