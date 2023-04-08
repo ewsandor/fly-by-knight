@@ -253,6 +253,8 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
 
+  setbuf(stdout, NULL);
+
   fbk_begin_standard_game(fbk);
 
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
