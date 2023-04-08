@@ -259,8 +259,8 @@ static void * worker_manager_thread_f(void * arg)
         FBK_ASSERT_MSG(i == 0, "Unexpected iterator value %u.", i);
         FBK_DEBUG_MSG(FBK_DEBUG_LOW, "No child nodes to queue job.");
       }
+      fbk_mutex_unlock(&node->lock);
     }
-    fbk_mutex_unlock(&node->lock);
     fbk_mutex_unlock(&analysis_data->analysis_state.lock);
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
   }

@@ -63,7 +63,12 @@ bool fbk_mutex_destroy(fbk_mutex_t *mutex)
 
   if(mutex)
   {
-    ret_val = (0 == pthread_mutex_destroy(mutex));
+    int rc = pthread_mutex_destroy(mutex);
+    if(rc != 0)
+    {
+      FBK_ERROR_MSG_HARD("Error %d destroying mutex.", rc);
+    }
+    ret_val = (0 == rc);
   }
   else
   {
@@ -136,14 +141,19 @@ void fbk_begin_standard_game(fbk_instance_s * fbk)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
 
-  //TODO stop ongoing analysis, reset decision maker, flush analysis
-  fbk_stop_analysis(true);
-  fbk_delete_move_tree_node(&fbk->move_tree.root);
+  if(fbk->move_tree.initialized)
+  {
+    fbk_stop_analysis(true);
+    fbk_stop_picker();
+    fbk_delete_move_tree_node(&fbk->move_tree.root);
+    fbk->move_tree.initialized = false;
+  }
 
   ftk_begin_standard_game(&fbk->game);
 
   fbk_init_move_tree_node(&fbk->move_tree.root, NULL, NULL);
   fbk->move_tree.current = &fbk->move_tree.root;
+  fbk->move_tree.initialized = true;
 }
 
 /**
@@ -243,10 +253,10 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
 
+  fbk_begin_standard_game(fbk);
+
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
   fbk_update_worker_thread_count(arguments->worker_threads);
-
-  fbk_begin_standard_game(fbk);
 
   fbk_init_picker(fbk);
 }
@@ -434,6 +444,7 @@ void parse_arguments(int argc, char *argv[], fbk_arguments_s *arguments)
   fbk_set_random_number_seed(random_seed);
 }
 
+fbk_instance_s fbk_instance;
 int main(int argc, char *argv[])
 {
   /* Introduce Fly by Knight */
@@ -448,7 +459,6 @@ int main(int argc, char *argv[])
   parse_arguments(argc, argv, &arguments);
 
   /* Initialize Fly by Knight root structure */
-  fbk_instance_s fbk_instance;
   init(&fbk_instance, &arguments);
 
   /* Start IO handler on main thread, analysis to be done on separate threads */
