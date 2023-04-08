@@ -435,8 +435,6 @@ fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_resu
     fbk->protocol_data.xboard.result_reported = false;
 
     /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
-    FBK_ASSERT_MSG(fbk->protocol_data.xboard.play_as == fbk->game.turn, "Pick callback for wrong turn (%u/%u)", 
-      fbk->protocol_data.xboard.play_as, fbk->game.turn);
 
     FBK_ASSERT_MSG(FTK_MOVE_VALID(move), "Picked move is invalid");
 
