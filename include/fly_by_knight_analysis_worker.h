@@ -12,10 +12,13 @@
 
 #include "fly_by_knight_types.h"
 
+typedef uint_fast32_t fbk_analysis_node_count_t;
+
 typedef enum
 {
   FBK_ANALYSIS_JOB_COMPLETE,
   FBK_ANALYSIS_JOB_ABORTED,
+  FBK_ANALYSIS_JOB_NO_LOCK,
 
 } fbk_analysis_job_result_e;
 
@@ -30,10 +33,13 @@ typedef struct
 typedef struct 
 {
   /* Thread index processing this job for logging */
-  fbk_thread_index_t thread_index;
+  fbk_thread_index_t        thread_index;
 
   /* Indicates if this is the top call or a recursive call */
-  bool               top_call;
+  bool                      top_call;
+
+  /* Number of nodes evaluated by this job */
+  fbk_analysis_node_count_t nodes_evaluated;
 
 } fbk_analysis_job_context_s;
 
@@ -41,15 +47,17 @@ typedef struct
 typedef struct 
 {
   /* Identifier for job */
-  unsigned int           job_id;
+  unsigned int               job_id;
   /* Reference game to begin analysis on */
-  ftk_game_s             game;
+  ftk_game_s                 game;
   /* Node to begin analysis on */
-  fbk_move_tree_node_s * node;
-  /* Maximum depth to search */
-  fbk_depth_t            depth;
-  /* Maximum breadth to search */
-  fbk_breadth_t          breadth;
+  fbk_move_tree_node_s      *node;
+  /* Depth to search */
+  fbk_depth_t                depth;
+  /* Breadth to search */
+  fbk_breadth_t              breadth;
+  /* Maximum number of nodes to search */
+  fbk_analysis_node_count_t  max_node_count;
 } fbk_analysis_job_s;
 
 /* Node for job queue */
@@ -125,8 +133,6 @@ typedef struct
   pthread_t worker_thread;
 
 } fbk_worker_thread_data_s;
-
-typedef uint_fast32_t fbk_analysis_node_count_t;
 
 /* Structure for storing analysis statistics */
 typedef struct 

@@ -102,6 +102,9 @@ struct fbk_move_tree_node_struct{
 typedef struct fbk_move_tree_struct fbk_move_tree_s;
 struct fbk_move_tree_struct
 {
+  /* True if the move tree has been initialized */
+  bool                  initialized;
+
   /* Root node of tree */
   fbk_move_tree_node_s  root;
 

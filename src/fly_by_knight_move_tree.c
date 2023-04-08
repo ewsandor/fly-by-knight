@@ -153,7 +153,7 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
 #define ZLIB_MEM_LEVEL         (ZLIB_WINDOW_BITS-7)
 bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
-  bool ret_val = true;
+  bool ret_val = false;
 
 #ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
@@ -164,6 +164,7 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
   if((node->child_count > 0) && (node->child != NULL))
   {
+    ret_val = true;
     for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
     {
       /* Invalidate child parent node as it may not be valid after decompressed (e.g. parent was also compressed) */
@@ -227,7 +228,7 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
 bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
-  bool ret_val = true;
+  bool ret_val = false;
 
 #ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
@@ -238,6 +239,7 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
   if((node->child_compressed_size > 0) && (node->child_compressed != NULL))
   {
+    ret_val = true;
     FBK_ASSERT_MSG(node->child == NULL, "Both child and child compressed set.");
 
     unsigned int have;

@@ -296,24 +296,24 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
 {
   unsigned int i;
 
+
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Deleting move_tree_node node %p (%u->%u)", (void*) node, node->move.source, node->move.target);
+
   fbk_decompress_move_tree_node(node, true);
 
-  node->analysis_data.evaluated = false;
-  node->analysis_data.base_score = 0;
-
-  if(node->analysis_data.evaluated)
+  for(i = 0; i < node->child_count; i++)
   {
-    for(i = 0; i < node->child_count; i++)
-    {
-      fbk_delete_move_tree_node(&node->child[i]);
-    }
-
-    node->child_count = 0;
-    free(node->child);
+    fbk_delete_move_tree_node(&node->child[i]);
   }
+
+  node->child_count = 0;
+  free(node->child);
+  node->child = NULL;
+
+  memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
 
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }
@@ -329,7 +329,7 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
   FBK_ASSERT_MSG(node != NULL, "NULL node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-  fbk_decompress_move_tree_node(node, true);
+  bool decompressed = fbk_decompress_move_tree_node(node, true);
   fbk_evaluate_move_tree_node(node, &game, true);
   FBK_ASSERT_MSG(true == node->analysis_data.evaluated, "Failed to evaluate node");
   for(i = 0; i < node->child_count; i++)
@@ -338,5 +338,72 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
     fbk_evaluate_move_tree_node(&node->child[i], &game, false);
     FBK_ASSERT_MSG(fbk_undo_move_tree_node(&node->child[i], &game),  "Failed to undo node %u", i);
   }
+  if(decompressed)
+  {
+    fbk_compress_move_tree_node(node, true);
+  }
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
+}
+
+static int node_cmp(const void *a, const void *b)
+{
+  int ret_val = 0;
+
+  const fbk_move_tree_node_s *node_a = *((fbk_move_tree_node_s **) a);
+  const fbk_move_tree_node_s *node_b = *((fbk_move_tree_node_s **) b);
+
+  FBK_ASSERT_MSG(node_a->analysis_data.evaluated, "Node A not evaluated");
+  FBK_ASSERT_MSG(node_b->analysis_data.evaluated, "Node B not evaluated");
+  FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
+
+  fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
+                             (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
+  fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
+                             (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
+
+  ret_val = node_a_score-node_b_score;
+
+  if(node_a->move.turn == FTK_COLOR_BLACK)
+  {
+    ret_val *= -1;
+  }
+
+  return ret_val;
+}
+
+bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
+{
+  FBK_ASSERT_MSG(node != NULL,         "NULL node passed");
+  FBK_ASSERT_MSG(sorted_nodes != NULL, "NULL sorted_nodes buffer passed");
+
+  bool ret_val = true;
+  fbk_move_tree_node_count_t nodes_locked = 0;
+
+  /* Prep child nodes and initialize pointers */
+  for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+  {
+    sorted_nodes[i] = &node->child[i];
+    fbk_mutex_lock(&sorted_nodes[i]->lock);
+    nodes_locked++;
+    if(false == sorted_nodes[i]->analysis_data.evaluated)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Child node %u is not yet analyzed (%u->%u).  Aborting sort.", i, sorted_nodes[i]->move.source, sorted_nodes[i]->move.target);
+      ret_val = false;
+      break;
+    }
+  }
+
+  if(true == ret_val)
+  {
+    qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_cmp);
+  }
+
+  /* Release pointers */
+  for(fbk_move_tree_node_count_t i = 0; (i < node->child_count) && (nodes_locked > 0); i++)
+  {
+    fbk_mutex_unlock(&sorted_nodes[i]->lock);
+    nodes_locked--;
+  }
+
+  return ret_val;
 }
