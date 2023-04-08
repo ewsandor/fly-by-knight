@@ -300,7 +300,6 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-  FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Deleting move_tree_node node %p (%u->%u)", (void*) node, node->move.source, node->move.target);
 
   fbk_decompress_move_tree_node(node, true);
 

@@ -8,6 +8,7 @@
 */
 
 #include <string.h>
+#include <errno.h>
 
 #include <farewell_to_king.h>
 #ifdef FBK_ZLIB_COMPRESSION
@@ -16,6 +17,7 @@
 
 #include "fly_by_knight.h"
 #include "fly_by_knight_analysis.h"
+#include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
 
@@ -62,6 +64,122 @@ void fbk_delete_move_tree_node(fbk_move_tree_node_s * node)
 
   memset(node, 0, sizeof(fbk_move_tree_node_s));
 }
+
+typedef struct
+{
+  unsigned int          index;
+  bool                  parallel;
+  fbk_move_tree_node_s *node;
+
+} delete_thread_arg_s;
+
+void * delete_thread_f(void* arg)
+{
+  FBK_ASSERT_MSG(arg != NULL, "NULL arg passed");
+  delete_thread_arg_s *delete_thread_arg = (delete_thread_arg_s *) arg;
+
+  if(delete_thread_arg->parallel)
+  {
+    fbk_delete_move_tree_node_parallel(delete_thread_arg->node);
+  }
+  else
+  {
+    fbk_delete_move_tree_node(delete_thread_arg->node);
+  }
+
+  return NULL;
+}
+
+static int node_depth_cmp(const void *a, const void *b)
+{
+  int ret_val = 0;
+
+  const fbk_move_tree_node_s *node_a = *((fbk_move_tree_node_s **) a);
+  const fbk_move_tree_node_s *node_b = *((fbk_move_tree_node_s **) b);
+
+  fbk_depth_t node_a_depth = (node_a->analysis_data.evaluated)?(node_a->analysis_data.max_depth):0;
+  fbk_depth_t node_b_depth = (node_b->analysis_data.evaluated)?(node_b->analysis_data.max_depth):0;
+
+  ret_val = (node_a_depth-node_b_depth);
+
+  return ret_val;
+}
+
+
+/**
+ * @brief Releases memory for node and all child nodes using multiple threads
+ * 
+ * @param node node to delete
+ */
+void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node)
+{
+  FBK_ASSERT_MSG(node != NULL, "NULL node passed");
+
+  FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
+  fbk_decompress_move_tree_node(node, true);
+
+  if(node->child_count > 0)
+  {
+    fbk_move_tree_node_s** sorted_nodes = malloc(node->child_count * sizeof(fbk_move_tree_node_s*));
+    FBK_ASSERT_MSG(sorted_nodes != NULL, "Failed to allocate memory for sorted_nodes buffer");
+
+    fbk_depth_t                max_depth    = 0;
+    fbk_move_tree_node_count_t nodes_locked = 0;
+
+    /* Prep child nodes and initialize pointers */
+    for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
+    {
+      sorted_nodes[i] = &node->child[i];
+      fbk_mutex_lock(&sorted_nodes[i]->lock);
+      nodes_locked++;
+      if(sorted_nodes[i]->analysis_data.evaluated && (sorted_nodes[i]->analysis_data.max_depth > max_depth))
+      {
+        max_depth = sorted_nodes[i]->analysis_data.max_depth;
+      }
+    }
+    qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_depth_cmp);
+    /* Release pointers */
+    for(fbk_move_tree_node_count_t i = 0; (i < node->child_count) && (nodes_locked > 0); i++)
+    {
+      fbk_mutex_unlock(&sorted_nodes[i]->lock);
+      nodes_locked--;
+    }
+
+    int                         delete_thread_count = node->child_count;
+    pthread_t                  *delete_thread     = calloc(delete_thread_count, sizeof(pthread_t));
+    delete_thread_arg_s        *delete_thread_arg = calloc(delete_thread_count, sizeof(delete_thread_arg_s));
+
+    for(int i = 0; i < delete_thread_count; i++)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Starting thread to delete child node %u.", i);
+      delete_thread_arg[i].index    = i;
+      delete_thread_arg[i].parallel = (i >= (delete_thread_count-4));
+      delete_thread_arg[i].node     = sorted_nodes[i];
+      int rc = 0;
+      do
+      {
+        rc = pthread_create(&delete_thread[i], NULL, delete_thread_f, &delete_thread_arg[i]);
+      } while(rc == EAGAIN);
+      FBK_ASSERT_MSG(rc == 0, "Error (%d) creating delete thread %u", rc, i);
+    }
+
+    for(fbk_move_tree_node_count_t i = 0; i < delete_thread_count; i++)
+    {
+      FBK_ASSERT_MSG(0 == pthread_join(delete_thread[i], NULL), "Error joining delete thread %u", i);
+      FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Thread to delete child node %u done.", i);
+    }
+
+    free(delete_thread);
+    free(delete_thread_arg);
+    free(sorted_nodes);
+  }
+
+  FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to lock node mutex");
+
+  /* Finally delete this node */
+  fbk_delete_move_tree_node(node);
+}
+
 
 /**
  * @brief Applies move to given game
