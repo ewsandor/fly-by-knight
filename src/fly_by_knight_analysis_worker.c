@@ -85,36 +85,6 @@ static void push_job_to_job_queue(fbk_analysis_job_queue_s * queue, fbk_analysis
 }
 
 /**
- * @brief Logic to add job to front of job queue.  Assumes caller has lock.
- * @param queue   queue to append
- * @param new_job new job to append
-*/
-static void push_job_to_job_queue_front(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue_node_s * new_job)
-{
-  FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
-  FBK_ASSERT_MSG(new_job != NULL, "NULL job passed.");
-
-  /* Ensure end of queue is NULL */
-  new_job->next_job = NULL;
-
-  if(queue->job_count > 0)
-  {
-    /* Add to linked list */
-    new_job->next_job = queue->next_job;
-    queue->next_job = new_job;
-  }
-  else
-  {
-    /* Init root job */
-    queue->next_job = new_job;
-    queue->last_job = new_job;
-  }
-
-  queue->job_count++;
-  FBK_ASSERT_MSG(0 == pthread_cond_signal(&queue->new_job_available), "Failed to signal new job is available.");
-}
-
-/**
  * @brief Returns the next job in the job queue or NULL if no jobs are available.  Assumes caller has lock.
  * @param queue Job queue to pop from.
 */
@@ -178,7 +148,7 @@ static void job_aborted(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queue
   fbk_mutex_lock(&queue->lock);
   FBK_ASSERT_MSG(queue->active_job_count > 0, "Unexpected for job to abort with no active jobs");
   /* Put job back in queue */
-  push_job_to_job_queue_front(queue, job);
+  push_job_to_job_queue(queue, job);
   queue->active_job_count--;
   pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
@@ -274,6 +244,7 @@ static void * worker_manager_thread_f(void * arg)
         new_job->job.node   = &node->child[i];
         FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %u", i);
         new_job->job.depth  = depth;
+        new_job->job.max_node_count = 256*256;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
         i++;
@@ -408,61 +379,72 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
     context->top_call = false;
   }
 
-  fbk_mutex_lock(&job->node->lock);
-  fbk_decompress_move_tree_node(job->node, true);
-  ftk_game_s game = job->game;
-  fbk_evaluate_move_tree_node(job->node, &game, true);
-
-  if(job->depth > 0)
+  if(0 == pthread_mutex_trylock(&job->node->lock))
   {
-    fbk_analysis_job_s sub_job = *job;
-    sub_job.depth--;
-
-    job->node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == job->game.turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
-    job->node->analysis_data.max_depth        =  0;
-    job->node->analysis_data.min_depth        = -1;
-
-    for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
+    fbk_decompress_move_tree_node(job->node, true);
+    ftk_game_s game = job->game;
+    if(fbk_evaluate_move_tree_node(job->node, &game, true) == true)
     {
-      sub_job.node = &job->node->child[i];
-      FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
-      process_job(&sub_job, context, result);
-      FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
-
-      FBK_ASSERT_MSG(true == job->node->child[i].analysis_data.evaluated, "Sub-job failed.");
-      if(job->node->child[i].analysis_data.best_child_index < job->node->child[i].child_count)
-      {
-        if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.best_child_score > job->node->analysis_data.best_child_score)) ||
-           ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.best_child_score < job->node->analysis_data.best_child_score)))
-        {
-          job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.best_child_score;
-          job->node->analysis_data.best_child_index = i;
-        }
-      }
-      else
-      {
-        if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.base_score > job->node->analysis_data.best_child_score)) ||
-           ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.base_score < job->node->analysis_data.best_child_score)))
-        {
-          job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.base_score;
-          job->node->analysis_data.best_child_index = i;
-        }
-      }
-      if(job->node->child[i].analysis_data.min_depth < job->node->analysis_data.min_depth)
-      {
-        job->node->analysis_data.min_depth = job->node->child[i].analysis_data.min_depth;
-      }
-      if(job->node->child[i].analysis_data.max_depth > job->node->analysis_data.max_depth)
-      {
-        job->node->analysis_data.max_depth = job->node->child[i].analysis_data.max_depth;
-      }
+      context->nodes_evaluated++;
     }
 
-    job->node->analysis_data.max_depth++;
-    job->node->analysis_data.min_depth++;
+    if((result->result == FBK_ANALYSIS_JOB_COMPLETE) &&
+       (job->depth > 0) &&
+       (context->nodes_evaluated < job->max_node_count))
+    {
+      fbk_analysis_job_s sub_job = *job;
+      sub_job.depth--;
+
+      job->node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == job->game.turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
+      job->node->analysis_data.max_depth        =  0;
+      job->node->analysis_data.min_depth        = -1;
+
+      for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
+      {
+        sub_job.node = &job->node->child[i];
+        FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
+        process_job(&sub_job, context, result);
+        FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+
+        FBK_ASSERT_MSG(true == job->node->child[i].analysis_data.evaluated, "Sub-job failed.");
+        if(job->node->child[i].analysis_data.best_child_index < job->node->child[i].child_count)
+        {
+          if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.best_child_score > job->node->analysis_data.best_child_score)) ||
+            ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.best_child_score < job->node->analysis_data.best_child_score)))
+          {
+            job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.best_child_score;
+            job->node->analysis_data.best_child_index = i;
+          }
+        }
+        else
+        {
+          if(((FTK_COLOR_WHITE == job->game.turn) && (job->node->child[i].analysis_data.base_score > job->node->analysis_data.best_child_score)) ||
+            ((FTK_COLOR_BLACK == job->game.turn) && (job->node->child[i].analysis_data.base_score < job->node->analysis_data.best_child_score)))
+          {
+            job->node->analysis_data.best_child_score = job->node->child[i].analysis_data.base_score;
+            job->node->analysis_data.best_child_index = i;
+          }
+        }
+        if(job->node->child[i].analysis_data.min_depth < job->node->analysis_data.min_depth)
+        {
+          job->node->analysis_data.min_depth = job->node->child[i].analysis_data.min_depth;
+        }
+        if(job->node->child[i].analysis_data.max_depth > job->node->analysis_data.max_depth)
+        {
+          job->node->analysis_data.max_depth = job->node->child[i].analysis_data.max_depth;
+        }
+      }
+
+      job->node->analysis_data.max_depth++;
+      job->node->analysis_data.min_depth++;
+    }
+    fbk_compress_move_tree_node(job->node, true);
+    fbk_mutex_unlock(&job->node->lock);
   }
-  fbk_compress_move_tree_node(job->node, true);
-  fbk_mutex_unlock(&job->node->lock);
+  else
+  {
+    result->result = FBK_ANALYSIS_JOB_NO_LOCK;
+  }
 }
 
 static void * worker_thread_f(void * arg)
@@ -513,6 +495,7 @@ static void * worker_thread_f(void * arg)
 
     /* Disable PThread cancellation while cleaning up */
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    
     if(FBK_ANALYSIS_JOB_COMPLETE == job_result.result)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);

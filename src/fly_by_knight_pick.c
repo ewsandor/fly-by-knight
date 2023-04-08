@@ -145,16 +145,20 @@ void * picker_thread_f(void * arg)
         FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Could not find best move, not selecting any move yet.");
       }
     }
-
+  
     if((commit_move || report) && (pick_data->pick_cb != NULL))
     {
-      pick_data->pick_cb(game_result, move, pick_data->pick_cb_user_data_ptr);
-    }
+      fbk_pick_callback_response_s callback_response = pick_data->pick_cb(game_result, move, pick_data->pick_cb_user_data_ptr);
 
-    if(commit_move)
-    {
-      fbk_stop_analysis(true);
-      FBK_ASSERT_MSG(true == fbk_commit_move(pick_data->fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+      if(commit_move)
+      {
+        fbk_stop_analysis(true);
+        FBK_ASSERT_MSG(true == fbk_commit_move(pick_data->fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+        if(callback_response.continue_analysis)
+        {
+          fbk_start_analysis(&pick_data->fbk->game, pick_data->fbk->move_tree.current);
+        }
+      }
     }
 
     fbk_mutex_unlock(&pick_data->lock);

@@ -12,7 +12,12 @@
 
 #include "fly_by_knight_types.h"
 
-typedef void (*fbk_pick_callback_f)(ftk_game_end_e, ftk_move_s, void *);
+typedef struct
+{
+  bool continue_analysis;
+} fbk_pick_callback_response_s;
+
+typedef fbk_pick_callback_response_s (*fbk_pick_callback_f)(ftk_game_end_e, ftk_move_s, void *);
 
 /**
  * @brief Logic to initialize the picking logic

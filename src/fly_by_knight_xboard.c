@@ -405,23 +405,30 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   return input_handled;
 }
 
-void manage_xboard_analysis(fbk_instance_s * fbk)
+bool manage_xboard_analysis(fbk_instance_s * fbk)
 {
+  bool ret_val = false;
+
   if( (FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode) &&
       ((fbk->game.turn == fbk->protocol_data.xboard.play_as) || fbk->protocol_data.xboard.ponder))
   {
     fbk_start_analysis(&fbk->game, fbk->move_tree.current);
+    ret_val = true;
   }
   else
   {
     fbk_stop_analysis(false);
   }
+
+  return ret_val;
 }
 
-void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
+fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
 {
   FBK_ASSERT_MSG(user_data != NULL,"NULL user data pointer passed");
   fbk_instance_s *fbk = (fbk_instance_s *) user_data;
+
+  fbk_pick_callback_response_s response = {0};
 
   if(FTK_END_NOT_OVER == game_result)
   {
@@ -469,7 +476,9 @@ void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, voi
     fbk->protocol_data.xboard.result_reported = true;
   }
 
-  manage_xboard_analysis(fbk);
+  response.continue_analysis = manage_xboard_analysis(fbk);
+
+  return response;
 }
 
 /**
