@@ -244,7 +244,7 @@ static void * worker_manager_thread_f(void * arg)
         new_job->job.node   = &node->child[i];
         FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %u", i);
         new_job->job.depth  = depth;
-        new_job->job.max_node_count = 256*256;
+        new_job->job.max_node_count = 10000;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
 
         i++;
