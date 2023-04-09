@@ -63,12 +63,15 @@ typedef struct
   bool                       evaluated;
   /* Score considering this node alone */
   fbk_score_t                base_score;
+  ftk_game_end_e             result;
   /* Min and Max child analysis depth */
   fbk_depth_t                min_depth;
   fbk_depth_t                max_depth;
   /* Child node with best analysis */
-  fbk_score_t                best_child_score;
   fbk_move_tree_node_count_t best_child_index;
+  ftk_game_end_e             best_childe_result;
+  fbk_score_t                best_child_score;
+  fbk_depth_t                best_childe_depth;
 
 } fbk_move_tree_node_analysis_data_s;
 

@@ -252,29 +252,36 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
   if(false == node->analysis_data.evaluated)
   {
     ftk_update_board_masks(game);
-    /* Score position, compound == base as no child nodes evaluated */
+
     memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
-    node->analysis_data.base_score = fbk_score_game(game);
 
-    /* Init child nodes */
-    ftk_move_list_s move_list = {0};
-    ftk_get_move_list(game, &move_list);
-    node->child_count = move_list.count;
+    /* Check for game end */
+    node->analysis_data.result = ftk_check_for_game_end(game);
 
-    if(node->child_count > 0)
+    if(FTK_END_NOT_OVER == node->analysis_data.result)
     {
-      node->child = malloc(node->child_count*sizeof(fbk_move_tree_node_s));
+      node->analysis_data.base_score = fbk_score_game(game);
 
-      for(unsigned int i = 0; i < node->child_count; i++)
+      /* Init child nodes */
+      ftk_move_list_s move_list = {0};
+      ftk_get_move_list(game, &move_list);
+      node->child_count = move_list.count;
+
+      if(node->child_count > 0)
       {
-        fbk_init_move_tree_node(&node->child[i], node, &move_list.move[i]);
+        node->child = malloc(node->child_count*sizeof(fbk_move_tree_node_s));
+
+        for(unsigned int i = 0; i < node->child_count; i++)
+        {
+          fbk_init_move_tree_node(&node->child[i], node, &move_list.move[i]);
+        }
       }
+
+      node->analysis_data.best_child_index = node->child_count;
+      node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == game->turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
+
+      ftk_delete_move_list(&move_list);
     }
-
-    node->analysis_data.best_child_index = node->child_count;
-    node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == game->turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
-
-    ftk_delete_move_list(&move_list);
 
     node->analysis_data.evaluated = true;
     ret_val = true;
