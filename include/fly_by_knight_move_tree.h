@@ -23,17 +23,19 @@ void fbk_init_move_tree_node(fbk_move_tree_node_s * node, fbk_move_tree_node_s *
 
 /**
  * @brief Releases memory for node and all child nodes
+ * @param fast true to perform fast delete (skip invalidating) if not re-initializing node
  * 
  * @param node node to delete
  */
-void fbk_delete_move_tree_node(fbk_move_tree_node_s * node);
+void fbk_delete_move_tree_node(fbk_move_tree_node_s * node, bool fast);
 
 /**
  * @brief Releases memory for node and all child nodes using multiple threads
  * 
  * @param node node to delete
+ * @param fast true to perform fast delete (skip invalidating) if not re-initializing node
  */
-void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node);
+void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node, bool fast);
 
 /**
  * @brief Applies move to given game

@@ -292,10 +292,9 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
  * 
  * @param node 
  */
-void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
+void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node, bool fast)
 {
   unsigned int i;
-
 
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
 
@@ -305,14 +304,17 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
 
   for(i = 0; i < node->child_count; i++)
   {
-    fbk_delete_move_tree_node(&node->child[i]);
+    fbk_delete_move_tree_node(&node->child[i], true);
   }
 
-  node->child_count = 0;
   free(node->child);
+  node->child_count = 0;
   node->child = NULL;
 
-  memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
+  if(!fast)
+  {
+    memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
+  }
 
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }

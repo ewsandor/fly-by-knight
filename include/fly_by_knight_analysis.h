@@ -35,8 +35,9 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
  * @brief Clears evaluation and deletes all child nodes
  * 
  * @param node 
+ * @param fast true to perform fast delete (skip invalidating) if not re-initializing node
  */
-void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node);
+void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node, bool fast);
 
 /**
  * @brief Evaluates all children of node
