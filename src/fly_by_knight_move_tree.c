@@ -79,7 +79,7 @@ void * delete_thread_f(void* arg)
 
   if(delete_thread_arg->parallel)
   {
-    fbk_delete_move_tree_node_parallel(delete_thread_arg->node, delete_thread_arg->fast);
+    fbk_delete_move_tree_node_parallel(delete_thread_arg->node);
   }
   else
   {
@@ -110,7 +110,7 @@ static int node_depth_cmp(const void *a, const void *b)
  * 
  * @param node node to delete
  */
-void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node, bool fast)
+void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node)
 {
   FBK_ASSERT_MSG(node != NULL, "NULL node passed");
 
@@ -159,12 +159,14 @@ void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node, bool fast)
     free(delete_thread);
     free(delete_thread_arg);
     free(sorted_nodes);
+
+    free(node->child);
+    node->child_count = 0;
+    node->child       = NULL;
   }
 
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to lock node mutex");
-
-  /* Finally delete this node */
-  fbk_delete_move_tree_node(node, fast);
+  fbk_mutex_destroy(&node->lock);
 }
 
 

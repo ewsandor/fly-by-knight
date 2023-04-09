@@ -145,8 +145,7 @@ void fbk_begin_standard_game(fbk_instance_s * fbk)
   {
     fbk_stop_analysis(true);
     fbk_stop_picker();
-//    fbk_delete_move_tree_node(&fbk->move_tree.root, true);
-    fbk_delete_move_tree_node_parallel(&fbk->move_tree.root, true);
+    fbk_delete_move_tree_node_parallel(&fbk->move_tree.root);
     fbk->move_tree.initialized = false;
   }
 

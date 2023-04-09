@@ -308,11 +308,11 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node, bool fast)
   }
 
   free(node->child);
-  node->child_count = 0;
-  node->child = NULL;
 
   if(!fast)
   {
+    node->child_count = 0;
+    node->child = NULL;
     memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
   }
 

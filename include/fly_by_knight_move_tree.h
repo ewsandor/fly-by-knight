@@ -35,7 +35,7 @@ void fbk_delete_move_tree_node(fbk_move_tree_node_s * node, bool fast);
  * @param node node to delete
  * @param fast true to perform fast delete (skip invalidating) if not re-initializing node
  */
-void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node, bool fast);
+void fbk_delete_move_tree_node_parallel(fbk_move_tree_node_s * node);
 
 /**
  * @brief Applies move to given game
