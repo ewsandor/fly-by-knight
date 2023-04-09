@@ -38,7 +38,7 @@ void fbk_process_uci_position_command(fbk_instance_s *fbk, char * input)
   else if(strncmp("startpos moves", input, 14) == 0)
   {
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "startpos received: %s", &input[15]);
-    fbk_begin_standard_game(fbk);
+    fbk_begin_standard_game(fbk, true);
 
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
     ftk_square_e target, source;
@@ -117,7 +117,7 @@ bool fbk_process_uci_input(fbk_instance_s *fbk, char * input)
   else if(strcmp("ucinewgame", input) == 0)
   {
     //TODO stop ongoing analysis, reset decision maker, flush analysis
-    fbk_begin_standard_game(fbk);
+    fbk_begin_standard_game(fbk, true);
   }
   else if(strcmp("go", input) == 0)
   {

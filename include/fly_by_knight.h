@@ -59,7 +59,7 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex);
  * 
  * @param fbk 
  */
-void fbk_begin_standard_game(fbk_instance_s * fbk);
+void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis);
 
 /**
  * @brief Commits move to game and updates move tree

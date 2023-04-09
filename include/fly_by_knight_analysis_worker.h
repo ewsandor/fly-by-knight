@@ -203,7 +203,9 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node);
 /**
  * @brief Stops analysis and blocks until all analysis has stopped
  * @param clear_pending_jobs option to clear the job queue after stopping
+ * 
+ * @return true if analysis was started before calling, false if analysis was already stopped
 */
-void fbk_stop_analysis(bool clear_pending_jobs);
+bool fbk_stop_analysis(bool clear_pending_jobs);
 
 #endif /* __FLY_BY_KNIGHT_ANALYSIS_WORKER_H__ */

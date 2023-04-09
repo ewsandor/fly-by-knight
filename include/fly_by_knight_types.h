@@ -41,6 +41,7 @@ typedef int_fast32_t fbk_score_t;
  */
 typedef uint_fast16_t fbk_depth_t;
 #define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
+#define FBK_MAX_DEPTH                ((1<<16)-1)
 
 /**
  * @brief Type for analysis breadth
@@ -129,6 +130,8 @@ typedef uint8_t xboard_version_t;
 typedef enum
 {
   FBK_XBOARD_MODE_NORMAL,
+  FBK_XBOARD_MODE_FORCE,
+  FBK_XBOARD_MODE_WAITING,
   FBK_XBOARD_MODE_EDIT,
 } fbk_xboard_mode_e;
 
