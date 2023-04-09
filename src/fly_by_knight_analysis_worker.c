@@ -377,7 +377,7 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
     fbk_depth_t min_depth = FBK_MAX_DEPTH;
     fbk_analysis_node_count_t best_child = node->child_count;
 
-    for(fbk_analysis_node_count_t i; i < node->child_count; i++)
+    for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
     {
       fbk_mutex_lock(&node->child[i].lock);
       if(node->child[i].analysis_data.evaluated)
@@ -393,7 +393,9 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
 
         if(best_child < node->child_count)
         {
-          if(fbk_compare_move_tree_nodes(&node->child[i], &node->child[best_child]) > 0)
+          const fbk_move_tree_node_s *node_a = &node->child[i];
+          const fbk_move_tree_node_s *node_b = &node->child[best_child];
+          if(fbk_compare_move_tree_nodes(&node_a, &node_b) > 0)
           {
             fbk_mutex_unlock(&node->child[best_child].lock);
             best_child = i;
@@ -411,11 +413,12 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
       else
       {
         all_child_nodes_analyzed = false;
+        fbk_mutex_unlock(&node->child[i].lock);
       }
     }
 
-    node->analysis_data.max_depth = max_depth;
-    node->analysis_data.min_depth = (all_child_nodes_analyzed?min_depth:0);
+    node->analysis_data.max_depth = max_depth+1;
+    node->analysis_data.min_depth = (all_child_nodes_analyzed?min_depth+1:0);
     if(best_child < node->child_count)
     {
       node->analysis_data.best_child_index = best_child;
@@ -659,9 +662,11 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
   fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
 }
 
-void fbk_stop_analysis(bool clear_pending_jobs)
+bool fbk_stop_analysis(bool clear_pending_jobs)
 {
+  
   fbk_mutex_lock(&fbk_analysis_data.analysis_state.lock);
+  bool ret_val = fbk_analysis_data.analysis_state.analysis_active;
   if(fbk_analysis_data.analysis_state.analysis_active == true)
   {
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
@@ -685,4 +690,5 @@ void fbk_stop_analysis(bool clear_pending_jobs)
   fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");
 
+  return ret_val;
 }
