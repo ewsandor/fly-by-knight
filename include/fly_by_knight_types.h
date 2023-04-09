@@ -129,6 +129,8 @@ typedef uint8_t xboard_version_t;
 typedef enum
 {
   FBK_XBOARD_MODE_NORMAL,
+  FBK_XBOARD_MODE_FORCE,
+  FBK_XBOARD_MODE_WAITING,
   FBK_XBOARD_MODE_EDIT,
 } fbk_xboard_mode_e;
 

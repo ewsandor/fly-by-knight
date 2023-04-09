@@ -33,7 +33,7 @@ void fbk_init_xboard_protocol(fbk_instance_s *fbk)
   memset(&fbk->protocol_data, 0, sizeof(fbk_protocol_data_u));
 
   fbk->protocol_data.xboard.version = 1;
-  fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL; 
+  fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE; 
 }
 
 /**
@@ -158,11 +158,12 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   else if(strcmp("force", input) == 0)
   {
     fbk_stop_analysis(true);
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
-    fbk->protocol_data.xboard.ponder  = false;
   }
   else if(strcmp("go", input) == 0)
   {
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
     fbk->protocol_data.xboard.play_as = fbk->game.turn;
   }
   else if(strcmp("playother", input) == 0)
@@ -239,6 +240,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     fbk_begin_standard_game(fbk);
 
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_WAITING;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
     fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   }
@@ -345,7 +347,7 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   if(strcmp(".", input) == 0)
   {
     FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Exiting xboard edit mode");
-    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_NORMAL;
+    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_FORCE;
     ftk_update_board_masks(&fbk->game);
   }
   else if(strcmp("c", input) == 0)
@@ -495,7 +497,10 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
   FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
 
-  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
+  if((FBK_XBOARD_MODE_NORMAL  == fbk->protocol_data.xboard.mode) ||
+     (FBK_XBOARD_MODE_FORCE   == fbk->protocol_data.xboard.mode) ||
+     (FBK_XBOARD_MODE_WAITING == fbk->protocol_data.xboard.mode) )
+
   {
     input_handled = fbk_process_xboard_input_normal_mode(fbk, input, input_length);
   }
