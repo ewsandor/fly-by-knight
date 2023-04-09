@@ -47,6 +47,16 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node);
 void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_s game);
 
 /**
+ * @brief Compares the score of two evaluated move tree nodes
+ * 
+ * @param a Node A for comparison
+ * @param b Node B for comparison
+ * 
+ * @return >0 if A is better than B, <0 if B is better than A, or 0 if equivalent
+*/
+int fbk_compare_move_tree_nodes(const void *a, const void *b);
+
+/**
  * @brief Sort child nodes of given node.  Assumes caller holds the lock on node
  * 
  * @param node         node to sort children

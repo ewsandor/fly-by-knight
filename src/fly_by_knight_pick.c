@@ -158,7 +158,7 @@ void * picker_thread_f(void * arg)
 
     fbk_mutex_unlock(&pick_data->lock);
 
-    sleep(1);
+    sleep(5);
   }
 }
 

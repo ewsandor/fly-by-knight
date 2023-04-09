@@ -345,7 +345,7 @@ void fbk_evaluate_move_tree_node_children(fbk_move_tree_node_s * node, ftk_game_
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(&node->lock), "Failed to unlock node mutex");
 }
 
-static int node_cmp(const void *a, const void *b)
+int fbk_compare_move_tree_nodes(const void *a, const void *b)
 {
   int ret_val = 0;
 
@@ -395,7 +395,7 @@ bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sor
 
   if(true == ret_val)
   {
-    qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), node_cmp);
+    qsort(sorted_nodes, node->child_count, sizeof(fbk_move_tree_node_s*), fbk_compare_move_tree_nodes);
   }
 
   /* Release pointers */
