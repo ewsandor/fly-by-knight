@@ -238,7 +238,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("new", input) == 0)
   {
-    fbk_begin_standard_game(fbk);
+    fbk_begin_standard_game(fbk, false);
 
     fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_WAITING;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
@@ -260,7 +260,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     if(input_length > 9)
     {
-      fbk_begin_standard_game(fbk);
+      fbk_begin_standard_game(fbk, true);
       ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[9]);
       FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[9], ftk_result);
     }

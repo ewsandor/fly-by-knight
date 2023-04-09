@@ -135,9 +135,10 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex)
 /**
  * @brief Begins a new standard game.  Resets move tree and setups up game
  * 
- * @param fbk 
+ * @param fbk Fly by Knight context
+ * @param flush_analysis flush analysis after setting board
  */
-void fbk_begin_standard_game(fbk_instance_s * fbk)
+void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk_instance pointer passed.");
 
@@ -146,6 +147,10 @@ void fbk_begin_standard_game(fbk_instance_s * fbk)
     fbk_stop_analysis(true);
     fbk_stop_picker();
     fbk->move_tree.initialized = false;
+    if(flush_analysis)
+    {
+      fbk_delete_move_tree_node(&fbk->move_tree.root);
+    }
   }
 
   ftk_begin_standard_game(&fbk->game);
@@ -254,7 +259,7 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
 
   setbuf(stdout, NULL);
 
-  fbk_begin_standard_game(fbk);
+  fbk_begin_standard_game(fbk, true);
 
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
   fbk_update_worker_thread_count(arguments->worker_threads);
