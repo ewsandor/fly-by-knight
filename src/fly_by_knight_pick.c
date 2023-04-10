@@ -122,6 +122,8 @@ void * picker_thread_f(void * arg)
     
     bool analysis_restart_needed = fbk_stop_analysis(false);
 
+    FBK_DEBUG_MSG(FBK_DEBUG_MED, "Considering best move for picking logic.");
+
     ftk_game_end_e game_result = ftk_check_for_game_end(&pick_data->fbk->game);
     ftk_move_s     move        = {0};
 
