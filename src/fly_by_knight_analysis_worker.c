@@ -422,13 +422,16 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
     if(best_child < node->child_count)
     {
       node->analysis_data.best_child_index = best_child;
+      node->analysis_data.best_child_depth = node->child[best_child].analysis_data.best_child_depth + 1;
       if(node->child[best_child].analysis_data.best_child_index < node->child[best_child].child_count)
       {
-        node->analysis_data.best_child_score = node->child[best_child].analysis_data.best_child_score;
+        node->analysis_data.best_child_score  = node->child[best_child].analysis_data.best_child_score;
+        node->analysis_data.best_child_result = node->child[best_child].analysis_data.best_child_result;
       }
       else
       {
-        node->analysis_data.best_child_score = node->child[best_child].analysis_data.base_score;
+        node->analysis_data.best_child_score  = node->child[best_child].analysis_data.base_score;
+        node->analysis_data.best_child_result = node->child[best_child].analysis_data.result;
       }
       fbk_mutex_unlock(&node->child[best_child].lock);
     }

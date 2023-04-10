@@ -69,9 +69,9 @@ typedef struct
   fbk_depth_t                max_depth;
   /* Child node with best analysis */
   fbk_move_tree_node_count_t best_child_index;
-  ftk_game_end_e             best_childe_result;
+  ftk_game_end_e             best_child_result;
   fbk_score_t                best_child_score;
-  fbk_depth_t                best_childe_depth;
+  fbk_depth_t                best_child_depth;
 
 } fbk_move_tree_node_analysis_data_s;
 
