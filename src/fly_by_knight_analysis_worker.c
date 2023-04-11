@@ -213,6 +213,13 @@ static void * worker_manager_thread_f(void * arg)
       node = NULL;
     }
 
+    while(node == analysis_data->analysis_state.root_node)
+    {
+      fbk_mutex_unlock(&analysis_data->job_queue.lock);
+      pthread_cond_wait(&fbk_analysis_data.analysis_state.analysis_node_changed_cond, &analysis_data->analysis_state.lock);
+      fbk_mutex_lock(&analysis_data->job_queue.lock);
+    }
+
     if((analysis_data->analysis_state.analysis_active) &&
        (node != analysis_data->analysis_state.root_node))
     {
@@ -278,6 +285,7 @@ bool fbk_init_analysis_data(fbk_instance_s *fbk)
     fbk_analysis_data.analysis_state.analysis_active = false;
     FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.analysis_state.lock), "Failed to initialize analysis state lock");
     FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.analysis_state.analysis_started_cond, NULL), "Failed to initialize analysis_started condition");
+    FBK_ASSERT_MSG(0 == pthread_cond_init(&fbk_analysis_data.analysis_state.analysis_node_changed_cond, NULL), "Failed to initialize analysis_node_changed condition");
 
     /* Initialize job queue */
     FBK_ASSERT_MSG(fbk_mutex_init(&fbk_analysis_data.job_queue.lock), "Failed to initialize job queue lock");
@@ -641,7 +649,11 @@ void fbk_start_analysis(const ftk_game_s *game, fbk_move_tree_node_s * node)
     FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Starting analysis.");
     fbk_analysis_data.analysis_state.analysis_active =  true;
   }
-  fbk_analysis_data.analysis_state.root_node       =  node;
+  if(node != fbk_analysis_data.analysis_state.root_node)
+  {
+    fbk_analysis_data.analysis_state.root_node =  node;
+    pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_node_changed_cond);
+  }
   fbk_analysis_data.analysis_state.game            = *game;
   pthread_cond_broadcast(&fbk_analysis_data.analysis_state.analysis_started_cond);
 

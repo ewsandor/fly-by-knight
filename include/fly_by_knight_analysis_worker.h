@@ -112,6 +112,7 @@ typedef struct
   /* Analysis check protection*/
   fbk_mutex_t           lock;
   pthread_cond_t        analysis_started_cond;
+  pthread_cond_t        analysis_node_changed_cond;
   /* Indicates analysis has been requested and is active */
   bool                  analysis_active;
 
