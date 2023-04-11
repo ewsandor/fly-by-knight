@@ -58,8 +58,6 @@ typedef struct
   fbk_depth_t                depth;
   /* Breadth to search */
   fbk_breadth_t              breadth;
-  /* Maximum number of nodes to search */
-  fbk_analysis_node_count_t  max_node_count;
 } fbk_analysis_job_s;
 
 /* Node for job queue */

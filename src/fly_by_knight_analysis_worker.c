@@ -125,10 +125,14 @@ static void job_finished(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queu
   FBK_ASSERT_MSG(queue != NULL,   "NULL job queue passed.");
   FBK_ASSERT_MSG(job != NULL, "NULL job passed.");
 
-  free(job);
   fbk_mutex_lock(&queue->lock);
   FBK_ASSERT_MSG(queue->active_job_count > 0, "Unexpected for job to finish with no active jobs");
   queue->active_job_count--;
+
+  job->job.depth++;
+  job->job.job_id = queue->next_job_id++;
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queueing job %u with depth %lu.", job->job.job_id, job->job.depth);
+  push_job_to_job_queue(queue, job);
   pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
 }
@@ -238,7 +242,6 @@ static void * worker_manager_thread_f(void * arg)
         new_job->job.node   = &node->child[i];
         FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %lu", i);
         new_job->job.depth  = WORKER_MANAGER_JOB_INITIAL_DEPTH;
-        new_job->job.max_node_count = 256*256;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
       }
       fbk_mutex_unlock(&node->lock);
@@ -450,9 +453,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         context->nodes_evaluated++;
       }
 
-      if((result->result == FBK_ANALYSIS_JOB_COMPLETE) &&
-        (job->depth > 0) &&
-        (context->nodes_evaluated < job->max_node_count))
+      if((result->result == FBK_ANALYSIS_JOB_COMPLETE) && (job->depth > 0))
       {
         fbk_analysis_job_s sub_job = *job;
         sub_job.depth--;
