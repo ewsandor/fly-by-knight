@@ -124,10 +124,15 @@ struct fbk_move_tree_struct
 typedef enum 
 {
   FBK_PROTOCOL_UNDEFINED,
+  #ifdef FBK_UCI_PROTOCOL_SUPPORT
   FBK_PROTOCOL_UCI,
+  #endif
+  #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
   FBK_PROTOCOL_XBOARD
+  #endif
 } fbk_protocol_e;
 
+#ifdef FBK_XBOARD_PROTOCOL_SUPPORT
 typedef uint8_t xboard_version_t;
 
 typedef enum
@@ -159,11 +164,15 @@ typedef struct
   bool             result_reported;
 
 } fbk_xboard_data_s;
+#endif
 
 typedef union
 {
+  char              unused;
+  #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
   /* Data specific to xboard */
   fbk_xboard_data_s xboard;
+  #endif
 
 } fbk_protocol_data_u;
 
