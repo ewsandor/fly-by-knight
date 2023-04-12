@@ -363,16 +363,61 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
   FBK_ASSERT_MSG(node_b->analysis_data.evaluated, "Node B not evaluated");
   FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
 
-  fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
-                             (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
-  fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
-                             (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
-
-  ret_val = node_a_score-node_b_score;
-
-  if(node_a->move.turn == FTK_COLOR_BLACK)
+  /* Check for the better node as white */
+  if(FTK_END_DEFINITIVE(node_a->analysis_data.result))
   {
-    ret_val *= -1;
+    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    {
+
+    }
+    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    {
+
+    }
+    else
+    {
+      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+    }
+  }
+  else if(FTK_END_DRAW(node_a->analysis_data.result))
+  {
+    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    {
+
+    }
+    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    {
+      /* Both nodes are a draw, choose the longer path as an opponent is more likely to make a mistake */
+      ret_val = (node_a->analysis_data.best_child_depth - node_b->analysis_data.best_child_depth);
+    }
+    else
+    {
+      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+    }
+  }
+  else
+  {
+    FBK_ASSERT_MSG((node_a->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+
+    fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
+                              (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
+
+    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    {
+
+    }
+    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    {
+
+    }
+    else
+    {
+      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+      fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
+                                (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
+
+      ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
+    }
   }
 
   return ret_val;
