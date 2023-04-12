@@ -364,9 +364,38 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
   FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
 
   /* Check for the better node as white */
-  if(FTK_END_DEFINITIVE(node_a->analysis_data.result))
+  if(node_a->analysis_data.result == FTK_END_NOT_OVER)
   {
-    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
+                              (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
+
+    if(node_b->analysis_data.result == FTK_END_NOT_OVER)
+    {
+      fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
+                                (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
+
+      ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
+    }
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    {
+
+    }
+    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    {
+      fbk_score_t node_b_score = 0;
+      ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
+    }
+    else
+    {
+      FBK_FATAL_MSG("Unhandled node game result");
+    }
+  }
+  else if(FTK_END_DEFINITIVE(node_a->analysis_data.result))
+  {
+    if(node_b->analysis_data.result == FTK_END_NOT_OVER)
+    {
+    }
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
     {
 
     }
@@ -376,12 +405,21 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
     }
     else
     {
-      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+      FBK_FATAL_MSG("Unhandled node game result");
     }
   }
   else if(FTK_END_DRAW(node_a->analysis_data.result))
   {
-    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    fbk_score_t node_a_score = 0;
+
+    if(node_b->analysis_data.result == FTK_END_NOT_OVER)
+    {
+      fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
+                                (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
+
+      ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
+    }
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
     {
 
     }
@@ -392,32 +430,12 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
     }
     else
     {
-      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
+      FBK_FATAL_MSG("Unhandled node game result");
     }
   }
   else
   {
-    FBK_ASSERT_MSG((node_a->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
-
-    fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
-                              (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
-
-    if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
-    {
-
-    }
-    else if(FTK_END_DRAW(node_b->analysis_data.result))
-    {
-
-    }
-    else
-    {
-      FBK_ASSERT_MSG((node_b->analysis_data.result == FTK_END_NOT_OVER), "Unhandled node game result");
-      fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
-                                (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
-
-      ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
-    }
+    FBK_FATAL_MSG("Unhandled node game result");
   }
 
   return ret_val;
