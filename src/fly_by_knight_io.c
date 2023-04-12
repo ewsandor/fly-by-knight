@@ -22,9 +22,14 @@
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_io.h"
 #include "fly_by_knight_types.h"
-#include "fly_by_knight_uci.h"
 #include "fly_by_knight_version.h"
+
+#ifdef FBK_UCI_PROTOCOL_SUPPORT
+#include "fly_by_knight_uci.h"
+#endif
+#ifdef FBK_XBOARD_PROTOCOL_SUPPORT
 #include "fly_by_knight_xboard.h"
+#endif
 
 #define FBK_INPUT_BUFFER_SIZE  1024
 #define FBK_OUTPUT_BUFFER_SIZE 1024
@@ -154,7 +159,8 @@ void *fly_by_knight_io_thread(void *fbk_instance)
     {
       if(strcmp("uci", input_buffer) == 0)
       {
-        FBK_FATAL_MSG("UCI not fully supported yet, please prefer xboard");
+        #ifdef FBK_UCI_PROTOCOL_SUPPORT
+        FBK_OUTPUT_MSG("info string The UCI communication protocol not fully supported yet, please prefer the xboard communication protocol.\n");
 
         fbk->protocol = FBK_PROTOCOL_UCI;
 
@@ -163,24 +169,37 @@ void *fly_by_knight_io_thread(void *fbk_instance)
                        "id author " FLY_BY_KNIGHT_AUTHOR "\n"
                        /* TODO specify options */
                        "uciok\n");
+        #else
+        FBK_OUTPUT_MSG("The uci communication protocol is not supported.\n");
+        fbk_exit(1);
+        #endif
       }
       else if(strcmp("xboard", input_buffer) == 0)
       {
+        #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
         fbk_init_xboard_protocol(fbk);
+        #else
+        FBK_OUTPUT_MSG("The xboard communication protocol is not supported.\n");
+        fbk_exit(1);
+        #endif
       }
       else
       {
         input_handled = false;
       }
     }
+    #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
     else if(FBK_PROTOCOL_XBOARD == fbk->protocol)
     {
       input_handled = fbk_process_xboard_input(fbk, input_buffer);
     }
+    #endif
+    #ifdef FBK_UCI_PROTOCOL_SUPPORT
     else if(FBK_PROTOCOL_UCI == fbk->protocol)
     {
       input_handled = fbk_process_uci_input(fbk, input_buffer);
     }
+    #endif
     else
     {
       FBK_FATAL_MSG("Unsupported protocol %d", fbk->protocol);
