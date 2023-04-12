@@ -317,6 +317,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
 
           if(FTK_MOVE_VALID(move))
           {
+            fbk_stop_analysis(true);
             FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
           }
           else
