@@ -257,6 +257,7 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
 
     /* Check for game end */
     node->analysis_data.result = ftk_check_for_game_end(game);
+    node->analysis_data.best_child_result = node->analysis_data.result;
 
     if(FTK_END_NOT_OVER == node->analysis_data.result)
     {
@@ -278,7 +279,7 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
       }
 
       node->analysis_data.best_child_index = node->child_count;
-      node->analysis_data.best_child_score =  (FTK_COLOR_WHITE == game->turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
+      node->analysis_data.best_child_score = (FTK_COLOR_WHITE == game->turn)?FBK_SCORE_BLACK_MAX:FBK_SCORE_WHITE_MAX;
 
       ftk_delete_move_list(&move_list);
     }
@@ -364,25 +365,25 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
   FBK_ASSERT_MSG(node_a->move.turn == node_b->move.turn, "Node turns do not match");
 
   /* Check for the better node as white */
-  if(node_a->analysis_data.result == FTK_END_NOT_OVER)
+  if(node_a->analysis_data.best_child_result == FTK_END_NOT_OVER)
   {
     fbk_score_t node_a_score = (node_a->analysis_data.best_child_index < node_a->child_count)?
                               (node_a->analysis_data.best_child_score):(node_a->analysis_data.base_score);
 
-    if(node_b->analysis_data.result == FTK_END_NOT_OVER)
+    if(node_b->analysis_data.best_child_result == FTK_END_NOT_OVER)
     {
       fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
                                 (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
 
       ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
     }
-    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.best_child_result))
     {
       /* If child depth is even, then node B will checkmate in the current turn's favor.  
          If odd, then node B will checkmate in the other turn's favor. */
       ret_val = ((node_b->analysis_data.best_child_depth % 2) == 0)?-1:1;
     }
-    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    else if(FTK_END_DRAW(node_b->analysis_data.best_child_result))
     {
       fbk_score_t node_b_score = 0;
       ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
@@ -392,42 +393,66 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
       FBK_FATAL_MSG("Unhandled node game result");
     }
   }
-  else if(FTK_END_DEFINITIVE(node_a->analysis_data.result))
+  else if(FTK_END_DEFINITIVE(node_a->analysis_data.best_child_result))
   {
-    if( (node_b->analysis_data.result == FTK_END_NOT_OVER) ||
-        (FTK_END_DRAW(node_b->analysis_data.result)) )
+    if( (node_b->analysis_data.best_child_result == FTK_END_NOT_OVER) ||
+        (FTK_END_DRAW(node_b->analysis_data.best_child_result)) )
     {
       /* If child depth is even, then node A will checkmate in the current turn's favor.  
          If odd, then node A will checkmate in the other turn's favor. */
       ret_val = ((node_a->analysis_data.best_child_depth % 2) == 0)?1:-1;
     }
-    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.best_child_result))
     {
-
+      if( ((node_a->analysis_data.best_child_depth % 2) == 0) &&
+          ((node_b->analysis_data.best_child_depth % 2) == 1) )
+      {
+        /* Node A checkmates in the current turns favor.  Node B loses */
+        ret_val = 1;
+      }
+      else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 0) )
+      {
+        /* Node B checkmates in the current turns favor.  Node A loses */
+        ret_val = -1;
+      }
+      else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 1) )
+      {
+        /* Node A and Node B both checkmate in the current turns favor. Choose the shortest path. */
+          /* If node B is the larger path, return a positive value */
+        ret_val = node_b->analysis_data.best_child_depth-node_a->analysis_data.best_child_depth;
+      }
+      else if(((node_a->analysis_data.best_child_depth % 2) == 0) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 0) )
+      {
+        /* Node A and Node B both lose. Choose the longest path to maximize the chance of an opponents mistake. */
+        ret_val = node_a->analysis_data.best_child_depth-node_b->analysis_data.best_child_depth;
+      }
     }
     else
     {
       FBK_FATAL_MSG("Unhandled node game result");
     }
   }
-  else if(FTK_END_DRAW(node_a->analysis_data.result))
+  else if(FTK_END_DRAW(node_a->analysis_data.best_child_result))
   {
     fbk_score_t node_a_score = 0;
 
-    if(node_b->analysis_data.result == FTK_END_NOT_OVER)
+    if(node_b->analysis_data.best_child_result == FTK_END_NOT_OVER)
     {
       fbk_score_t node_b_score = (node_b->analysis_data.best_child_index < node_b->child_count)?
                                 (node_b->analysis_data.best_child_score):(node_b->analysis_data.base_score);
 
       ret_val = (node_a->move.turn == FTK_COLOR_WHITE)?(node_a_score-node_b_score):(node_b_score-node_a_score);
     }
-    else if(FTK_END_DEFINITIVE(node_b->analysis_data.result))
+    else if(FTK_END_DEFINITIVE(node_b->analysis_data.best_child_result))
     {
       /* If child depth is even, then node B will checkmate in the current turn's favor.  
          If odd, then node B will checkmate in the other turn's favor. */
       ret_val = ((node_b->analysis_data.best_child_depth % 2) == 0)?-1:1;
     }
-    else if(FTK_END_DRAW(node_b->analysis_data.result))
+    else if(FTK_END_DRAW(node_b->analysis_data.best_child_result))
     {
       /* Both nodes are a draw, choose the longer path as an opponent is more likely to make a mistake */
       ret_val = (node_a->analysis_data.best_child_depth - node_b->analysis_data.best_child_depth);
