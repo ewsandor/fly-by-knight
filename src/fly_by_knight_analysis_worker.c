@@ -667,12 +667,9 @@ bool fbk_stop_analysis(bool clear_pending_jobs)
   bool ret_val = fbk_analysis_data.analysis_state.analysis_active;
   if(fbk_analysis_data.analysis_state.analysis_active == true)
   {
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis.");
-    /* Disable analysis */
-    fbk_analysis_data.analysis_state.analysis_active = false;
-    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Blocking until analysis is fully stopped.");
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Stopping analysis and blocking until analysis is fully stopped.");
   }
-  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
+  fbk_analysis_data.analysis_state.analysis_active = false;
 
   fbk_mutex_lock(&fbk_analysis_data.job_queue.lock);
   /* Block for all analysis to stop */
@@ -686,6 +683,7 @@ bool fbk_stop_analysis(bool clear_pending_jobs)
     fbk_analysis_data.analysis_state.root_node = NULL;
   }
   fbk_mutex_unlock(&fbk_analysis_data.job_queue.lock);
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_state.lock);
   FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Analysis stopped.");
 
   return ret_val;

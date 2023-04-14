@@ -120,54 +120,59 @@ void * picker_thread_f(void * arg)
       pthread_cond_wait(&pick_data->pick_started_cond, &pick_data->lock);
     }
     
+    fbk_mutex_unlock(&pick_data->lock);
     bool analysis_restart_needed = fbk_stop_analysis(false);
+    fbk_mutex_lock(&pick_data->lock);
 
-    FBK_DEBUG_MSG(FBK_DEBUG_MED, "Considering best move for picking logic.");
-
-    ftk_game_end_e game_result = ftk_check_for_game_end(&pick_data->fbk->game);
-    ftk_move_s     move        = {0};
-
-    bool report      = false;
-    bool commit_move = false;
-
-    if(FTK_END_NOT_OVER != game_result)
+    if(pick_data->picker_active == true)
     {
-      fbk_stop_analysis(true);
-      analysis_restart_needed = false;
-      report = true;
-    }
-    else if(FTK_END_NOT_OVER == game_result && (pick_data->fbk->game.turn == pick_data->play_as))
-    {
-      move = fbk_get_best_move(pick_data->fbk);
-      
-      if(FTK_MOVE_VALID(move))
-      {
-        /* Commit move */
-        commit_move = true;
-      }
-      else
-      {
-        FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Could not find best move, not selecting any move yet.");
-      }
-    }
-  
-    if((commit_move || report) && (pick_data->pick_cb != NULL))
-    {
-      if(commit_move)
+      /* Make sure picker is still active */
+      FBK_DEBUG_MSG(FBK_DEBUG_MED, "Considering best move for picking logic.");
+
+      ftk_game_end_e game_result = ftk_check_for_game_end(&pick_data->fbk->game);
+      ftk_move_s     move        = {0};
+
+      bool report      = false;
+      bool commit_move = false;
+
+      if(FTK_END_NOT_OVER != game_result)
       {
         fbk_stop_analysis(true);
         analysis_restart_needed = false;
-        FBK_ASSERT_MSG(true == fbk_commit_move(pick_data->fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+        report = true;
       }
-      pick_data->pick_cb(game_result, move, pick_data->pick_cb_user_data_ptr);
+      else if(FTK_END_NOT_OVER == game_result && (pick_data->fbk->game.turn == pick_data->play_as))
+      {
+        move = fbk_get_best_move(pick_data->fbk);
+        
+        if(FTK_MOVE_VALID(move))
+        {
+          /* Commit move */
+          commit_move = true;
+        }
+        else
+        {
+          FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Could not find best move, not selecting any move yet.");
+        }
+      }
+    
+      if((commit_move || report) && (pick_data->pick_cb != NULL))
+      {
+        if(commit_move)
+        {
+          fbk_stop_analysis(true);
+          analysis_restart_needed = false;
+          FBK_ASSERT_MSG(true == fbk_commit_move(pick_data->fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
+        }
+        pick_data->pick_cb(game_result, move, pick_data->pick_cb_user_data_ptr);
+      }
     }
+    fbk_mutex_unlock(&pick_data->lock);
 
     if(analysis_restart_needed)
     {
       fbk_start_analysis(&pick_data->fbk->game, pick_data->fbk->move_tree.current);
     }
-
-    fbk_mutex_unlock(&pick_data->lock);
 
     sleep(5);
   }
