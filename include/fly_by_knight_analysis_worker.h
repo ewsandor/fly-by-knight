@@ -43,11 +43,13 @@ typedef struct
 
 } fbk_analysis_job_context_s;
 
+typedef unsigned int fbk_analysis_job_id_t;
+
 /* Job details for worker thread to analyze game */
 typedef struct 
 {
   /* Identifier for job */
-  unsigned int               job_id;
+  fbk_analysis_job_id_t      job_id;
   /* Reference game to begin analysis on */
   ftk_game_s                 game;
   /* Node to begin analysis on */
@@ -56,8 +58,6 @@ typedef struct
   fbk_depth_t                depth;
   /* Breadth to search */
   fbk_breadth_t              breadth;
-  /* Maximum number of nodes to search */
-  fbk_analysis_node_count_t  max_node_count;
 } fbk_analysis_job_s;
 
 /* Node for job queue */
@@ -87,6 +87,11 @@ typedef struct
   /* Condition when new job processing is stopped (either successfully or in failure) */
   pthread_cond_t job_ended;
 
+  /* Indicate the job queue has been cleared and need new initial jobs */
+  bool                           queue_cleared;
+  /* Number of active jobs popped from the queue but not yet freed */
+  fbk_analysis_job_count_t       active_job_count;
+
   /* Number of queued jobs */
   fbk_analysis_job_count_t       job_count;
   /* Root job of queue */
@@ -94,8 +99,8 @@ typedef struct
   /* Back of job queue*/
   fbk_analysis_job_queue_node_s *last_job;
 
-  /* Number of active jobs popped from the queue but not yet freed */
-  fbk_analysis_job_count_t active_job_count;
+  /* ID for next job created*/
+  fbk_analysis_job_id_t          next_job_id;
 
 } fbk_analysis_job_queue_s;
 
@@ -107,6 +112,7 @@ typedef struct
   /* Analysis check protection*/
   fbk_mutex_t           lock;
   pthread_cond_t        analysis_started_cond;
+  pthread_cond_t        analysis_node_changed_cond;
   /* Indicates analysis has been requested and is active */
   bool                  analysis_active;
 
