@@ -381,7 +381,7 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
     {
       /* If child depth is even, then node B will checkmate in the current turn's favor.  
          If odd, then node B will checkmate in the other turn's favor. */
-      ret_val = ((node_b->analysis_data.best_child_depth % 2) == 0)?-1:1;
+      ret_val = ((node_b->analysis_data.best_child_depth % 2) == 1)?-1:1;
     }
     else if(FTK_END_DRAW(node_b->analysis_data.best_child_result))
     {
@@ -400,31 +400,31 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
     {
       /* If child depth is even, then node A will checkmate in the current turn's favor.  
          If odd, then node A will checkmate in the other turn's favor. */
-      ret_val = ((node_a->analysis_data.best_child_depth % 2) == 0)?1:-1;
+      ret_val = ((node_a->analysis_data.best_child_depth % 2) == 1)?1:-1;
     }
     else if(FTK_END_DEFINITIVE(node_b->analysis_data.best_child_result))
     {
-      if( ((node_a->analysis_data.best_child_depth % 2) == 0) &&
-          ((node_b->analysis_data.best_child_depth % 2) == 1) )
+      if( ((node_a->analysis_data.best_child_depth % 2) == 1) &&
+          ((node_b->analysis_data.best_child_depth % 2) == 0) )
       {
         /* Node A checkmates in the current turns favor.  Node B loses */
         ret_val = 1;
       }
-      else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
-              ((node_b->analysis_data.best_child_depth % 2) == 0) )
+      else if(((node_a->analysis_data.best_child_depth % 2) == 0) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 1) )
       {
         /* Node B checkmates in the current turns favor.  Node A loses */
         ret_val = -1;
       }
-      else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
-              ((node_b->analysis_data.best_child_depth % 2) == 1) )
+      else if(((node_a->analysis_data.best_child_depth % 2) == 0) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 0) )
       {
         /* Node A and Node B both checkmate in the current turns favor. Choose the shortest path. */
           /* If node B is the larger path, return a positive value */
         ret_val = node_b->analysis_data.best_child_depth-node_a->analysis_data.best_child_depth;
       }
-      else if(((node_a->analysis_data.best_child_depth % 2) == 0) &&
-              ((node_b->analysis_data.best_child_depth % 2) == 0) )
+      else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
+              ((node_b->analysis_data.best_child_depth % 2) == 1) )
       {
         /* Node A and Node B both lose. Choose the longest path to maximize the chance of an opponents mistake. */
         ret_val = node_a->analysis_data.best_child_depth-node_b->analysis_data.best_child_depth;
@@ -450,7 +450,7 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
     {
       /* If child depth is even, then node B will checkmate in the current turn's favor.  
          If odd, then node B will checkmate in the other turn's favor. */
-      ret_val = ((node_b->analysis_data.best_child_depth % 2) == 0)?-1:1;
+      ret_val = ((node_b->analysis_data.best_child_depth % 2) == 1)?-1:1;
     }
     else if(FTK_END_DRAW(node_b->analysis_data.best_child_result))
     {
