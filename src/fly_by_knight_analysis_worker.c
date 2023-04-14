@@ -466,11 +466,9 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         fbk_analysis_job_s sub_job = *job;
         sub_job.depth--;
 
-        fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
-
         for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
         {
-          /* Do surface analysis on all child nodes */
+          /* Do surface analysis (depth 1) on all child nodes */
           sub_job.node = &job->node->child[i];
           FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
           if(fbk_evaluate_move_tree_node(job->node->child, &game, true) == true)
@@ -480,18 +478,22 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
           FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
         }
 
-        FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
-
-        for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
+        if(sub_job.depth > 1)
         {
-          sub_job.node = &job->node->child[i];
-          FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
-          process_job(&sub_job, context, result);
-          FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
-          if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
+          fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
+          FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
+          for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
           {
-            break;
+            sub_job.node = &job->node->child[i];
+            FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
+            process_job(&sub_job, context, result);
+            FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+            if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
+            {
+              break;
+            }
           }
+          free(sorted_nodes);
         }
       }
       update_analysis_from_child_nodes(job->node);
