@@ -132,7 +132,7 @@ static void job_finished(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queu
   job->job.depth++;
   job->job.job_id  = queue->next_job_id++;
   job->job.breadth = FBK_DEFAULT_ANALYSIS_BREADTH;
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queueing job %u with depth %lu.", job->job.job_id, job->job.depth);
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queueing job %u with depth %lu and breadth %u.", job->job.job_id, job->job.depth, job->job.breadth);
   push_job_to_job_queue(queue, job);
   pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
@@ -241,7 +241,7 @@ static void * worker_manager_thread_f(void * arg)
 
       for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
       {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH);
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u and breadth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH, FBK_MAX_ANALYSIS_BREADTH);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
         FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
         /* Fill job info here... */
