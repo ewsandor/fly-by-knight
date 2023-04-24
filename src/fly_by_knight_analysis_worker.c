@@ -475,6 +475,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
           if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, false) == true)
           {
             context->nodes_evaluated++;
+            fbk_compress_move_tree_node(&job->node->child[i], true);
           }
           FBK_ASSERT_MSG(fbk_undo_move_tree_node(&job->node->child[i], &game), "Failed to undo child node %lu", i);
         }
