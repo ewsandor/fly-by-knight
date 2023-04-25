@@ -420,15 +420,15 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
       else if(((node_a->analysis_data.best_child_depth % 2) == 1) &&
               ((node_b->analysis_data.best_child_depth % 2) == 1) )
       {
-        /* Node A and Node B both checkmate in the current turns favor. Choose the shortest path. */
-          /* If node B is the larger path, return a positive value */
-        ret_val = node_b->analysis_data.best_child_depth-node_a->analysis_data.best_child_depth;
+        /* Node A and Node B both lose. Choose the longest path to maximize the chance of an opponents mistake. */
+        ret_val = node_a->analysis_data.best_child_depth-node_b->analysis_data.best_child_depth;
       }
       else if(((node_a->analysis_data.best_child_depth % 2) == 0) &&
               ((node_b->analysis_data.best_child_depth % 2) == 0) )
       {
-        /* Node A and Node B both lose. Choose the longest path to maximize the chance of an opponents mistake. */
-        ret_val = node_a->analysis_data.best_child_depth-node_b->analysis_data.best_child_depth;
+        /* Node A and Node B both checkmate in the current turns favor. Choose the shortest path. */
+          /* If node B is the larger path, return a positive value */
+        ret_val = node_b->analysis_data.best_child_depth-node_a->analysis_data.best_child_depth;
       }
     }
     else
