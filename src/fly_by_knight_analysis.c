@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <farewell_to_king.h>
+#include <farewell_to_king_strings.h>
 
 #include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
@@ -308,7 +309,7 @@ void fbk_unevaluate_move_tree_node(fbk_move_tree_node_s * node)
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
 
   FBK_ASSERT_MSG(true == fbk_mutex_lock(&node->lock), "Failed to lock node mutex");
-  FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Deleting move_tree_node node %p (%u->%u)", (void*) node, node->move.source, node->move.target);
+  FBK_DEBUG_MSG(FBK_DEBUG_MIN, "Deleting move_tree_node node %p (%s->%s)", (void*) node, ftk_position_to_string_const_ptr(node->move.source), ftk_position_to_string_const_ptr(node->move.target));
 
   fbk_decompress_move_tree_node(node, true);
 
@@ -486,7 +487,7 @@ bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sor
     nodes_locked++;
     if(false == sorted_nodes[i]->analysis_data.evaluated)
     {
-      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Child node %u is not yet analyzed (%u->%u).  Aborting sort.", i, sorted_nodes[i]->move.source, sorted_nodes[i]->move.target);
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Child node %u is not yet analyzed (%s->%s).  Aborting sort.", i, ftk_position_to_string_const_ptr(sorted_nodes[i]->move.source), ftk_position_to_string_const_ptr(sorted_nodes[i]->move.target));
       ret_val = false;
       break;
     }
