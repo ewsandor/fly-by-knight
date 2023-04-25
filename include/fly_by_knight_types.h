@@ -48,7 +48,8 @@ typedef uint_fast16_t fbk_depth_t;
  * 
  */
 typedef uint8_t fbk_breadth_t;
-#define FBK_DEFAULT_MAX_SEARCH_BREADTH 0
+#define FBK_MAX_ANALYSIS_BREADTH     255
+#define FBK_DEFAULT_ANALYSIS_BREADTH   4
 
 #define FBK_MOVE_TREE_MAX_NODE_COUNT ((1<<8)-1)
 /**
@@ -192,8 +193,8 @@ typedef struct
   /* Include radom factor for move decision */
   bool                random;
 
-  /* Maximum analysis depth, 0 for no limit */
-  fbk_depth_t         max_search_depth;
+  /* Target analysis breadth, FBK_MAX_ANALYSIS_BREADTH for no limit */
+  fbk_breadth_t       analysis_breadth;
 
   /* Output current analysis details */
   bool                analysis_output;

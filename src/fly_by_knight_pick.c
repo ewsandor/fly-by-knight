@@ -11,7 +11,6 @@
 
 #include <farewell_to_king.h>
 
-#include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"

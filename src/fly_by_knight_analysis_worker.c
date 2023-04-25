@@ -9,7 +9,6 @@
 
 #include <string.h>
 
-#include "fly_by_knight_algorithm_constants.h"
 #include "fly_by_knight_analysis.h"
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
@@ -130,8 +129,9 @@ static void job_finished(fbk_analysis_job_queue_s * queue, fbk_analysis_job_queu
   queue->active_job_count--;
 
   job->job.depth++;
-  job->job.job_id = queue->next_job_id++;
-  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queueing job %u with depth %lu.", job->job.job_id, job->job.depth);
+  job->job.job_id  = queue->next_job_id++;
+  job->job.breadth = FBK_DEFAULT_ANALYSIS_BREADTH;
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queueing job %u with depth %lu and breadth %u.", job->job.job_id, job->job.depth, job->job.breadth);
   push_job_to_job_queue(queue, job);
   pthread_cond_signal(&fbk_analysis_data.job_queue.job_ended);
   fbk_mutex_unlock(&queue->lock);
@@ -240,15 +240,16 @@ static void * worker_manager_thread_f(void * arg)
 
       for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
       {
-        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH);
+        FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u and breadth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH, FBK_MAX_ANALYSIS_BREADTH);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
         FBK_ASSERT_MSG(new_job != NULL, "Failed to allocate memory for new job.");
         /* Fill job info here... */
-        new_job->job.job_id = analysis_data->job_queue.next_job_id++;
-        new_job->job.game   = analysis_data->analysis_state.game;
-        new_job->job.node   = &node->child[i];
+        new_job->job.job_id  = analysis_data->job_queue.next_job_id++;
+        new_job->job.game    = analysis_data->analysis_state.game;
+        new_job->job.node    = &node->child[i];
         FBK_ASSERT_MSG(fbk_apply_move_tree_node(new_job->job.node, &new_job->job.game), "Failed to apply node for child %lu", i);
-        new_job->job.depth  = WORKER_MANAGER_JOB_INITIAL_DEPTH;
+        new_job->job.depth   = WORKER_MANAGER_JOB_INITIAL_DEPTH;
+        new_job->job.breadth = FBK_MAX_ANALYSIS_BREADTH;
         push_job_to_job_queue(&analysis_data->job_queue, new_job);
       }
       fbk_mutex_unlock(&node->lock);
@@ -468,14 +469,32 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
 
         for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
         {
-          sub_job.node = &job->node->child[i];
-          FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
-          process_job(&sub_job, context, result);
-          FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
-          if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
+          /* Do surface analysis (depth 1) on all child nodes */
+          FBK_ASSERT_MSG(fbk_apply_move_tree_node(&job->node->child[i], &game), "Failed to apply child node %lu", i);
+          if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, false) == true)
           {
-            break;
+            context->nodes_evaluated++;
+            fbk_compress_move_tree_node(&job->node->child[i], true);
           }
+          FBK_ASSERT_MSG(fbk_undo_move_tree_node(&job->node->child[i], &game), "Failed to undo child node %lu", i);
+        }
+
+        if(sub_job.depth > 1)
+        {
+          fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
+          FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
+          for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
+          {
+            sub_job.node = sorted_nodes[(job->node->child_count-1)-i];
+            FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
+            process_job(&sub_job, context, result);
+            FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+            if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
+            {
+              break;
+            }
+          }
+          free(sorted_nodes);
         }
       }
       update_analysis_from_child_nodes(job->node);

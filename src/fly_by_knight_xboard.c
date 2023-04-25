@@ -242,7 +242,6 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
 
     fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_WAITING;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
-    fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   }
   else if(strncmp("ping", input, 4) == 0)
   {

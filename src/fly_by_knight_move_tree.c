@@ -164,6 +164,7 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
   if((node->child_count > 0) && (node->child != NULL))
   {
+    FBK_ASSERT_MSG(node->child[0].child == NULL, "Compressing node, but child nodes are not compressed");
     ret_val = true;
     for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
     {

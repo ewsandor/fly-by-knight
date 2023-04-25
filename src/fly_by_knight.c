@@ -254,7 +254,7 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   fbk->protocol = FBK_PROTOCOL_UNDEFINED;
   
   fbk->config.random           = false;
-  fbk->config.max_search_depth = FBK_DEFAULT_MAX_SEARCH_DEPTH;
+  fbk->config.analysis_breadth = FBK_DEFAULT_ANALYSIS_BREADTH;
   fbk->config.opponent_type    = FBK_OPPONENT_UNKNOWN;
 
   setbuf(stdout, NULL);
