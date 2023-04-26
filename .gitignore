@@ -15,3 +15,5 @@ compile_commands.json
 out
 CMakeSettings.json
 .vscode
+flybyknight_*x*.png
+flybyknight.ico
