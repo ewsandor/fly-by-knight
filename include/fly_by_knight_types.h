@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdint.h>
 
+#include <farewell_to_king_hash.h>
 #include <farewell_to_king_types.h>
 
 /**
@@ -88,6 +89,10 @@ struct fbk_move_tree_node_struct{
 
   /* Move represented by this node, invalid if root node*/
   ftk_move_s                          move;
+  /* True if this position has been hashed and key is valid */
+  bool                                hashed;
+  /* Hash key of current position */
+  ftk_zobrist_hash_key_t              key;
 
   /* Analysis data for this node */
   fbk_move_tree_node_analysis_data_s  analysis_data;

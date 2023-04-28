@@ -16,6 +16,7 @@
 #include "fly_by_knight_analysis.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
+#include "fly_by_knight_hash.h"
 #include "fly_by_knight_move_tree.h"
 
 fbk_score_t fbk_score_potential_capture_value(ftk_type_e piece_type)
@@ -252,6 +253,8 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
 
   if(false == node->analysis_data.evaluated)
   {
+    fbk_hash_move_tree_node(node, game, true);
+
     ftk_update_board_masks(game);
 
     memset(&node->analysis_data, 0, sizeof(fbk_move_tree_node_analysis_data_s));
