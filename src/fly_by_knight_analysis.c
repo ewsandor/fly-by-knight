@@ -242,6 +242,27 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
   return score;
 }
 
+unsigned int position_repetition_count(const fbk_move_tree_node_s *node)
+{
+  FBK_ASSERT_MSG(node != NULL, "NULL node passed");
+  FBK_ASSERT_MSG(node->hashed, "Node not hashed to check for threefold repetition");
+
+  unsigned int repetition_count = 1;
+
+  const fbk_move_tree_node_s *parent_node = node->parent;
+
+  while(parent_node != NULL)
+  {
+    if(parent_node->hashed && (parent_node->key == node->key))
+    {
+      repetition_count++;
+    }
+    parent_node = parent_node->parent;
+  }
+
+  return repetition_count;
+}
+
 bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game, bool locked)
 {
   bool ret_val = false;
@@ -266,6 +287,19 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
     if(FTK_END_NOT_OVER == node->analysis_data.result)
     {
       node->analysis_data.base_score = fbk_score_game(game);
+
+      const unsigned int repetition_count = position_repetition_count(node);
+      if(repetition_count == 2)
+      {
+        /* Approaching threefold repetition draw, divide score by 2 to approach 0 for a draw */
+        node->analysis_data.base_score = (FBK_TWOFOLD_REPETITION_NUM * node->analysis_data.base_score) / FBK_TWOFOLD_REPETITION_DEN;
+      }
+      else if(repetition_count > 2)
+      {
+        /* Threefold repetition draw */
+        node->analysis_data.base_score = 0;
+        node->analysis_data.result = FTK_END_DRAW_REPETITION;
+      }
 
       /* Init child nodes */
       ftk_move_list_s move_list = {0};
