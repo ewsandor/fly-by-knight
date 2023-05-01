@@ -219,7 +219,38 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
             black_king_not_moved = true;
           }
         }
-
+        else if ( (i == FTK_G1) && 
+                  (game->board.square[FTK_G1].color == FTK_COLOR_WHITE) && 
+                  (game->board.square[FTK_F1].type  == FTK_TYPE_ROOK) && 
+                  (game->board.square[FTK_F1].color == FTK_COLOR_WHITE))
+        {
+          /* White is castled kingside */
+          score += FBK_SCORE_CASTLED_KINGSIDE;
+        }
+        else if ( (i == FTK_G8) && 
+                  (game->board.square[FTK_G8].color == FTK_COLOR_BLACK) && 
+                  (game->board.square[FTK_F8].type  == FTK_TYPE_ROOK) && 
+                  (game->board.square[FTK_F8].color == FTK_COLOR_BLACK))
+        {
+          /* Black is castled kingside */
+          score -= FBK_SCORE_CASTLED_KINGSIDE;
+        }
+        else if ( (i == FTK_C1) && 
+                  (game->board.square[FTK_C1].color == FTK_COLOR_WHITE) && 
+                  (game->board.square[FTK_D1].type  == FTK_TYPE_ROOK) && 
+                  (game->board.square[FTK_D1].color == FTK_COLOR_WHITE))
+        {
+          /* White is castled queenside */
+          score += FBK_SCORE_CASTLED_QUEENSIDE;
+        }
+        else if ( (i == FTK_C8) && 
+                  (game->board.square[FTK_C8].color == FTK_COLOR_BLACK) && 
+                  (game->board.square[FTK_D8].type  == FTK_TYPE_ROOK) && 
+                  (game->board.square[FTK_D8].color == FTK_COLOR_BLACK))
+        {
+          /* Black is castled queenside */
+          score -= FBK_SCORE_CASTLED_QUEENSIDE;
+        }
         break;
       }
       default:
