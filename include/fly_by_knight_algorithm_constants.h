@@ -50,4 +50,8 @@
 /* Score for the ability to castle */
 #define FBK_SCORE_CAN_CASTLE (FBK_SCORE_PAWN/3)
 
+/* Score scalar for TWOFOLD repetitions as this is approaching THREEFOLD repetition draw */
+#define FBK_TWOFOLD_REPETITION_NUM (1)
+#define FBK_TWOFOLD_REPETITION_DEN (2)
+
 #endif //_FLY_BY_KNIGHT_ALGORITHM_CONSTANTS_H_
