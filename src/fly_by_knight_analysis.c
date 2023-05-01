@@ -39,70 +39,85 @@ bool fbk_init_analysis_lut()
   {
     struct fbk_analysis_lookup_table_struct *new_lut = calloc(1, sizeof(*new_lut));
 
-    new_lut->initialized = true;
-
     for(unsigned int i = 0; i < FTK_STD_BOARD_SIZE; i++)
     {
-      if((i / 8) == 0)
+      switch(i/8)
       {
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
-      }
-      else if((i / 8) == 1)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
+        case 0:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIRST_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
+          break;
+        }
+        case 1:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
-      }
-      else if((i / 8) == 2)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
+          break;
+        }
+        case 2:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
-      }
-      else if((i / 8) == 3)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
+          break;
+        }
+        case 3:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
-      }
-      else if((i / 8) == 4)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
+          break;
+        }
+        case 4:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
-      }
-      else if((i / 8) == 5)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
+          break;
+        }
+        case 5:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
-      }
-      else if((i / 8) == 6)
-      {
-        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
-        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
+          break;
+        }
+        case 6:
+        {
+          new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
+          new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
 
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
-      }
-      else if((i / 8) == 7)
-      {
-        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
-        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIRST_ROW;
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
+          break;
+        }
+        case 7:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIRST_ROW;
+          break;
+        }
+        default:
+        {
+          FBK_FATAL_MSG("Unexpected position %u", i);
+          break;
+        }
       }
     }
 
+    new_lut->initialized = true;
     lut = new_lut;
   }
 
