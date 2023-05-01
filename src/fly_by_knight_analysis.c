@@ -19,6 +19,96 @@
 #include "fly_by_knight_hash.h"
 #include "fly_by_knight_move_tree.h"
 
+/* Constant after initialized */
+static const struct fbk_analysis_lookup_table_struct
+{
+  bool initialized;
+
+  fbk_score_t white_pawn_position_score  [FTK_STD_BOARD_SIZE];
+  fbk_score_t black_pawn_position_score  [FTK_STD_BOARD_SIZE];
+  fbk_score_t white_knight_position_score[FTK_STD_BOARD_SIZE];
+  fbk_score_t black_knight_position_score[FTK_STD_BOARD_SIZE];
+
+} *lut = NULL;
+
+bool fbk_init_analysis_lut()
+{
+  bool ret_val = true;
+
+  if(lut == NULL)
+  {
+    struct fbk_analysis_lookup_table_struct *new_lut = calloc(1, sizeof(*new_lut));
+
+    new_lut->initialized = true;
+
+    for(unsigned int i = 0; i < FTK_STD_BOARD_SIZE; i++)
+    {
+      if((i / 8) == 0)
+      {
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
+      }
+      else if((i / 8) == 1)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
+      }
+      else if((i / 8) == 2)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
+      }
+      else if((i / 8) == 3)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
+      }
+      else if((i / 8) == 4)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_FIFTH_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_FOURTH_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FIFTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FOURTH_ROW;
+      }
+      else if((i / 8) == 5)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SIXTH_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_THIRD_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SIXTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_THIRD_ROW;
+      }
+      else if((i / 8) == 6)
+      {
+        new_lut->white_pawn_position_score[i] += FBK_SCORE_PAWN_SEVENTH_ROW;
+        new_lut->black_pawn_position_score[i] += FBK_SCORE_PAWN_SECOND_ROW;
+
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_SEVENTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_SECOND_ROW;
+      }
+      else if((i / 8) == 7)
+      {
+        new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_EIGHTH_ROW;
+        new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FIRST_ROW;
+      }
+    }
+
+    lut = new_lut;
+  }
+
+  return ret_val;
+}
+
 fbk_score_t fbk_score_potential_capture_value(ftk_type_e piece_type)
 {
   fbk_score_t score = 0;
@@ -176,10 +266,12 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
         if(game->board.square[i].color == FTK_COLOR_WHITE)
         {
           white_pawns_on_file[i % 8]++;
+          score += lut->white_pawn_position_score[i];
         }
         else
         {
           black_pawns_on_file[i % 8]++;
+          score -= lut->black_pawn_position_score[i];
         }
 
         break;
@@ -187,6 +279,16 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
       case FTK_TYPE_KNIGHT:
       {
         score += advantage*(FBK_SCORE_KNIGHT + (legal_move_count*FBK_SCORE_KNIGHT_MOVE));
+
+        if(game->board.square[i].color == FTK_COLOR_WHITE)
+        {
+          score += lut->white_knight_position_score[i];
+        }
+        else
+        {
+          score -= lut->black_knight_position_score[i];
+        }
+
         break;
       }
       case FTK_TYPE_BISHOP:

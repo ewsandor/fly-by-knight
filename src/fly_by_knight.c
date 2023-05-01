@@ -261,6 +261,7 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
 
   fbk_begin_standard_game(fbk, true);
 
+  FBK_ASSERT_MSG(fbk_init_analysis_lut(), "Failed to initialize analysis look-up tables");
   FBK_ASSERT_MSG(fbk_init_analysis_data(fbk), "Failed to initialize analysis data");
   fbk_update_worker_thread_count(arguments->worker_threads);
 

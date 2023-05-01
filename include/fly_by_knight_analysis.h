@@ -13,6 +13,14 @@
 #include "fly_by_knight_types.h"
 
 /**
+ * @brief Initialized Look-Up Tables for Fly by Knight analysis
+ * 
+ * @return true if successful
+ */
+bool fbk_init_analysis_lut();
+
+
+/**
  * @brief Score game position for white or black advantage
  * 
  * @param game      to analyze
