@@ -151,6 +151,9 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
   unsigned int black_king_not_moved  = 0;
   unsigned int black_rooks_not_moved = 0;
 
+  unsigned int white_pawns_on_file[8] = {0};
+  unsigned int black_pawns_on_file[8] = {0};
+
   for(i = 0; i < FTK_STD_BOARD_SIZE; i++)
   {
     advantage = (FTK_COLOR_WHITE == game->board.square[i].color)?1:-1;
@@ -169,6 +172,16 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
       case FTK_TYPE_PAWN:
       {
         score += advantage*(FBK_SCORE_PAWN + (legal_move_count*FBK_SCORE_PAWN_MOVE));
+
+        if(game->board.square[i].color == FTK_COLOR_WHITE)
+        {
+          white_pawns_on_file[i % 8]++;
+        }
+        else
+        {
+          black_pawns_on_file[i % 8]++;
+        }
+
         break;
       }
       case FTK_TYPE_KNIGHT:
@@ -257,6 +270,20 @@ fbk_score_t fbk_score_game(const ftk_game_s * game)
       {
         break;
       }
+    }
+  }
+
+  for(unsigned int i = 0; i < 8; i++)
+  {
+    if(white_pawns_on_file[i] > 1)
+    {
+      /* base*2^(doubled_pawn_count-2)) */
+      score -= FBK_SCORE_DOUBLE_PAWN_BASE_PENALTY * (1 << (white_pawns_on_file[i]-2));
+    }
+    if(black_pawns_on_file[i] > 1)
+    {
+      /* base*2^(doubled_pawn_count-2)) */
+      score += FBK_SCORE_DOUBLE_PAWN_BASE_PENALTY * (1 << (black_pawns_on_file[i]-2));
     }
   }
 

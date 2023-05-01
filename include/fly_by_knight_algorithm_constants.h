@@ -56,4 +56,7 @@
 #define FBK_TWOFOLD_REPETITION_NUM (1)
 #define FBK_TWOFOLD_REPETITION_DEN (2)
 
+/* Doubled pawn base penalty (base*2^(doubled_pawn_count-2))*/
+#define FBK_SCORE_DOUBLE_PAWN_BASE_PENALTY (FBK_SCORE_PAWN/50)
+
 #endif //_FLY_BY_KNIGHT_ALGORITHM_CONSTANTS_H_
