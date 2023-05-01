@@ -5,7 +5,7 @@ option (ANALYSIS_NODE_COMPRESSION "ON to compress analysis nodes in RAM.  Turnin
 option (BUILD_AS_LEGACY "ON to build Fly by Knight as a legacy version with appropriate suffix.  OFF to build as main version with no suffix." OFF)
 option (BUILD_FTK_SHARED "ON to link Fly by Knight with shared Farewell to King library, else link statically." OFF)
 option (XBOARD_PROTOCOL_SUPPORT "ON to build Fly by Knight with support for the xboard chess communication protocol.  OFF to build without this support." ON)
-option (UCI_PROTOCOL_SUPPORT "ON to build Fly by Knight with support for the UCI chess communication protocol.  OFF to build without this support." ON)
+option (UCI_PROTOCOL_SUPPORT "ON to build Fly by Knight with support for the UCI chess communication protocol.  OFF to build without this support." OFF)
 
 
 

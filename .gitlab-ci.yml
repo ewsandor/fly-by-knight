@@ -35,10 +35,10 @@ stages:          # List of stages for jobs, and their order of execution
   - echo "Compiling the code..."
   - mkdir build-debug
   - cd build-debug
-  - cmake .. -DCMAKE_BUILD_TYPE=Debug
+  - cmake .. -DCMAKE_BUILD_TYPE=Debug -DUCI_PROTOCOL_SUPPORT=ON
   - make -j$(nproc)
   - cd ..
-  - mkdir build
+  - mkdir build -DCMAKE_BUILD_TYPE=Release -DUCI_PROTOCOL_SUPPORT=OFF
   - cd build
   - cmake ..
   - make -j$(nproc)
