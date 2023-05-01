@@ -38,9 +38,9 @@ stages:          # List of stages for jobs, and their order of execution
   - cmake .. -DCMAKE_BUILD_TYPE=Debug -DUCI_PROTOCOL_SUPPORT=ON
   - make -j$(nproc)
   - cd ..
-  - mkdir build -DCMAKE_BUILD_TYPE=Release -DUCI_PROTOCOL_SUPPORT=OFF
+  - mkdir build
   - cd build
-  - cmake ..
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DUCI_PROTOCOL_SUPPORT=OFF
   - make -j$(nproc)
   - echo "Compile complete."
 
