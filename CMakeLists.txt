@@ -57,7 +57,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(flybyknight PRIVATE Threads::Threads)
 
 if(ANALYSIS_NODE_COMPRESSION)
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DFBK_ZLIB_COMPRESSION")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFBK_ZLIB_COMPRESSION")
   find_package(ZLIB REQUIRED)
   target_link_libraries(flybyknight PRIVATE ZLIB::ZLIB)
 endif()
