@@ -115,6 +115,63 @@ bool fbk_init_analysis_lut()
           break;
         }
       }
+
+      switch(i%8)
+      {
+        case 0:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_A;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_A;
+          break;
+        }
+        case 1:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_B;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_B;
+          break;
+        }
+        case 2:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_C;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_C;
+          break;
+        }
+        case 3:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_D;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_D;
+          break;
+        }
+        case 4:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_E;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_E;
+          break;
+        }
+        case 5:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_F;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_F;
+          break;
+        }
+        case 6:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_G;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_G;
+          break;
+        }
+        case 7:
+        {
+          new_lut->white_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_H;
+          new_lut->black_knight_position_score[i] += FBK_SCORE_KNIGHT_FILE_H;
+          break;
+        }
+        default:
+        {
+          FBK_FATAL_MSG("Unexpected position %u", i);
+          break;
+        }
+      }
     }
 
     new_lut->initialized = true;
