@@ -174,6 +174,22 @@ bool fbk_init_analysis_lut()
       }
     }
 
+
+    /* Score pawn center squares */
+    new_lut->white_pawn_position_score[FTK_D4] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->white_pawn_position_score[FTK_E4] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->white_pawn_position_score[FTK_D5] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->white_pawn_position_score[FTK_E5] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->black_pawn_position_score[FTK_D4] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->black_pawn_position_score[FTK_E4] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->black_pawn_position_score[FTK_D5] = FBK_SCORE_PAWN_CENTER_SQUARE;
+    new_lut->black_pawn_position_score[FTK_E5] = FBK_SCORE_PAWN_CENTER_SQUARE;
+
+
+    /* Follow Kasparov's 'Knight on F6 is worth a Pawn'*/
+    new_lut->white_knight_position_score[FTK_F6] = FBK_SCORE_PAWN;
+    new_lut->black_knight_position_score[FTK_F3] = FBK_SCORE_PAWN;
+
     new_lut->initialized = true;
     lut = new_lut;
   }

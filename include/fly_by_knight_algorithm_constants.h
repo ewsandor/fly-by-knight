@@ -59,6 +59,8 @@
 /* Doubled pawn base penalty (base*2^(doubled_pawn_count-2))*/
 #define FBK_SCORE_DOUBLE_PAWN_BASE_PENALTY (FBK_SCORE_PAWN/50)
 
+#define FBK_SCORE_PAWN_CENTER_SQUARE ((10*FBK_SCORE_PAWN) / 50)
+
 #define FBK_SCORE_PAWN_SEVENTH_ROW   (( 5*FBK_SCORE_PAWN) / 50)
 #define FBK_SCORE_PAWN_SIXTH_ROW     (( 4*FBK_SCORE_PAWN) / 50)
 #define FBK_SCORE_PAWN_FIFTH_ROW     (( 3*FBK_SCORE_PAWN) / 50)
