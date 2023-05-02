@@ -525,7 +525,6 @@ static void * worker_thread_f(void * arg)
   {
     wait_for_analysis_start(worker_thread_data->analysis_state);
 
-    fbk_analysis_job_queue_node_s * job = NULL;
     /* Claim an analysis job */
     fbk_mutex_lock(&worker_thread_data->job_queue->lock);
     pthread_cleanup_push(worker_thread_job_queue_cleanup, worker_thread_data);
@@ -535,21 +534,24 @@ static void * worker_thread_f(void * arg)
       FBK_ASSERT_MSG(0 == pthread_cond_wait(&worker_thread_data->job_queue->new_job_available, &worker_thread_data->job_queue->lock),
         "Failed Waiting for new data available condition.");
     }
-
-    /* Claim job and set pthread cancellation cleanup callback */
-    job = pop_job_from_job_queue(worker_thread_data->job_queue);
-    FBK_ASSERT_MSG(NULL != job, "Failed to pop job from job queue");
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_cleanup_pop(0);
-    fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
-    
+   
     worker_thread_job_cleanup_s worker_thread_job_cleanup = 
       {
         .worker_thread_index = worker_thread_data->thread_index,
         .queue               = worker_thread_data->job_queue,
-        .job                 = job,
+        .job                 = NULL,
       };
     pthread_cleanup_push(worker_thread_job_cleanup_f, &worker_thread_job_cleanup);
 
+    /* Claim job and set pthread cancellation cleanup callback */
+    fbk_analysis_job_queue_node_s * job = pop_job_from_job_queue(worker_thread_data->job_queue);
+    FBK_ASSERT_MSG(NULL != job, "Failed to pop job from job queue");
+    worker_thread_job_cleanup.job = job;
+    fbk_mutex_unlock(&worker_thread_data->job_queue->lock);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+ 
     /* Process job */
     fbk_analysis_job_context_s job_context;
     fbk_analysis_job_result_s  job_result;
