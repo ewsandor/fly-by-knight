@@ -50,26 +50,22 @@ ftk_move_s fbk_get_random_move(fbk_instance_s *fbk)
 /**
  * @brief Returns the best move based on the current game
  * 
- * @param fbk         Fly by Knight instance
- * @return ftk_move_s Best move
+ * @param node Locked and decompressed node to get best child
+ * @return Best move tree node
  */
-ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
+static inline fbk_move_tree_node_s *fbk_get_best_move(const fbk_move_tree_node_s * node)
 {
-  FBK_ASSERT_MSG(NULL != fbk->move_tree.current, "Current move tree node NULL");
+  FBK_ASSERT_MSG(NULL != node, "Current move tree node NULL");
 
-  fbk_move_tree_node_s** sorted_nodes = malloc(fbk->move_tree.current->child_count * sizeof(fbk_move_tree_node_s*));
-  fbk_mutex_lock(&fbk->move_tree.current->lock);
+  fbk_move_tree_node_s** sorted_nodes = malloc(node->child_count * sizeof(fbk_move_tree_node_s*));
 
-  bool decompressed = fbk_decompress_move_tree_node(fbk->move_tree.current, true);
+  fbk_move_tree_node_s * best_node = NULL;
 
-  ftk_move_s best_move = {0};
-  ftk_invalidate_move(&best_move);
-
-  if(fbk->move_tree.current->child_count > 0)
+  if(node->child_count > 0)
   {
-    if(fbk_sort_child_nodes(fbk->move_tree.current, sorted_nodes))
+    if(fbk_sort_child_nodes(node, sorted_nodes))
     {
-      best_move = sorted_nodes[fbk->move_tree.current->child_count-1]->move;
+      best_node = sorted_nodes[node->child_count-1];
     }
     else
     {
@@ -77,15 +73,9 @@ ftk_move_s fbk_get_best_move(fbk_instance_s *fbk)
     }
   }
 
-  if(decompressed)
-  {
-    fbk_compress_move_tree_node(fbk->move_tree.current, true);
-  }
-
-  fbk_mutex_unlock(&fbk->move_tree.current->lock);
   free(sorted_nodes);
    
-  return best_move;
+  return best_node;
 }
 
 typedef struct
@@ -130,6 +120,7 @@ void * picker_thread_f(void * arg)
 
       ftk_game_end_e game_result = ftk_check_for_game_end(&pick_data->fbk->game);
       ftk_move_s     move        = {0};
+      ftk_invalidate_move(&move);
 
       bool report      = false;
       bool commit_move = false;
@@ -142,8 +133,23 @@ void * picker_thread_f(void * arg)
       }
       else if(FTK_END_NOT_OVER == game_result && (pick_data->fbk->game.turn == pick_data->play_as))
       {
-        move = fbk_get_best_move(pick_data->fbk);
-        
+
+        fbk_mutex_lock(&pick_data->fbk->move_tree.current->lock);
+        bool decompressed = fbk_decompress_move_tree_node(pick_data->fbk->move_tree.current, true);
+        fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
+        if(best_node != NULL)
+        {
+          fbk_mutex_lock(&best_node->lock);
+          move = best_node->move;
+          fbk_mutex_unlock(&best_node->lock);
+        }
+        if(decompressed)
+        {
+          fbk_compress_move_tree_node(pick_data->fbk->move_tree.current, true);
+        }
+        fbk_mutex_unlock(&pick_data->fbk->move_tree.current->lock);
+
+ 
         if(FTK_MOVE_VALID(move))
         {
           /* Commit move */

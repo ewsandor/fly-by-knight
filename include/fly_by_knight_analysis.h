@@ -70,6 +70,6 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b);
  * @param node         node to sort children
  * @param sorted_nodes output array of sorted node pointers.  Must be size of node->child_count node pointers
  */
-bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[]);
+bool fbk_sort_child_nodes(const fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[]);
 
 #endif //__FLY_BY_KNIGHT_ANALYSIS_H__

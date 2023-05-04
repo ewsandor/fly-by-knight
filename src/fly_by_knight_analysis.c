@@ -762,7 +762,7 @@ int fbk_compare_move_tree_nodes(const void *a, const void *b)
   return ret_val;
 }
 
-bool fbk_sort_child_nodes(fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
+bool fbk_sort_child_nodes(const fbk_move_tree_node_s * node, fbk_move_tree_node_s* sorted_nodes[])
 {
   FBK_ASSERT_MSG(node != NULL,         "NULL node passed");
   FBK_ASSERT_MSG(sorted_nodes != NULL, "NULL sorted_nodes buffer passed");
