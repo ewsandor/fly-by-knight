@@ -696,7 +696,8 @@ bool fbk_stop_analysis(bool clear_pending_jobs)
   /* Block for all analysis to stop */
   while(fbk_analysis_data.job_queue.active_job_count > 0)
   {
-    pthread_cond_wait(&fbk_analysis_data.job_queue.job_ended, &fbk_analysis_data.job_queue.lock);
+    const struct timespec timeout = {.tv_sec = 0, .tv_nsec = 100000000}; /* Retry every 100ms */
+    pthread_cond_timedwait(&fbk_analysis_data.job_queue.job_ended, &fbk_analysis_data.job_queue.lock, &timeout);
   }
   if(clear_pending_jobs)
   {

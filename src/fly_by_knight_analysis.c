@@ -542,11 +542,17 @@ bool fbk_evaluate_move_tree_node(fbk_move_tree_node_s * node, ftk_game_s * game,
         /* Approaching threefold repetition draw, divide score by 2 to approach 0 for a draw */
         node->analysis_data.base_score = (FBK_TWOFOLD_REPETITION_NUM * node->analysis_data.base_score) / FBK_TWOFOLD_REPETITION_DEN;
       }
+      else if(repetition_count > 4)
+      {
+        /* Threefold repetition draw */
+        node->analysis_data.base_score = 0;
+        node->analysis_data.result = FTK_END_DRAW_FIVEFOLD_REPETITION;
+      }
       else if(repetition_count > 2)
       {
         /* Threefold repetition draw */
         node->analysis_data.base_score = 0;
-        node->analysis_data.result = FTK_END_DRAW_REPETITION;
+        node->analysis_data.result = FTK_END_DRAW_THREEFOLD_REPETITION;
       }
 
       /* Init child nodes */
