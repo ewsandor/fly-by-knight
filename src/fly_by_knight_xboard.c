@@ -451,25 +451,17 @@ fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_resu
     {
       if(FTK_COLOR_BLACK == fbk->game.turn)
       {
-        FBK_OUTPUT_MSG("1-0 {White mates}\n");
+        FBK_OUTPUT_MSG("1-0 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
       }
       else
       {
-        FBK_OUTPUT_MSG("0-1 {Black mates}\n");
+        FBK_OUTPUT_MSG("0-1 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
       }
     }
     else
     {
       FBK_ASSERT_MSG(FTK_END_DRAW(game_result), "Unexpected game result %u", game_result);
-
-      if(FTK_END_DRAW_STALEMATE == game_result)
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Stalemate}\n");
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Rule %u}\n", game_result);
-      }
+      FBK_OUTPUT_MSG("1/2-1/2 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
     }
 
     fbk->protocol_data.xboard.result_reported = true;
