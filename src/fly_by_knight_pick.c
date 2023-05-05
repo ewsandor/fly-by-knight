@@ -109,10 +109,6 @@ void * picker_thread_f(void * arg)
       pthread_cond_wait(&pick_data->pick_started_cond, &pick_data->lock);
     }
     
-    fbk_mutex_unlock(&pick_data->lock);
-    bool analysis_restart_needed = fbk_stop_analysis(false);
-    fbk_mutex_lock(&pick_data->lock);
-
     if(pick_data->picker_active == true)
     {
       /* Make sure picker is still active */
@@ -128,12 +124,10 @@ void * picker_thread_f(void * arg)
       if(FTK_END_NOT_OVER != game_result)
       {
         fbk_stop_analysis(true);
-        analysis_restart_needed = false;
         report = true;
       }
       else if(FTK_END_NOT_OVER == game_result && (pick_data->fbk->game.turn == pick_data->play_as))
       {
-
         fbk_mutex_lock(&pick_data->fbk->move_tree.current->lock);
         bool decompressed = fbk_decompress_move_tree_node(pick_data->fbk->move_tree.current, true);
         fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
@@ -166,18 +160,12 @@ void * picker_thread_f(void * arg)
         if(commit_move)
         {
           fbk_stop_analysis(true);
-          analysis_restart_needed = false;
           FBK_ASSERT_MSG(true == fbk_commit_move(pick_data->fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
         }
         pick_data->pick_cb(game_result, move, pick_data->pick_cb_user_data_ptr);
       }
     }
     fbk_mutex_unlock(&pick_data->lock);
-
-    if(analysis_restart_needed)
-    {
-      fbk_start_analysis(&pick_data->fbk->game, pick_data->fbk->move_tree.current);
-    }
 
     sleep(5);
   }

@@ -483,12 +483,15 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         {
           fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
           FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
+
           for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
           {
             sub_job.node = sorted_nodes[(job->node->child_count-1)-i];
+            fbk_mutex_unlock(&job->node->lock);
             FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
             process_job(&sub_job, context, result);
             FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+            fbk_mutex_lock(&job->node->lock);
             if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
             {
               break;
