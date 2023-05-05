@@ -432,13 +432,11 @@ fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_resu
 
   fbk_pick_callback_response_s response = {0};
 
-  if(FTK_END_NOT_OVER == game_result)
+  if(FTK_MOVE_VALID(move))
   {
     fbk->protocol_data.xboard.result_reported = false;
 
     /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
-
-    FBK_ASSERT_MSG(FTK_MOVE_VALID(move), "Picked move is invalid");
 
     /* Null move by default */
     char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
@@ -446,7 +444,8 @@ fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_resu
 
     FBK_OUTPUT_MSG("move %s\n", move_output);
   }
-  else if(false == fbk->protocol_data.xboard.result_reported)
+  
+  if((FTK_END_NOT_OVER != game_result) && (false == fbk->protocol_data.xboard.result_reported))
   {
     if(FTK_END_DEFINITIVE(game_result))
     {
