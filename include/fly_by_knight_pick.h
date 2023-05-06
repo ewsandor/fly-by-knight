@@ -12,12 +12,47 @@
 
 #include "fly_by_knight_types.h"
 
+typedef void (*fbk_pick_callback_f)          (ftk_game_end_e, ftk_move_s, void *);
+
+typedef struct fbk_picker_best_line_node_struct fbk_picker_best_line_node_s;
+
+struct fbk_picker_best_line_node_struct
+{
+  /* Current move in best line */
+  ftk_move_s                   move;
+
+  /* Next move in best line */
+  fbk_picker_best_line_node_s *next_move;
+
+};
+
 typedef struct
 {
-  bool continue_analysis;
-} fbk_pick_callback_response_s;
+  /* Score information */
+  /* placeholder */
 
-typedef fbk_pick_callback_response_s (*fbk_pick_callback_f)(ftk_game_end_e, ftk_move_s, void *);
+  /* First move in best line */
+  fbk_picker_best_line_node_s *first_move;
+
+} fbk_picker_best_line_s;
+
+typedef void (*fbk_pick_best_line_callback_f)(fbk_picker_best_line_s, void *);
+
+/* Picker client config */
+typedef struct
+{
+  /* Color to pick for */
+  ftk_color_e            play_as;
+
+  /* Callback to be called when a move is picked and commited */
+  fbk_pick_callback_f    pick_callback;
+  void *                 pick_user_data_ptr;
+
+  /* Callback to be called when the best line is updated without committing */
+  fbk_picker_best_line_s best_line_callback;
+  void *                 best_line_user_data_ptr;
+
+} fbk_picker_client_config_s;
 
 /**
  * @brief Logic to initialize the picking logic
@@ -31,12 +66,10 @@ bool fbk_init_picker(fbk_instance_s *fbk);
 /**
  * @brief Start the picker logic
  * 
- * @param play_as       color to pick the best move for
- * @param callback      callback to be called when a move is picked
- * @param user_data_ptr pointer to be passed back in callback
+ * @param pick_client_config Client specific picker configuration
  * 
 */
-void fbk_start_picker(ftk_color_e play_as, fbk_pick_callback_f callback, void * user_data_ptr);
+void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config);
 
 /**
  * @brief Stop the picker logic and block until stop

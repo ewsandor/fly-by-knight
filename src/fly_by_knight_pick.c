@@ -196,13 +196,13 @@ bool fbk_init_picker(fbk_instance_s *fbk)
   return true;
 }
 
-void fbk_start_picker(ftk_color_e play_as, fbk_pick_callback_f callback, void * user_data_ptr)
+void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config)
 {
   fbk_mutex_lock(&pick_data.lock);
-  pick_data.pick_cb               = callback;
-  pick_data.pick_cb_user_data_ptr = user_data_ptr;
+  pick_data.pick_cb               = pick_client_config->pick_callback;
+  pick_data.pick_cb_user_data_ptr = pick_client_config->pick_user_data_ptr;
   pick_data.picker_active         = true;
-  pick_data.play_as               = play_as;
+  pick_data.play_as               = pick_client_config->play_as;
   pthread_cond_broadcast(&pick_data.pick_started_cond);
   fbk_mutex_unlock(&pick_data.lock);
 }
