@@ -63,6 +63,27 @@ typedef struct
 } fbk_picker_client_config_s;
 
 /**
+ * @brief Types of picker logic triggers
+*/
+typedef enum 
+{
+  FBK_PICKER_TRIGGER_INVALID,
+  FBK_PICKER_TRIGGER_FORCED,
+  FBK_PICKER_TRIGGER_TIMED,
+  FBK_PICKER_TRIGGER_JOB_ENDED,
+} fbk_picker_trigger_e;
+
+/**
+ * @brief Picker logic trigger data
+*/
+typedef struct
+{
+  fbk_picker_trigger_e type;
+
+} fbk_picker_trigger_s;
+
+
+/**
  * @brief Logic to initialize the picking logic
  * 
  * @param fbk Fly by Knight instance
@@ -85,6 +106,11 @@ void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config);
 */
 void fbk_stop_picker();
 
-
+/**
+ * @brief Trigger the picker to reevaluate best move
+ * 
+ * @param trigger Trigger data
+*/
+void fbk_trigger_picker(const fbk_picker_trigger_s * trigger);
 
 #endif //_FLY_BY_KNIGHT_PICK_H_

@@ -78,22 +78,42 @@ static inline fbk_move_tree_node_s *fbk_get_best_move(const fbk_move_tree_node_s
   return best_node;
 }
 
+typedef struct fbk_picker_trigger_node_struct fbk_picker_trigger_node_s;
+struct fbk_picker_trigger_node_struct
+{
+  fbk_picker_trigger_s       trigger;
+  fbk_picker_trigger_node_s *next_trigger;
+};
+
 typedef struct
 {
-  fbk_instance_s      *fbk;
+  fbk_mutex_t                lock;
+  pthread_cond_t             new_trigger_condition;
 
-  fbk_mutex_t          lock;
-  pthread_t            picker_thread;
-  pthread_cond_t       pick_started_cond;
+  unsigned int               trigger_count;
+  fbk_picker_trigger_node_s *first_trigger;
+  fbk_picker_trigger_node_s *last_trigger;
+  
+} fbk_picker_trigger_queue_s;
 
-  bool                 picker_active;
-  ftk_color_e          play_as;
+typedef struct
+{
+  fbk_instance_s                *fbk;
 
-  fbk_pick_callback_f  pick_cb;
-  void                *pick_cb_user_data_ptr;
+  fbk_mutex_t                    lock;
+  pthread_t                      picker_thread;
+  pthread_cond_t                 pick_started_cond;
 
-  fbk_pick_best_line_callback_f best_line_callback;
-  void *                        best_line_user_data_ptr;
+  fbk_picker_trigger_queue_s     trigger_queue;
+
+  bool                           picker_active;
+  ftk_color_e                    play_as;
+
+  fbk_pick_callback_f            pick_cb;
+  void                          *pick_cb_user_data_ptr;
+
+  fbk_pick_best_line_callback_f  best_line_callback;
+  void *                         best_line_user_data_ptr;
 
 } fbk_pick_data_s;
 fbk_pick_data_s pick_data = {0};
@@ -136,6 +156,69 @@ static inline void delete_best_line(fbk_picker_best_line_node_s *best_line)
   free(best_line);
 }
 
+/**
+ * @brief Logic to add job to back of job queue.  Assumes caller has lock.
+ * @param queue       queue to append
+ * @param new_trigger new trigger to append
+*/
+static void push_trigger_to_trigger_queue(fbk_picker_trigger_queue_s * queue, const fbk_picker_trigger_s * new_trigger)
+{
+
+  FBK_ASSERT_MSG(queue       != NULL, "NULL queue passed.");
+  FBK_ASSERT_MSG(new_trigger != NULL, "NULL trigger passed.");
+
+  /* Build new node */
+  fbk_picker_trigger_node_s *new_trigger_node = (fbk_picker_trigger_node_s *) malloc(sizeof(fbk_picker_trigger_node_s));
+  FBK_ASSERT_MSG(new_trigger_node != NULL, "Malloc failed");
+  new_trigger_node->next_trigger = NULL;
+  new_trigger_node->trigger      = *new_trigger;
+
+  if(queue->trigger_count > 0)
+  {
+    /* Add to linked list */
+    queue->last_trigger->next_trigger = new_trigger_node;
+    queue->last_trigger               = new_trigger_node;
+  }
+  else
+  {
+    /* Init root job */
+    queue->first_trigger = new_trigger_node;
+    queue->last_trigger  = new_trigger_node;
+  }
+
+  queue->trigger_count++;
+  FBK_ASSERT_MSG(0 == pthread_cond_signal(&queue->new_trigger_condition), "Failed to signal new trigger is available.");
+}
+
+/**
+ * @brief Returns the next trigger in the trigger queue or NULL if no triggers are available.  Assumes caller has lock.
+ * @param queue Job queue to pop from.
+ * 
+ * @return Next trigger in queue or 'invalid' trigger if queue is empty
+*/
+static fbk_picker_trigger_s pop_trigger_from_trigger_queue(fbk_picker_trigger_queue_s * queue)
+{
+  fbk_picker_trigger_s ret_val = {0};
+
+  FBK_ASSERT_MSG(queue != NULL, "NULL job queue passed.");
+
+  if(queue->trigger_count > 0)
+  {
+    ret_val = queue->first_trigger->trigger;
+    queue->first_trigger = queue->first_trigger->next_trigger;
+
+    queue->trigger_count--;
+
+    if(queue->trigger_count == 0)
+    {
+      FBK_ASSERT_MSG(NULL == queue->first_trigger, "All jobs claimed, but last job is not pointing to NULL");
+      queue->last_trigger = NULL;
+    }
+  }
+
+  return ret_val;
+}
+
 void * picker_thread_f(void * arg)
 {
   FBK_ASSERT_MSG(arg != NULL, "NULL arg passed.");
@@ -144,6 +227,11 @@ void * picker_thread_f(void * arg)
 
   while(1)
   {
+
+    fbk_mutex_lock(&pick_data->trigger_queue.lock);
+    pop_trigger_from_trigger_queue(&pick_data->trigger_queue);
+    fbk_mutex_unlock(&pick_data->trigger_queue.lock);
+
     fbk_mutex_lock(&pick_data->lock);
     while(pick_data->picker_active == false)
     {
@@ -272,4 +360,13 @@ void fbk_stop_picker()
   pick_data.picker_active           = false;
   pick_data.play_as                 = FTK_COLOR_NONE;
   fbk_mutex_unlock(&pick_data.lock);
+}
+
+void fbk_trigger_picker(const fbk_picker_trigger_s * trigger)
+{
+  FBK_ASSERT_MSG(trigger != NULL, "Null trigger passed");
+
+  fbk_mutex_lock(&pick_data.trigger_queue.lock);
+  push_trigger_to_trigger_queue(&pick_data.trigger_queue, trigger);
+  fbk_mutex_unlock(&pick_data.trigger_queue.lock);
 }
