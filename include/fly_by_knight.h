@@ -78,4 +78,13 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move);
  */
 bool fbk_undo_move(fbk_instance_s * fbk);
 
+/**
+ * @brief Get the time spent on the current move in ms
+ * 
+ * @param fbk 
+ * 
+ * @return Time in ms
+*/
+fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk);
+
 #endif //_FLY_BY_KNIGHT_H_

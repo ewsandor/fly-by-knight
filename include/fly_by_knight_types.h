@@ -239,6 +239,9 @@ typedef struct
 
   /* Game state */
   ftk_game_s          game;
+  
+  /* Time of last move or new game */
+  struct timespec     last_move_time;
 
   /* Move tree for current game */
   fbk_move_tree_s     move_tree;
