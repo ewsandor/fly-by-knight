@@ -178,6 +178,7 @@ void * picker_thread_f(void * arg)
 
           if(pick_data->best_line_callback != NULL)
           {
+            best_line.searched_node_count = get_analyzed_nodes();
             best_line.first_move = build_best_line(best_node);
             pick_data->best_line_callback(&best_line, pick_data->best_line_user_data_ptr);
             delete_best_line(best_line.first_move);

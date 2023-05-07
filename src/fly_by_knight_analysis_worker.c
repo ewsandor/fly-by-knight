@@ -114,6 +114,15 @@ static fbk_analysis_job_queue_node_s * pop_job_from_job_queue(fbk_analysis_job_q
   return ret_val;
 }
 
+static void update_stats(fbk_node_count_t analyzed_nodes)
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes       += analyzed_nodes;
+  fbk_analysis_data.analysis_stats.game_analyzed_nodes  += analyzed_nodes;
+  fbk_analysis_data.analysis_stats.total_analyzed_nodes += analyzed_nodes;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+}
+
 /**
  * @brief Cleans up job after successfully processing
  * @param queue   queue to book-keep
@@ -565,7 +574,9 @@ static void * worker_thread_f(void * arg)
 
     /* Disable PThread cancellation while cleaning up */
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-    
+
+    update_stats(job_context.nodes_evaluated);
+
     if(FBK_ANALYSIS_JOB_COMPLETE == job_result.result)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
@@ -713,3 +724,28 @@ bool fbk_stop_analysis(bool clear_pending_jobs)
 
   return ret_val;
 }
+
+fbk_node_count_t get_analyzed_nodes()
+{
+  fbk_node_count_t nodes = 0;
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  nodes = fbk_analysis_data.analysis_stats.analyzed_nodes;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+  return nodes;
+}
+
+void reset_analyzed_nodes()
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes = 0;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+}
+
+void reset_game_analyzed_nodes()
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes = 0;
+  fbk_analysis_data.analysis_stats.game_analyzed_nodes = 0;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+}
+

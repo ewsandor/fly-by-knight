@@ -144,7 +144,7 @@ typedef struct
   /* Lock for accessing analysis statistics */
   fbk_mutex_t lock;
 
-  /* Nodes analyzed since analysis start */
+  /* Nodes analyzed since start of this turn */
   fbk_node_count_t analyzed_nodes;
   /* Nodes analyzed since game start */
   fbk_node_count_t game_analyzed_nodes;
@@ -152,6 +152,21 @@ typedef struct
   fbk_node_count_t total_analyzed_nodes;
 
 } fbk_analysis_stats_s;
+
+/**
+ * @brief Returns the number of nodes analyzed since the start of this turn
+*/
+fbk_node_count_t get_analyzed_nodes();
+
+/**
+ * @brief Resets the number of nodes analyzed this turn (reset when committing a move)
+*/
+void reset_analyzed_nodes();
+
+/**
+ * @brief Resets the number of nodes analyzed this game (reset when starting a new game)
+*/
+void reset_game_analyzed_nodes();
 
 /* Root structure for Fly by Knight analysis data */
 typedef struct 

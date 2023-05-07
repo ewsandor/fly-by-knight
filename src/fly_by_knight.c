@@ -158,6 +158,9 @@ void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis)
   fbk_init_move_tree_node(&fbk->move_tree.root, NULL, NULL);
   fbk->move_tree.current = &fbk->move_tree.root;
   fbk->move_tree.initialized = true;
+
+  /* Reset the analysis counter */
+  reset_game_analyzed_nodes();
 }
 
 /**
@@ -190,6 +193,9 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
   {
     ret_val = false;
   }
+
+  /* Reset the analysis counter */
+  reset_analyzed_nodes();
 
   return ret_val;
 }
@@ -225,6 +231,9 @@ bool fbk_undo_move(fbk_instance_s * fbk)
   }
 
   FBK_ASSERT_MSG(true == fbk_mutex_unlock(node_lock), "Failed to unlock node mutex");
+
+  /* Reset the analysis counter */
+  reset_analyzed_nodes();
 
   return ret_val;
 }
