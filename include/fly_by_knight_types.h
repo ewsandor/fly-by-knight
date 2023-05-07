@@ -212,7 +212,7 @@ typedef struct
   fbk_breadth_t       analysis_breadth;
 
   /* Output current analysis details */
-  bool                analysis_output;
+  bool                thinking_output;
 
   /* Current opponent type */
   fbk_opponent_type_e opponent_type;

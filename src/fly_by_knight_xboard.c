@@ -193,11 +193,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("post", input) == 0)
   {
-    fbk->config.analysis_output = true;
+    fbk->config.thinking_output = true;
   }
   else if(strcmp("nopost", input) == 0)
   {
-    fbk->config.analysis_output = false;
+    fbk->config.thinking_output = false;
   }
   else if(strcmp("easy", input) == 0)
   {
