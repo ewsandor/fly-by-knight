@@ -425,7 +425,7 @@ bool manage_xboard_analysis(fbk_instance_s * fbk)
   return ret_val;
 }
 
-void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
+void xboard_pick_callback(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
 {
   FBK_ASSERT_MSG(user_data != NULL,"NULL user data pointer passed");
   fbk_instance_s *fbk = (fbk_instance_s *) user_data;
@@ -468,6 +468,37 @@ void fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, voi
   manage_xboard_analysis(fbk);
 }
 
+#define THINKING_OUTPUT_BUFFER_SIZE 1024
+void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * user_data)
+{
+  FBK_UNUSED(user_data);
+
+  const fbk_picker_best_line_node_s * best_line_node = best_line->first_move;
+
+  char thinking_output_buffer[THINKING_OUTPUT_BUFFER_SIZE] = {'\0'};
+  size_t thinking_output_buffer_length = 0;
+
+  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %ld %lu %lu",
+                                            best_line->analysis_data.max_depth,
+                                            best_line->analysis_data.base_score/10,
+                                            best_line->search_time/10,
+                                            best_line->searched_node_count );
+
+  while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
+  {
+    char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_xboard_string(&best_line_node->move, move_output);
+
+    thinking_output_buffer_length += snprintf(&thinking_output_buffer[thinking_output_buffer_length], 
+                                              (THINKING_OUTPUT_BUFFER_SIZE-thinking_output_buffer_length), 
+                                              " %s", move_output);
+
+    best_line_node = best_line_node->next_move;
+  }
+
+  FBK_OUTPUT_MSG("%s\n", thinking_output_buffer);
+}
+
 /**
  * @brief Process input string with xboard protocol
  * 
@@ -504,9 +535,11 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
   {
     fbk_picker_client_config_s picker_config = {0};
 
-    picker_config.play_as            = fbk->protocol_data.xboard.play_as;
-    picker_config.pick_callback      = fbk_xboard_pick_callback_f;
-    picker_config.pick_user_data_ptr = (void*) fbk;
+    picker_config.play_as                 = fbk->protocol_data.xboard.play_as;
+    picker_config.pick_callback           = xboard_pick_callback;
+    picker_config.pick_user_data_ptr      = (void*) fbk;
+    picker_config.best_line_callback      = xboard_best_line_callback;
+    picker_config.best_line_user_data_ptr = (void*) fbk;
 
     fbk_start_picker(&picker_config);
   }

@@ -92,8 +92,49 @@ typedef struct
   fbk_pick_callback_f  pick_cb;
   void                *pick_cb_user_data_ptr;
 
+  fbk_pick_best_line_callback_f best_line_callback;
+  void *                        best_line_user_data_ptr;
+
 } fbk_pick_data_s;
 fbk_pick_data_s pick_data = {0};
+
+static fbk_picker_best_line_node_s *build_best_line(fbk_move_tree_node_s *move_tree_node)
+{
+  FBK_ASSERT_MSG(move_tree_node != NULL, "Null move_tree_node");
+
+  fbk_picker_best_line_node_s *new_node = malloc(sizeof(fbk_picker_best_line_node_s));
+  FBK_ASSERT_MSG(new_node != NULL, "Failed to allocate new best-line node");
+
+  fbk_mutex_lock(&move_tree_node->lock);
+  bool decompressed = fbk_decompress_move_tree_node(move_tree_node, true);
+ 
+  new_node->move = move_tree_node->move;
+  if(move_tree_node->analysis_data.evaluated && (move_tree_node->analysis_data.best_child_index < move_tree_node->child_count))
+  {
+    new_node->next_move = build_best_line(&move_tree_node->child[move_tree_node->analysis_data.best_child_index]);
+  }
+  else
+  {
+    new_node->next_move = NULL;
+  }
+
+  if(decompressed)
+  {
+    fbk_compress_move_tree_node(move_tree_node, true);
+  }
+  fbk_mutex_unlock(&move_tree_node->lock);
+
+  return new_node;
+}
+
+static inline void delete_best_line(fbk_picker_best_line_node_s *best_line)
+{
+  if(best_line->next_move != NULL)
+  {
+    delete_best_line(best_line->next_move);
+  }
+  free(best_line);
+}
 
 void * picker_thread_f(void * arg)
 {
@@ -128,9 +169,19 @@ void * picker_thread_f(void * arg)
         fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
         if(best_node != NULL)
         {
+          fbk_picker_best_line_s best_line = {0};
+
           fbk_mutex_lock(&best_node->lock);
           move = best_node->move;
+          best_line.analysis_data = best_node->analysis_data;
           fbk_mutex_unlock(&best_node->lock);
+
+          if(pick_data->best_line_callback != NULL)
+          {
+            best_line.first_move = build_best_line(best_node);
+            pick_data->best_line_callback(&best_line, pick_data->best_line_user_data_ptr);
+            delete_best_line(best_line.first_move);
+          }
         }
         if(decompressed)
         {
@@ -199,10 +250,12 @@ bool fbk_init_picker(fbk_instance_s *fbk)
 void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config)
 {
   fbk_mutex_lock(&pick_data.lock);
-  pick_data.pick_cb               = pick_client_config->pick_callback;
-  pick_data.pick_cb_user_data_ptr = pick_client_config->pick_user_data_ptr;
-  pick_data.picker_active         = true;
-  pick_data.play_as               = pick_client_config->play_as;
+  pick_data.pick_cb                 = pick_client_config->pick_callback;
+  pick_data.pick_cb_user_data_ptr   = pick_client_config->pick_user_data_ptr;
+  pick_data.best_line_callback      = pick_client_config->best_line_callback;
+  pick_data.best_line_user_data_ptr = pick_client_config->best_line_user_data_ptr;
+  pick_data.picker_active           = true;
+  pick_data.play_as                 = pick_client_config->play_as;
   pthread_cond_broadcast(&pick_data.pick_started_cond);
   fbk_mutex_unlock(&pick_data.lock);
 }
@@ -210,9 +263,11 @@ void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config)
 void fbk_stop_picker()
 {
   fbk_mutex_lock(&pick_data.lock);
-  pick_data.pick_cb               = NULL;
-  pick_data.pick_cb_user_data_ptr = NULL;
-  pick_data.picker_active         = false;
-  pick_data.play_as               = FTK_COLOR_NONE;
+  pick_data.pick_cb                 = NULL;
+  pick_data.pick_cb_user_data_ptr   = NULL;
+  pick_data.best_line_callback      = NULL;
+  pick_data.best_line_user_data_ptr = NULL;
+  pick_data.picker_active           = false;
+  pick_data.play_as                 = FTK_COLOR_NONE;
   fbk_mutex_unlock(&pick_data.lock);
 }

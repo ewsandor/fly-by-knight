@@ -29,28 +29,32 @@ struct fbk_picker_best_line_node_struct
 typedef struct
 {
   /* Score information */
-  /* placeholder */
+  fbk_move_tree_node_analysis_data_s  analysis_data;
+  /* Current move search time in ms */
+  fbk_time_ms_t                       search_time;
+  /* Number of nodes searched */
+  fbk_node_count_t                    searched_node_count;
 
   /* First move in best line */
-  fbk_picker_best_line_node_s *first_move;
+  fbk_picker_best_line_node_s        *first_move;
 
 } fbk_picker_best_line_s;
 
-typedef void (*fbk_pick_best_line_callback_f)(fbk_picker_best_line_s, void *);
+typedef void (*fbk_pick_best_line_callback_f)(const fbk_picker_best_line_s *, void *);
 
 /* Picker client config */
 typedef struct
 {
   /* Color to pick for */
-  ftk_color_e            play_as;
+  ftk_color_e                   play_as;
 
   /* Callback to be called when a move is picked and commited */
-  fbk_pick_callback_f    pick_callback;
-  void *                 pick_user_data_ptr;
+  fbk_pick_callback_f           pick_callback;
+  void *                        pick_user_data_ptr;
 
   /* Callback to be called when the best line is updated without committing */
-  fbk_picker_best_line_s best_line_callback;
-  void *                 best_line_user_data_ptr;
+  fbk_pick_best_line_callback_f best_line_callback;
+  void *                        best_line_user_data_ptr;
 
 } fbk_picker_client_config_s;
 

@@ -238,7 +238,7 @@ static void * worker_manager_thread_f(void * arg)
         fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game, true);
       }
 
-      for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
+      for(fbk_node_count_t i = 0; i < node->child_count; i++)
       {
         FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u and breadth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH, FBK_MAX_ANALYSIS_BREADTH);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
@@ -369,9 +369,9 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
     bool all_child_nodes_analyzed = true;
     fbk_depth_t max_depth =  0;
     fbk_depth_t min_depth = FBK_MAX_DEPTH;
-    fbk_analysis_node_count_t best_child = node->child_count;
+    fbk_node_count_t best_child = node->child_count;
 
-    for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
+    for(fbk_node_count_t i = 0; i < node->child_count; i++)
     {
       fbk_mutex_lock(&node->child[i].lock);
       if(node->child[i].analysis_data.evaluated)
@@ -467,7 +467,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         fbk_analysis_job_s sub_job = *job;
         sub_job.depth--;
 
-        for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
+        for(fbk_node_count_t i = 0; i < job->node->child_count; i++)
         {
           /* Do surface analysis (depth 1) on all child nodes */
           FBK_ASSERT_MSG(fbk_apply_move_tree_node(&job->node->child[i], &game), "Failed to apply child node %lu", i);
@@ -484,7 +484,7 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
           fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
           FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
 
-          for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
+          for(fbk_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
           {
             sub_job.node = sorted_nodes[(job->node->child_count-1)-i];
             fbk_mutex_unlock(&job->node->lock);

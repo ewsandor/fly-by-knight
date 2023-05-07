@@ -12,8 +12,6 @@
 
 #include "fly_by_knight_types.h"
 
-typedef uint_fast32_t fbk_analysis_node_count_t;
-
 typedef enum
 {
   FBK_ANALYSIS_JOB_COMPLETE,
@@ -39,7 +37,7 @@ typedef struct
   bool                      top_call;
 
   /* Number of nodes evaluated by this job */
-  fbk_analysis_node_count_t nodes_evaluated;
+  fbk_node_count_t nodes_evaluated;
 
 } fbk_analysis_job_context_s;
 
@@ -147,11 +145,11 @@ typedef struct
   fbk_mutex_t lock;
 
   /* Nodes analyzed since analysis start */
-  fbk_analysis_node_count_t analyzed_nodes;
+  fbk_node_count_t analyzed_nodes;
   /* Nodes analyzed since game start */
-  fbk_analysis_node_count_t game_analyzed_nodes;
+  fbk_node_count_t game_analyzed_nodes;
   /* Nodes analyzed since process start */
-  fbk_analysis_node_count_t total_analyzed_nodes;
+  fbk_node_count_t total_analyzed_nodes;
 
 } fbk_analysis_stats_s;
 

@@ -37,6 +37,16 @@ typedef unsigned int fbk_thread_index_t;
 typedef int_fast32_t fbk_score_t;
 
 /**
+ * @brief Count of nodes
+*/
+typedef uint_fast32_t fbk_node_count_t;
+
+/**
+ * @brief Time in count of milliseconds
+*/
+typedef int_fast64_t fbk_time_ms_t;
+
+/**
  * @brief Type for analysis depth
  * 
  */
