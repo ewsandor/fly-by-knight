@@ -36,6 +36,8 @@ typedef struct
   fbk_time_ms_t                       search_time;
   /* Number of nodes searched */
   fbk_node_count_t                    searched_node_count;
+  /* Table base hits - currently unused (value 0) */
+  unsigned long int                   tbhits;
 
   /* First move in best line */
   fbk_picker_best_line_node_s        *first_move;

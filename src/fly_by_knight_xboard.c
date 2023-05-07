@@ -523,11 +523,16 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
     snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "0");
   }
 
-  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %s %lu %lu",
-                                            best_line->analysis_data.max_depth,
+  uint_fast64_t nodes_per_second = (best_line->search_time > 0)?((best_line->searched_node_count*1000)/best_line->search_time):0;
+
+  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %s %lu %lu %lu %lu %lu\t",
+                                            best_line->analysis_data.best_child_depth,
                                             score_output_buffer,
                                             best_line->search_time/10,
-                                            best_line->searched_node_count );
+                                            best_line->searched_node_count,
+                                            best_line->analysis_data.max_depth,
+                                            nodes_per_second,
+                                            best_line->tbhits);
 
   while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
   {
