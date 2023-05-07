@@ -469,6 +469,8 @@ void xboard_pick_callback(ftk_game_end_e game_result, ftk_move_s move, void * us
 }
 
 #define THINKING_OUTPUT_BUFFER_SIZE 1024
+#define SCORE_OUTPUT_BUFFER_SIZE           1024
+
 void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * user_data)
 {
   FBK_UNUSED(user_data);
@@ -478,9 +480,52 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
   char thinking_output_buffer[THINKING_OUTPUT_BUFFER_SIZE] = {'\0'};
   size_t thinking_output_buffer_length = 0;
 
-  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %ld %lu %lu",
+  char score_output_buffer[SCORE_OUTPUT_BUFFER_SIZE] = {'\0'};
+
+  if(best_line->analysis_data.evaluated)
+  {
+    if(FTK_END_DEFINITIVE(best_line->analysis_data.best_child_result))
+    {
+      if((best_line->analysis_data.best_child_depth % 2) == 0)
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                  100000+best_line->analysis_data.best_child_depth);
+      }
+      else
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                  -(100000+best_line->analysis_data.best_child_depth));
+      }
+    }
+    else
+    {
+      fbk_score_t score = 0;
+      if(best_line->analysis_data.best_child_index < best_line->child_count)
+      {
+        score = best_line->analysis_data.best_child_score/10;
+      }
+      else
+      {
+        score = best_line->analysis_data.base_score/10;
+      }
+
+      if(best_line->first_move->move.turn == FTK_COLOR_BLACK)
+      {
+        score *= -1;
+      }
+
+      snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                score);
+    }
+  }
+  else
+  {
+    snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "0");
+  }
+
+  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %s %lu %lu",
                                             best_line->analysis_data.max_depth,
-                                            best_line->analysis_data.base_score/10,
+                                            score_output_buffer,
                                             best_line->search_time/10,
                                             best_line->searched_node_count );
 

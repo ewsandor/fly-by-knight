@@ -30,6 +30,8 @@ typedef struct
 {
   /* Score information */
   fbk_move_tree_node_analysis_data_s  analysis_data;
+  /* Number of child node from best line root */
+  fbk_move_tree_node_count_t          child_count;
   /* Current move search time in ms */
   fbk_time_ms_t                       search_time;
   /* Number of nodes searched */
