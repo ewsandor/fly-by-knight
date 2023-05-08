@@ -481,11 +481,13 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         {
           /* Do surface analysis (depth 1) on all child nodes */
           FBK_ASSERT_MSG(fbk_apply_move_tree_node(&job->node->child[i], &game), "Failed to apply child node %lu", i);
-          if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, false) == true)
+          fbk_mutex_lock(&job->node->child[i].lock);
+          if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, true) == true)
           {
             context->nodes_evaluated++;
             fbk_compress_move_tree_node(&job->node->child[i], true);
           }
+          fbk_mutex_unlock(&job->node->child[i].lock);
           FBK_ASSERT_MSG(fbk_undo_move_tree_node(&job->node->child[i], &game), "Failed to undo child node %lu", i);
         }
 
