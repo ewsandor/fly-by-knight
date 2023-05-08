@@ -252,12 +252,12 @@ void * picker_thread_f(void * arg)
     }
 
     fbk_mutex_lock(&pick_data->lock);
-   
     if(pick_data->picker_active == true)
     {
       /* Make sure picker is still active */
       FBK_DEBUG_MSG(FBK_DEBUG_MED, "Considering best move for picking logic.");
 
+      fbk_mutex_lock(&pick_data->fbk->game_lock);
       ftk_game_end_e game_result = ftk_check_for_game_end(&pick_data->fbk->game);
       ftk_move_s     move        = {0};
       ftk_invalidate_move(&move);
@@ -346,6 +346,7 @@ void * picker_thread_f(void * arg)
         fbk_stop_analysis(true);
         report = true;
       }
+      fbk_mutex_unlock(&pick_data->fbk->game_lock);
     
       if((commit_move || report) && (pick_data->pick_cb != NULL))
       {

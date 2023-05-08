@@ -237,6 +237,8 @@ typedef struct
   /* Engine configuration */
   fbk_engine_config_s config;
 
+  /* Game state lock */
+  fbk_mutex_t         game_lock;
   /* Game state */
   ftk_game_s          game;
   
