@@ -56,7 +56,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature sigint=0\n"
                  "feature sigterm=0\n"
                  "feature reuse=1\n"
-                 "feature analyze=0\n"
+                 "feature analyze=1\n"
                  "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
                  "feature variants=\"normal\"\n"
                  "feature colors=0\n"
@@ -159,6 +159,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     fbk_stop_analysis(true);
     fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE;
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
+  }
+  else if(strcmp("analyze", input) == 0)
+  {
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
   }
   else if(strcmp("go", input) == 0)
