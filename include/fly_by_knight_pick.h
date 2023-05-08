@@ -74,12 +74,19 @@ typedef enum
   FBK_PICKER_TRIGGER_JOB_ENDED,
 } fbk_picker_trigger_e;
 
+typedef union
+{
+  const fbk_move_tree_node_s * job_node;
+} fbk_picker_trigger_data_u;
+
 /**
  * @brief Picker logic trigger data
 */
 typedef struct
 {
-  fbk_picker_trigger_e type;
+  fbk_picker_trigger_e      type;
+
+  fbk_picker_trigger_data_u data;
 
 } fbk_picker_trigger_s;
 

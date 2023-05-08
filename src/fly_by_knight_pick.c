@@ -269,7 +269,14 @@ void * picker_thread_f(void * arg)
           best_line.analysis_data = best_node->analysis_data;
           fbk_mutex_unlock(&best_node->lock);
 
-          if((pick_data->fbk->config.thinking_output == true) && (pick_data->best_line_callback != NULL))
+          bool post = true;
+
+          if((FBK_PICKER_TRIGGER_JOB_ENDED == trigger.type) && (trigger.data.job_node != best_node))
+          {
+            post = false;
+          }
+
+          if(post && (pick_data->fbk->config.thinking_output) && (pick_data->best_line_callback != NULL))
           {
             best_line.search_time = fbk_get_move_time_ms(pick_data->fbk);
             best_line.searched_node_count = get_analyzed_nodes();

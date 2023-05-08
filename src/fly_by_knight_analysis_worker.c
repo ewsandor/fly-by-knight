@@ -578,6 +578,13 @@ static void * worker_thread_f(void * arg)
 
     update_stats(job_context.nodes_evaluated);
 
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_JOB_ENDED,
+      .data.job_node = job->job.node,
+    };
+    fbk_trigger_picker(&trigger);
+
     if(FBK_ANALYSIS_JOB_COMPLETE == job_result.result)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
@@ -589,12 +596,6 @@ static void * worker_thread_f(void * arg)
       job_aborted(worker_thread_data->job_queue, job);
     }
     pthread_cleanup_pop(0);
-
-    const fbk_picker_trigger_s trigger = 
-    {
-      .type = FBK_PICKER_TRIGGER_JOB_ENDED,
-    };
-    fbk_trigger_picker(&trigger);
 
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   }
