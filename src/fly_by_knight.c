@@ -200,6 +200,12 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
   reset_analyzed_nodes();
   clock_gettime(CLOCK_MONOTONIC, &fbk->last_move_time);
 
+  const fbk_picker_trigger_s trigger = 
+  {
+    .type = FBK_PICKER_TRIGGER_MOVE_COMMITTED,
+  };
+  fbk_trigger_picker(&trigger);
+
   return ret_val;
 }
 
