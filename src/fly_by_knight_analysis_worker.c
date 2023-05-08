@@ -14,6 +14,7 @@
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
+#include "fly_by_knight_pick.h"
 
 fbk_analysis_data_s fbk_analysis_data = {0};
 
@@ -588,6 +589,13 @@ static void * worker_thread_f(void * arg)
       job_aborted(worker_thread_data->job_queue, job);
     }
     pthread_cleanup_pop(0);
+
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_JOB_ENDED,
+    };
+    fbk_trigger_picker(&trigger);
+
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   }
 

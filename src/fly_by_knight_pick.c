@@ -7,6 +7,7 @@
  Move picking and decision making for Fly by Knight
 */
 
+#include <string.h>
 #include <unistd.h>
 
 #include <farewell_to_king.h>
@@ -102,7 +103,6 @@ typedef struct
 
   fbk_mutex_t                    lock;
   pthread_t                      picker_thread;
-  pthread_cond_t                 pick_started_cond;
 
   fbk_picker_trigger_queue_s     trigger_queue;
 
@@ -227,17 +227,22 @@ void * picker_thread_f(void * arg)
 
   while(1)
   {
-
     fbk_mutex_lock(&pick_data->trigger_queue.lock);
-    pop_trigger_from_trigger_queue(&pick_data->trigger_queue);
+
+    while(pick_data->trigger_queue.trigger_count == 0)
+    {
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Waiting for picker trigger.");
+      pthread_cond_wait(&pick_data->trigger_queue.new_trigger_condition, &pick_data->trigger_queue.lock);
+    }
+    fbk_picker_trigger_s trigger = pop_trigger_from_trigger_queue(&pick_data->trigger_queue);
+    FBK_ASSERT_MSG(trigger.type != FBK_PICKER_TRIGGER_INVALID, "Invalid picker tirgger.");
+    FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Popped picker trigger %u.", trigger.type);
+
     fbk_mutex_unlock(&pick_data->trigger_queue.lock);
 
+
     fbk_mutex_lock(&pick_data->lock);
-    while(pick_data->picker_active == false)
-    {
-      pthread_cond_wait(&pick_data->pick_started_cond, &pick_data->lock);
-    }
-    
+   
     if(pick_data->picker_active == true)
     {
       /* Make sure picker is still active */
@@ -298,7 +303,6 @@ void * picker_thread_f(void * arg)
         fbk_stop_analysis(true);
         report = true;
       }
- 
     
       if((commit_move || report) && (pick_data->pick_cb != NULL))
       {
@@ -312,8 +316,6 @@ void * picker_thread_f(void * arg)
       }
     }
     fbk_mutex_unlock(&pick_data->lock);
-
-    sleep(5);
   }
 }
 
@@ -321,16 +323,15 @@ bool fbk_init_picker(fbk_instance_s *fbk)
 {
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk instance passed.");
 
+  memset(&pick_data, 0, sizeof(fbk_pick_data_s));
+
   fbk_mutex_init(&pick_data.lock);
-  pthread_cond_init(&pick_data.pick_started_cond, NULL);
 
   pick_data.fbk                   = fbk;
-
   pick_data.picker_active         = false;
-  pick_data.play_as               = FTK_COLOR_NONE;
 
-  pick_data.pick_cb               = NULL;
-  pick_data.pick_cb_user_data_ptr = NULL;
+  fbk_mutex_init(&pick_data.trigger_queue.lock);
+  pthread_cond_init(&pick_data.trigger_queue.new_trigger_condition, NULL);
 
   FBK_ASSERT_MSG(0 == pthread_create(&pick_data.picker_thread , NULL, picker_thread_f, &pick_data), "Failed to start picker thread.");
 
@@ -346,8 +347,12 @@ void fbk_start_picker(const fbk_picker_client_config_s *pick_client_config)
   pick_data.best_line_user_data_ptr = pick_client_config->best_line_user_data_ptr;
   pick_data.picker_active           = true;
   pick_data.play_as                 = pick_client_config->play_as;
-  pthread_cond_broadcast(&pick_data.pick_started_cond);
   fbk_mutex_unlock(&pick_data.lock);
+  const fbk_picker_trigger_s trigger = 
+  {
+    .type = FBK_PICKER_TRIGGER_PICKER_STARTED,
+  };
+  fbk_trigger_picker(&trigger);
 }
 
 void fbk_stop_picker()
@@ -365,6 +370,8 @@ void fbk_stop_picker()
 void fbk_trigger_picker(const fbk_picker_trigger_s * trigger)
 {
   FBK_ASSERT_MSG(trigger != NULL, "Null trigger passed");
+
+  FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Queuing picker trigger %u.", trigger->type);
 
   fbk_mutex_lock(&pick_data.trigger_queue.lock);
   push_trigger_to_trigger_queue(&pick_data.trigger_queue, trigger);
