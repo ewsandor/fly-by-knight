@@ -271,7 +271,7 @@ void * picker_thread_f(void * arg)
         fbk_picker_best_line_s best_line = {0};
 
         fbk_mutex_lock(&pick_data->fbk->move_tree.current->lock);
-        bool decompressed = fbk_decompress_move_tree_node(pick_data->fbk->move_tree.current, true);
+        fbk_decompress_move_tree_node(pick_data->fbk->move_tree.current, true);
         fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
         if(best_node != NULL)
         {
@@ -290,12 +290,6 @@ void * picker_thread_f(void * arg)
           }
 
         }
-        if(decompressed)
-        {
-          fbk_compress_move_tree_node(pick_data->fbk->move_tree.current, true);
-        }
-        fbk_mutex_unlock(&pick_data->fbk->move_tree.current->lock);
-
         if(FTK_MOVE_VALID(move) &&
            (pick_data->fbk->game.turn == pick_data->play_as))
         { 
@@ -340,6 +334,8 @@ void * picker_thread_f(void * arg)
           pick_data->best_line_callback(&best_line, pick_data->best_line_user_data_ptr);
           delete_best_line(best_line.first_move);
         }
+
+       fbk_mutex_unlock(&pick_data->fbk->move_tree.current->lock);
       }
       else
       {
