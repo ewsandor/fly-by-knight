@@ -190,9 +190,13 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }*/
   else if(strcmp("?", input) == 0)
   {
-    //Force decision maker
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_FORCED,
+    };
+    fbk_trigger_picker(&trigger);
   }
-    else if(strcmp("random", input) == 0)
+  else if(strcmp("random", input) == 0)
   {
     fbk->config.random = !fbk->config.random;
   }

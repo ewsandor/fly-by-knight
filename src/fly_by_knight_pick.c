@@ -225,6 +225,8 @@ void * picker_thread_f(void * arg)
 
   fbk_pick_data_s * pick_data = (fbk_pick_data_s *) arg;
 
+  bool force_move = false;
+
   while(1)
   {
     fbk_mutex_lock(&pick_data->trigger_queue.lock);
@@ -240,6 +242,14 @@ void * picker_thread_f(void * arg)
 
     fbk_mutex_unlock(&pick_data->trigger_queue.lock);
 
+    if(FBK_PICKER_TRIGGER_MOVE_COMMITTED == trigger.type)
+    {
+      force_move = false;
+    }
+    else if(FBK_PICKER_TRIGGER_FORCED == trigger.type)
+    {
+      force_move = true;
+    }
 
     fbk_mutex_lock(&pick_data->lock);
    
@@ -290,8 +300,12 @@ void * picker_thread_f(void * arg)
            (pick_data->fbk->game.turn == pick_data->play_as))
         { 
           /* Move is valid and for current turn, check criteria to commit */
-          if( FTK_END_DEFINITIVE(best_line.analysis_data.result)        ||  FTK_END_DEFINITIVE(best_line.analysis_data.best_child_result) ||
-             (FTK_END_DRAW_STALEMATE == best_line.analysis_data.result) || (FTK_END_DRAW_STALEMATE == best_line.analysis_data.best_child_result))
+          if(force_move)
+          {
+            commit_move = true;
+          }
+          else if( FTK_END_DEFINITIVE(best_line.analysis_data.result)        ||  FTK_END_DEFINITIVE(best_line.analysis_data.best_child_result) ||
+                  (FTK_END_DRAW_STALEMATE == best_line.analysis_data.result) || (FTK_END_DRAW_STALEMATE == best_line.analysis_data.best_child_result))
           {
             /* Definitive result */
             commit_move = true;
