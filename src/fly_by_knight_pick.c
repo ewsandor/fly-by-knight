@@ -257,33 +257,28 @@ void * picker_thread_f(void * arg)
 
       if(FTK_END_NOT_OVER == game_result)
       {
+        bool post = false;
+        fbk_picker_best_line_s best_line = {0};
+
         fbk_mutex_lock(&pick_data->fbk->move_tree.current->lock);
         bool decompressed = fbk_decompress_move_tree_node(pick_data->fbk->move_tree.current, true);
         fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
         if(best_node != NULL)
         {
-          fbk_picker_best_line_s best_line = {0};
-
           fbk_mutex_lock(&best_node->lock);
           move = best_node->move;
           best_line.analysis_data = best_node->analysis_data;
           fbk_mutex_unlock(&best_node->lock);
 
-          bool post = true;
+          post = true;
+          best_line.search_time = fbk_get_move_time_ms(pick_data->fbk);
+          best_line.searched_node_count = get_analyzed_nodes();
 
           if((FBK_PICKER_TRIGGER_JOB_ENDED == trigger.type) && (trigger.data.job_node != best_node))
           {
             post = false;
           }
 
-          if(post && (pick_data->fbk->config.thinking_output) && (pick_data->best_line_callback != NULL))
-          {
-            best_line.search_time = fbk_get_move_time_ms(pick_data->fbk);
-            best_line.searched_node_count = get_analyzed_nodes();
-            best_line.first_move = build_best_line(best_node);
-            pick_data->best_line_callback(&best_line, pick_data->best_line_user_data_ptr);
-            delete_best_line(best_line.first_move);
-          }
         }
         if(decompressed)
         {
@@ -291,18 +286,45 @@ void * picker_thread_f(void * arg)
         }
         fbk_mutex_unlock(&pick_data->fbk->move_tree.current->lock);
 
- 
-        if(FTK_MOVE_VALID(move))
-        {
-          if(pick_data->fbk->game.turn == pick_data->play_as)
+        if(FTK_MOVE_VALID(move) &&
+           (pick_data->fbk->game.turn == pick_data->play_as))
+        { 
+          /* Move is valid and for current turn, check criteria to commit */
+          if( FTK_END_DEFINITIVE(best_line.analysis_data.result)        ||  FTK_END_DEFINITIVE(best_line.analysis_data.best_child_result) ||
+             (FTK_END_DRAW_STALEMATE == best_line.analysis_data.result) || (FTK_END_DRAW_STALEMATE == best_line.analysis_data.best_child_result))
           {
-            /* Commit move */
+            /* Definitive result */
+            commit_move = true;
+          }
+          else if(best_line.searched_node_count > 1000000)
+          {
+            /* Analyzed 1,000,000 moves*/
+            commit_move = true;
+          }
+          else if((best_line.searched_node_count > 500000) &&
+                  (best_line.analysis_data.best_child_depth >= 5))
+          {
+            /* Analyzed 500,000 moves and best line depth 5 */
+            commit_move = true;
+          }
+          else if((best_line.searched_node_count > 250000) &&
+                  (best_line.analysis_data.best_child_depth >= 6))
+          {
+            /* Analyzed 250,000 moves and best line depth 6 */
             commit_move = true;
           }
         }
         else
         {
           FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Could not find best move, not selecting any move yet.");
+        }
+
+        if( commit_move ||
+            (post && (pick_data->fbk->config.thinking_output) && (pick_data->best_line_callback != NULL)) )
+        {
+          best_line.first_move = build_best_line(best_node);
+          pick_data->best_line_callback(&best_line, pick_data->best_line_user_data_ptr);
+          delete_best_line(best_line.first_move);
         }
       }
       else
@@ -313,6 +335,7 @@ void * picker_thread_f(void * arg)
     
       if((commit_move || report) && (pick_data->pick_cb != NULL))
       {
+        
         if(commit_move)
         {
           fbk_stop_analysis(true);

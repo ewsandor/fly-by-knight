@@ -197,7 +197,7 @@ static void clear_job_queue(fbk_analysis_job_queue_s * queue)
 }
 
 #define WORKER_MANAGER_QUEUED_JOBS_PER_WORKER 2
-#define WORKER_MANAGER_JOB_INITIAL_DEPTH 3
+#define WORKER_MANAGER_JOB_INITIAL_DEPTH 4
 /**
  * @brief Main thread for worker manager thread
  * @param arg pointer to main analysis data structure
