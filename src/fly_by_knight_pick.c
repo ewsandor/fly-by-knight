@@ -8,6 +8,7 @@
 */
 
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <farewell_to_king.h>
@@ -219,6 +220,17 @@ static fbk_picker_trigger_s pop_trigger_from_trigger_queue(fbk_picker_trigger_qu
   return ret_val;
 }
 
+static void pick_timer_callback(union sigval sigev_value) 
+{
+  FBK_UNUSED(sigev_value);
+
+  const fbk_picker_trigger_s trigger = 
+  {
+    .type = FBK_PICKER_TRIGGER_TIMED,
+  };
+  fbk_trigger_picker(&trigger);
+}
+
 void * picker_thread_f(void * arg)
 {
   FBK_ASSERT_MSG(arg != NULL, "NULL arg passed.");
@@ -226,6 +238,22 @@ void * picker_thread_f(void * arg)
   fbk_pick_data_s * pick_data = (fbk_pick_data_s *) arg;
 
   bool force_move = false;
+
+  timer_t           pick_timer = {0};
+  struct sigevent   sev = {0};
+  struct itimerspec its = {0};
+
+  sev.sigev_notify = SIGEV_THREAD;
+  sev.sigev_value.sival_ptr = NULL;
+  sev.sigev_notify_function = pick_timer_callback;
+  sev.sigev_notify_attributes = NULL;
+  FBK_ASSERT_MSG(0 == timer_create(CLOCK_REALTIME, &sev, &pick_timer), "Failed to create pick timer.");
+
+  its.it_interval.tv_sec  = 5;
+  its.it_interval.tv_nsec = 0;
+  its.it_value.tv_sec     = 5;
+  its.it_value.tv_nsec    = 0;
+  FBK_ASSERT_MSG(0 == timer_settime(pick_timer, 0, &its, NULL), "Failed to start pick timer.");
 
   while(1)
   {
