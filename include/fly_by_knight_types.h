@@ -37,6 +37,16 @@ typedef unsigned int fbk_thread_index_t;
 typedef int_fast32_t fbk_score_t;
 
 /**
+ * @brief Count of nodes
+*/
+typedef uint_fast32_t fbk_node_count_t;
+
+/**
+ * @brief Time in count of milliseconds
+*/
+typedef int_fast64_t fbk_time_ms_t;
+
+/**
  * @brief Type for analysis depth
  * 
  */
@@ -202,7 +212,7 @@ typedef struct
   fbk_breadth_t       analysis_breadth;
 
   /* Output current analysis details */
-  bool                analysis_output;
+  bool                thinking_output;
 
   /* Current opponent type */
   fbk_opponent_type_e opponent_type;
@@ -227,8 +237,13 @@ typedef struct
   /* Engine configuration */
   fbk_engine_config_s config;
 
+  /* Game state lock */
+  fbk_mutex_t         game_lock;
   /* Game state */
   ftk_game_s          game;
+  
+  /* Time of last move or new game */
+  struct timespec     last_move_time;
 
   /* Move tree for current game */
   fbk_move_tree_s     move_tree;

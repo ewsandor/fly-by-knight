@@ -56,7 +56,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature sigint=0\n"
                  "feature sigterm=0\n"
                  "feature reuse=1\n"
-                 "feature analyze=0\n"
+                 "feature analyze=1\n"
                  "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
                  "feature variants=\"normal\"\n"
                  "feature colors=0\n"
@@ -161,6 +161,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
     fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
   }
+  else if(strcmp("analyze", input) == 0)
+  {
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
+  }
   else if(strcmp("go", input) == 0)
   {
     fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
@@ -185,19 +190,23 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }*/
   else if(strcmp("?", input) == 0)
   {
-    //Force decision maker
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_FORCED,
+    };
+    fbk_trigger_picker(&trigger);
   }
-    else if(strcmp("random", input) == 0)
+  else if(strcmp("random", input) == 0)
   {
     fbk->config.random = !fbk->config.random;
   }
   else if(strcmp("post", input) == 0)
   {
-    fbk->config.analysis_output = true;
+    fbk->config.thinking_output = true;
   }
   else if(strcmp("nopost", input) == 0)
   {
-    fbk->config.analysis_output = false;
+    fbk->config.thinking_output = false;
   }
   else if(strcmp("easy", input) == 0)
   {
@@ -425,20 +434,16 @@ bool manage_xboard_analysis(fbk_instance_s * fbk)
   return ret_val;
 }
 
-fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
+void xboard_pick_callback(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
 {
   FBK_ASSERT_MSG(user_data != NULL,"NULL user data pointer passed");
   fbk_instance_s *fbk = (fbk_instance_s *) user_data;
 
-  fbk_pick_callback_response_s response = {0};
-
-  if(FTK_END_NOT_OVER == game_result)
+  if(FTK_MOVE_VALID(move))
   {
     fbk->protocol_data.xboard.result_reported = false;
 
     /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
-
-    FBK_ASSERT_MSG(FTK_MOVE_VALID(move), "Picked move is invalid");
 
     /* Null move by default */
     char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
@@ -446,39 +451,111 @@ fbk_pick_callback_response_s fbk_xboard_pick_callback_f(ftk_game_end_e game_resu
 
     FBK_OUTPUT_MSG("move %s\n", move_output);
   }
-  else if(false == fbk->protocol_data.xboard.result_reported)
+  
+  if((FTK_END_NOT_OVER != game_result) && (false == fbk->protocol_data.xboard.result_reported))
   {
     if(FTK_END_DEFINITIVE(game_result))
     {
       if(FTK_COLOR_BLACK == fbk->game.turn)
       {
-        FBK_OUTPUT_MSG("1-0 {White mates}\n");
+        FBK_OUTPUT_MSG("1-0 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
       }
       else
       {
-        FBK_OUTPUT_MSG("0-1 {Black mates}\n");
+        FBK_OUTPUT_MSG("0-1 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
       }
     }
     else
     {
       FBK_ASSERT_MSG(FTK_END_DRAW(game_result), "Unexpected game result %u", game_result);
-
-      if(FTK_END_DRAW_STALEMATE == game_result)
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Stalemate}\n");
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Rule %u}\n", game_result);
-      }
+      FBK_OUTPUT_MSG("1/2-1/2 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
     }
 
     fbk->protocol_data.xboard.result_reported = true;
   }
 
-  response.continue_analysis = manage_xboard_analysis(fbk);
+  manage_xboard_analysis(fbk);
+}
 
-  return response;
+#define THINKING_OUTPUT_BUFFER_SIZE 1024
+#define SCORE_OUTPUT_BUFFER_SIZE           1024
+
+void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * user_data)
+{
+  FBK_UNUSED(user_data);
+
+  const fbk_picker_best_line_node_s * best_line_node = best_line->first_move;
+
+  char thinking_output_buffer[THINKING_OUTPUT_BUFFER_SIZE] = {'\0'};
+  size_t thinking_output_buffer_length = 0;
+
+  char score_output_buffer[SCORE_OUTPUT_BUFFER_SIZE] = {'\0'};
+
+  if(best_line->analysis_data.evaluated)
+  {
+    if(FTK_END_DEFINITIVE(best_line->analysis_data.best_child_result))
+    {
+      if((best_line->analysis_data.best_child_depth % 2) == 0)
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                  100000+best_line->analysis_data.best_child_depth);
+      }
+      else
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                  -(100000+best_line->analysis_data.best_child_depth));
+      }
+    }
+    else
+    {
+      fbk_score_t score = 0;
+      if(best_line->analysis_data.best_child_index < best_line->child_count)
+      {
+        score = best_line->analysis_data.best_child_score/10;
+      }
+      else
+      {
+        score = best_line->analysis_data.base_score/10;
+      }
+
+      if(best_line->first_move->move.turn == FTK_COLOR_BLACK)
+      {
+        score *= -1;
+      }
+
+      snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                score);
+    }
+  }
+  else
+  {
+    snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "0");
+  }
+
+  uint_fast64_t nodes_per_second = (best_line->search_time > 0)?((best_line->searched_node_count*1000)/best_line->search_time):0;
+
+  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %s %lu %lu %lu %lu %lu\t",
+                                            best_line->analysis_data.best_child_depth+1,
+                                            score_output_buffer,
+                                            best_line->search_time/10,
+                                            best_line->searched_node_count,
+                                            best_line->analysis_data.max_depth+1,
+                                            nodes_per_second,
+                                            best_line->tbhits);
+
+  while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
+  {
+    char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_xboard_string(&best_line_node->move, move_output);
+
+    thinking_output_buffer_length += snprintf(&thinking_output_buffer[thinking_output_buffer_length], 
+                                              (THINKING_OUTPUT_BUFFER_SIZE-thinking_output_buffer_length), 
+                                              " %s", move_output);
+
+    best_line_node = best_line_node->next_move;
+  }
+
+  FBK_OUTPUT_MSG("%s\n", thinking_output_buffer);
 }
 
 /**
@@ -515,7 +592,15 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 
   if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
   {
-    fbk_start_picker(fbk->protocol_data.xboard.play_as, fbk_xboard_pick_callback_f, (void*) fbk);
+    fbk_picker_client_config_s picker_config = {0};
+
+    picker_config.play_as                 = fbk->protocol_data.xboard.play_as;
+    picker_config.pick_callback           = xboard_pick_callback;
+    picker_config.pick_user_data_ptr      = (void*) fbk;
+    picker_config.best_line_callback      = xboard_best_line_callback;
+    picker_config.best_line_user_data_ptr = (void*) fbk;
+
+    fbk_start_picker(&picker_config);
   }
   else
   {

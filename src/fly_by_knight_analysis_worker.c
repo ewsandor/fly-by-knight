@@ -14,6 +14,7 @@
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
 #include "fly_by_knight_move_tree.h"
+#include "fly_by_knight_pick.h"
 
 fbk_analysis_data_s fbk_analysis_data = {0};
 
@@ -112,6 +113,15 @@ static fbk_analysis_job_queue_node_s * pop_job_from_job_queue(fbk_analysis_job_q
   }
 
   return ret_val;
+}
+
+static void update_stats(fbk_node_count_t analyzed_nodes)
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes       += analyzed_nodes;
+  fbk_analysis_data.analysis_stats.game_analyzed_nodes  += analyzed_nodes;
+  fbk_analysis_data.analysis_stats.total_analyzed_nodes += analyzed_nodes;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
 }
 
 /**
@@ -238,7 +248,7 @@ static void * worker_manager_thread_f(void * arg)
         fbk_evaluate_move_tree_node(node, &analysis_data->analysis_state.game, true);
       }
 
-      for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
+      for(fbk_node_count_t i = 0; i < node->child_count; i++)
       {
         FBK_DEBUG_MSG(FBK_DEBUG_MED, "Queueing job %u with depth %u and breadth %u.", analysis_data->job_queue.next_job_id, WORKER_MANAGER_JOB_INITIAL_DEPTH, FBK_MAX_ANALYSIS_BREADTH);
         fbk_analysis_job_queue_node_s *new_job = calloc(1, sizeof(fbk_analysis_job_queue_node_s));
@@ -369,9 +379,9 @@ static void update_analysis_from_child_nodes(fbk_move_tree_node_s * node)
     bool all_child_nodes_analyzed = true;
     fbk_depth_t max_depth =  0;
     fbk_depth_t min_depth = FBK_MAX_DEPTH;
-    fbk_analysis_node_count_t best_child = node->child_count;
+    fbk_node_count_t best_child = node->child_count;
 
-    for(fbk_analysis_node_count_t i = 0; i < node->child_count; i++)
+    for(fbk_node_count_t i = 0; i < node->child_count; i++)
     {
       fbk_mutex_lock(&node->child[i].lock);
       if(node->child[i].analysis_data.evaluated)
@@ -467,15 +477,17 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         fbk_analysis_job_s sub_job = *job;
         sub_job.depth--;
 
-        for(fbk_analysis_node_count_t i = 0; i < job->node->child_count; i++)
+        for(fbk_node_count_t i = 0; i < job->node->child_count; i++)
         {
           /* Do surface analysis (depth 1) on all child nodes */
           FBK_ASSERT_MSG(fbk_apply_move_tree_node(&job->node->child[i], &game), "Failed to apply child node %lu", i);
-          if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, false) == true)
+          fbk_mutex_lock(&job->node->child[i].lock);
+          if(fbk_evaluate_move_tree_node(&job->node->child[i], &game, true) == true)
           {
             context->nodes_evaluated++;
             fbk_compress_move_tree_node(&job->node->child[i], true);
           }
+          fbk_mutex_unlock(&job->node->child[i].lock);
           FBK_ASSERT_MSG(fbk_undo_move_tree_node(&job->node->child[i], &game), "Failed to undo child node %lu", i);
         }
 
@@ -483,12 +495,15 @@ static void process_job(const fbk_analysis_job_s * job, fbk_analysis_job_context
         {
           fbk_move_tree_node_s** sorted_nodes = malloc(job->node->child_count * sizeof(fbk_move_tree_node_s*));
           FBK_ASSERT_MSG(true == fbk_sort_child_nodes(job->node, sorted_nodes), "Failed to sort child nodes.");
-          for(fbk_analysis_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
+
+          for(fbk_node_count_t i = 0; (i < job->node->child_count) && (i < job->breadth); i++)
           {
             sub_job.node = sorted_nodes[(job->node->child_count-1)-i];
+            fbk_mutex_unlock(&job->node->lock);
             FBK_ASSERT_MSG(fbk_apply_move_tree_node(sub_job.node, &sub_job.game), "Failed to apply child node %lu", i);
             process_job(&sub_job, context, result);
             FBK_ASSERT_MSG(fbk_undo_move_tree_node(sub_job.node, &sub_job.game), "Failed to undo child node %lu", i);
+            fbk_mutex_lock(&job->node->lock);
             if(result->result != FBK_ANALYSIS_JOB_COMPLETE)
             {
               break;
@@ -562,7 +577,16 @@ static void * worker_thread_f(void * arg)
 
     /* Disable PThread cancellation while cleaning up */
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-    
+
+    update_stats(job_context.nodes_evaluated);
+
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_JOB_ENDED,
+      .data.job_node = job->job.node,
+    };
+    fbk_trigger_picker(&trigger);
+
     if(FBK_ANALYSIS_JOB_COMPLETE == job_result.result)
     {
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "Worker thread %u finished job %u.", worker_thread_data->thread_index, job->job.job_id);
@@ -574,6 +598,7 @@ static void * worker_thread_f(void * arg)
       job_aborted(worker_thread_data->job_queue, job);
     }
     pthread_cleanup_pop(0);
+
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
   }
 
@@ -710,3 +735,28 @@ bool fbk_stop_analysis(bool clear_pending_jobs)
 
   return ret_val;
 }
+
+fbk_node_count_t get_analyzed_nodes()
+{
+  fbk_node_count_t nodes = 0;
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  nodes = fbk_analysis_data.analysis_stats.analyzed_nodes;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+  return nodes;
+}
+
+void reset_analyzed_nodes()
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes = 0;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+}
+
+void reset_game_analyzed_nodes()
+{
+  fbk_mutex_lock(&fbk_analysis_data.analysis_stats.lock);
+  fbk_analysis_data.analysis_stats.analyzed_nodes = 0;
+  fbk_analysis_data.analysis_stats.game_analyzed_nodes = 0;
+  fbk_mutex_unlock(&fbk_analysis_data.analysis_stats.lock);
+}
+

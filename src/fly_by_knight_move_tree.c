@@ -273,7 +273,7 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
         }
         default:
         {
-          FBK_FATAL_MSG("Node inflation error %u", ret);
+          FBK_FATAL_MSG("Node inflation error %d", ret);
           break;
         }
       }
