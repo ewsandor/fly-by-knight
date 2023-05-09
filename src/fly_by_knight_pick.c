@@ -332,21 +332,26 @@ void * picker_thread_f(void * arg)
             /* Definitive result */
             commit_move = true;
           }
-          else if(best_line.searched_node_count > 1000000)
+          else if(best_line.searched_node_count > 1000*1000)
           {
             /* Analyzed 1,000,000 moves*/
             commit_move = true;
           }
-          else if((best_line.searched_node_count > 500000) &&
+          else if((best_line.searched_node_count > 500*1000) &&
                   (best_line.analysis_data.best_child_depth >= 5))
           {
             /* Analyzed 500,000 moves and best line depth 5 */
             commit_move = true;
           }
-          else if((best_line.searched_node_count > 250000) &&
+          else if((best_line.searched_node_count > 250*1000) &&
                   (best_line.analysis_data.best_child_depth >= 6))
           {
             /* Analyzed 250,000 moves and best line depth 6 */
+            commit_move = true;
+          }
+          else if(fbk_get_move_time_ms(pick_data->fbk) > 10*1000)
+          {
+            /* Max 10s per move */
             commit_move = true;
           }
         }
