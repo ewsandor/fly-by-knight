@@ -56,6 +56,9 @@ endif()
 find_package(Threads REQUIRED)
 target_link_libraries(flybyknight PRIVATE Threads::Threads)
 
+#POSIX Real-Time Library Linking
+target_link_libraries(flybyknight PRIVATE rt)
+
 if(ANALYSIS_NODE_COMPRESSION)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFBK_ZLIB_COMPRESSION")
   find_package(ZLIB REQUIRED)
