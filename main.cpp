@@ -261,17 +261,20 @@ bool handleInput(string input){
 		}*/
 	}
 	else{
-		if(input.find(".") == 0)
-			editMode = false;
-		else if(input.find("#") == 0)
-			currentGame->clear();
-		else if(input.find("print") == 0)
-			currentGame->getBoard()->printBoard();
-		else if(input.find("c") == 0)
-			eColor = eColor == WHITE? BLACK:WHITE;
-		else{          
-			if(!currentGame->modSquare(input, eColor))
-				handleOutput("Error (edit mode): " + input);
+		if(input.length() > 0)
+		{
+			if(input.find(".") == 0)
+				editMode = false;
+			else if(input.find("#") == 0)
+				currentGame->clear();
+			else if(input.find("print") == 0)
+				currentGame->getBoard()->printBoard();
+			else if(input.find("c") == 0)
+				eColor = (eColor == WHITE)? BLACK:WHITE;
+			else{          
+				if(!currentGame->modSquare(input, eColor))
+					handleOutput("Error (edit mode): " + input);
+			}
 		}
 	}
 
