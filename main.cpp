@@ -31,6 +31,7 @@ Game * currentGame = new Game();
 bool editMode = false;
 
 bool ponder = false;
+bool gameStarted = false;
 bool analyze = false;
 bool pondB4 = false;
 
@@ -95,7 +96,10 @@ bool handleInput(string input){
 		else if(input.find("quit") == 0)                                  //exits program
 			exit(0);
 		else if(input.find("new") == 0)                         //reset the board play white
+		{
 			currentGame->resetGame();
+			gameStarted = false;
+		}
 		else if(input.find("print") == 0)                         //draws a board
 			currentGame->getBoard()->printBoard();
 		else if(input.find("help") == 0)                          //dislays list of commands
@@ -103,6 +107,7 @@ bool handleInput(string input){
 		else if(input.find("go") == 0){                             //move right now
 			currentGame->playAs = currentGame->moveTree->actual->turn%2;
 			currentGame->searchClock = clock();
+			gameStarted = true;
 		}
 		else if(input.find("force") == 0 || input.find("result") == 0){                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
@@ -186,6 +191,7 @@ bool handleInput(string input){
 		else if(Board::moveFormat(input)){                   //move piece
 			currentGame->goActualLayout();
 			if(currentGame->move(input)){
+				gameStarted = true;
 				currentGame->commitMove();
 				currentGame->endGame();
 			}
@@ -230,7 +236,7 @@ bool handleInput(string input){
 			currentGame->endGame();
 		}
 
-		if(ponder)
+		if(ponder && !editMode && gameStarted)
 
 			currentGame->stepAnalysis();
 		else if(currentGame->playAs == currentGame->moveTree->actual->turn%2)
