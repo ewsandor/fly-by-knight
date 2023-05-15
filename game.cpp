@@ -106,6 +106,11 @@ void Game::setupBoard(){
 }
 void Game::updateClocks(){
 }
+
+void Game::changeTurn() {
+	moveTree->current->turn = ((moveTree->current->turn + 1) % 2);
+}
+
 int Game::getTurn(){  
 	return moveTree->current->turn % 2;
 }

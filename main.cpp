@@ -159,7 +159,21 @@ bool handleInput(string input){
 			ponder = true;
 			currentGame->playAs = NONE;
 		}
-		else if(input.find("exit") == 0){                              //exits program or analyze
+		else if(input.find("white") == 0){      
+			if(currentGame->getTurn() == BLACK)
+			{
+				currentGame->changeTurn();
+			}
+			currentGame->playAs = BLACK;
+		}
+		else if(input.find("black") == 0){      
+			if(currentGame->getTurn() == WHITE)
+			{
+				currentGame->changeTurn();
+			}
+			currentGame->playAs = WHITE;
+		}
+			else if(input.find("exit") == 0){                              //exits program or analyze
 			if(!analyze)
 				exit(0);
 			else{
