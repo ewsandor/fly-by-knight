@@ -49,7 +49,7 @@ void *inputQueuer(void*){
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.4.2-dev"
+	handleOutput("feature myname=\"Fly By Knight 0.4.3-dev"
 #ifdef FBK_DEBUG_BUILD
 " <debug "__DATE__ " " __TIME__">"
 #endif
@@ -102,7 +102,7 @@ bool handleInput(string input){
 		}
 		else if(input.find("print") == 0)                         //draws a board
 			currentGame->getBoard()->printBoard();
-		else if(input.find("help") == 0)                          //dislays list of commands
+		else if(input.find("help") == 0)                          //displays list of commands
 			handleOutput("\nquit\nprint\nnew\ngo\nforce\nundo\nremove\nredo\nreplace\nhelp\n");
 		else if(input.find("go") == 0){                             //move right now
 			currentGame->playAs = currentGame->moveTree->actual->turn%2;
@@ -122,11 +122,11 @@ bool handleInput(string input){
 			currentGame->moveBack(2);
 				currentGame->commitMove();
 		}
-		else if(input.find("redo") == 0){                        //go foreward 1 move; play same color
+		else if(input.find("redo") == 0){                        //go forward 1 move; play same color
 			currentGame->moveForward();
 				currentGame->commitMove();
 		}
-		else if(input.find("replace") == 0){                         //go foreward 2 move; play same color
+		else if(input.find("replace") == 0){                         //go forward 2 move; play same color
 			currentGame->moveForward(2);
 				currentGame->commitMove();
 		}
