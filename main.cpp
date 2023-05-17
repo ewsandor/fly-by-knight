@@ -49,7 +49,7 @@ void *inputQueuer(void*){
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.4.2"
+	handleOutput("feature myname=\"Fly By Knight 0.4.3-dev"
 #ifdef FBK_DEBUG_BUILD
 " <debug "__DATE__ " " __TIME__">"
 #endif
