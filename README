@@ -1,7 +1,9 @@
 ################################################################################################################################
-REWRITE IN PROGRESS 
-The 'v0.x.x' branch of this repository is no longer maintained.  All active development is currently on the 'v.x.x' branch.  Once the rewrite is on par functionally, it will become the default branch.
-https://git.sandorlaboratories.com/edward/fly-by-knight/-/tree/v1.x.x
+Branch Archived
+
+Since the release of Fly by Knight 1.0.0, this 'v0.x.x' branch of Fly by Knight is no longer maintained.  
+
+v1.x.x is a complete rewrite of Fly by Knight and this v0.x.x branch is kept only for historical purposes.
 ################################################################################################################################
 
 
@@ -25,9 +27,6 @@ https://git.sandorlaboratories.com/edward/fly-by-knight/-/tree/v1.x.x
 
 	- Requires g++ to compile with Make
 	- Depends on the POSIX pthread library
-	- Simply type 'make' to compile.
-	- To run with the command line interface type 'make run'
-	- If xboard is installed, the engine can be run with xboard by typing 'make runxboard'
 
 XBoard/WinBoard information: 
 http://www.gnu.org/software/xboard/
