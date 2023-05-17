@@ -106,6 +106,11 @@ void Game::setupBoard(){
 }
 void Game::updateClocks(){
 }
+
+void Game::changeTurn() {
+	moveTree->current->turn = ((moveTree->current->turn + 1) % 2);
+}
+
 int Game::getTurn(){  
 	return moveTree->current->turn % 2;
 }
@@ -612,14 +617,14 @@ void Game::stepAnalysis(){
 	if(post && (analysisQueue.size() == 1 || analysisQueue[0]->turn<analysisQueue[1]->turn)){
 		unsigned int depth = ((int)analysisQueue[0]->turn - moveTree->actual->turn);
 		string think = "";
-		think = think + to_string((long double)depth);
+		think = think + to_string((int)depth);
 		think.append(" ");
-		think.append(to_string((long double)floor((playAs!=BLACK?moveTree->actual->adjustedScore()+.5:-1*moveTree->actual->adjustedScore())+.5)));
+		think.append(to_string((int)floor((playAs!=BLACK?moveTree->actual->adjustedScore()+.5:-1*moveTree->actual->adjustedScore())+.5)));
 		think.append(" ");
 		double searchTime = ((clock() - searchClock) /CLOCKS_PER_SEC)*100;
-		think.append(to_string((long double)searchTime));
+		think.append(to_string((int)searchTime));
 		think.append(" ");
-		think.append(to_string((long double)nodes));
+		think.append(to_string((int)nodes));
 
 		Move * best = moveTree->actual->getBest();
 		//bool out = best->evaluated;

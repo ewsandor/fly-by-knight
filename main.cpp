@@ -31,6 +31,7 @@ Game * currentGame = new Game();
 bool editMode = false;
 
 bool ponder = false;
+bool gameStarted = false;
 bool analyze = false;
 bool pondB4 = false;
 
@@ -48,7 +49,7 @@ void *inputQueuer(void*){
 
 int main(int argc, char* argv[]){
 
-	handleOutput("feature myname=\"Fly By Knight 0.4.1"
+	handleOutput("feature myname=\"Fly By Knight 0.4.2-dev"
 #ifdef FBK_DEBUG_BUILD
 " <debug "__DATE__ " " __TIME__">"
 #endif
@@ -95,7 +96,10 @@ bool handleInput(string input){
 		else if(input.find("quit") == 0)                                  //exits program
 			exit(0);
 		else if(input.find("new") == 0)                         //reset the board play white
+		{
 			currentGame->resetGame();
+			gameStarted = false;
+		}
 		else if(input.find("print") == 0)                         //draws a board
 			currentGame->getBoard()->printBoard();
 		else if(input.find("help") == 0)                          //dislays list of commands
@@ -103,6 +107,7 @@ bool handleInput(string input){
 		else if(input.find("go") == 0){                             //move right now
 			currentGame->playAs = currentGame->moveTree->actual->turn%2;
 			currentGame->searchClock = clock();
+			gameStarted = true;
 		}
 		else if(input.find("force") == 0 || input.find("result") == 0){                         //turn on force mode or stop play.
 			currentGame->playAs = NONE;
@@ -154,7 +159,21 @@ bool handleInput(string input){
 			ponder = true;
 			currentGame->playAs = NONE;
 		}
-		else if(input.find("exit") == 0){                              //exits program or analyze
+		else if(input.find("white") == 0){      
+			if(currentGame->getTurn() == BLACK)
+			{
+				currentGame->changeTurn();
+			}
+			currentGame->playAs = BLACK;
+		}
+		else if(input.find("black") == 0){      
+			if(currentGame->getTurn() == WHITE)
+			{
+				currentGame->changeTurn();
+			}
+			currentGame->playAs = WHITE;
+		}
+			else if(input.find("exit") == 0){                              //exits program or analyze
 			if(!analyze)
 				exit(0);
 			else{
@@ -186,6 +205,7 @@ bool handleInput(string input){
 		else if(Board::moveFormat(input)){                   //move piece
 			currentGame->goActualLayout();
 			if(currentGame->move(input)){
+				gameStarted = true;
 				currentGame->commitMove();
 				currentGame->endGame();
 			}
@@ -230,7 +250,7 @@ bool handleInput(string input){
 			currentGame->endGame();
 		}
 
-		if(ponder)
+		if(ponder && !editMode && gameStarted)
 
 			currentGame->stepAnalysis();
 		else if(currentGame->playAs == currentGame->moveTree->actual->turn%2)
@@ -261,17 +281,20 @@ bool handleInput(string input){
 		}*/
 	}
 	else{
-		if(input.find(".") == 0)
-			editMode = false;
-		else if(input.find("#") == 0)
-			currentGame->clear();
-		else if(input.find("print") == 0)
-			currentGame->getBoard()->printBoard();
-		else if(input.find("c") == 0)
-			eColor = eColor == WHITE? BLACK:WHITE;
-		else{          
-			if(!currentGame->modSquare(input, eColor))
-				handleOutput("Error (edit mode): " + input);
+		if(input.length() > 0)
+		{
+			if(input.find(".") == 0)
+				editMode = false;
+			else if(input.find("#") == 0)
+				currentGame->clear();
+			else if(input.find("print") == 0)
+				currentGame->getBoard()->printBoard();
+			else if(input.find("c") == 0)
+				eColor = (eColor == WHITE)? BLACK:WHITE;
+			else{          
+				if(!currentGame->modSquare(input, eColor))
+					handleOutput("Error (edit mode): " + input);
+			}
 		}
 	}
 
