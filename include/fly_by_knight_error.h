@@ -21,14 +21,20 @@
 #define FBK_DEBUG_EXIT
 #endif
 
+#ifdef __GNUC__
+#define FBK_ASSERT_CHECK(exp) __builtin_expect(!(__builtin_expect(exp, true)),false)
+#else
+#define FBK_ASSERT_CHECK(exp) !(exp)
+#endif 
+
 #define FBK_ERROR_MSG(msg, ...)             fprintf(stderr, "# [ERROR] FBK: "         msg "\n",                     ##__VA_ARGS__); FBK_LOG_MSG("# [ERROR] FBK: "         msg "\n",                     ##__VA_ARGS__)
 #ifdef FBK_DEBUG_EXIT
 #define FBK_ERROR_MSG_HARD(msg, ...)        fprintf(stderr, "# [ERROR] (%s:%d) FBK: " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__); FBK_LOG_MSG("# [ERROR] (%s:%d) FBK: " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-#define FBK_ASSERT_MSG(exp, msg, ...)       if(!(exp)) {FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); fbk_exit(128+SIGABRT); }
+#define FBK_ASSERT_MSG(exp, msg, ...)       if(FBK_ASSERT_CHECK(exp)) {FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); fbk_exit(128+SIGABRT); }
 #define FBK_FATAL_MSG_CODE(code, msg, ...)              FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__); fbk_exit(code);
 #else
 #define FBK_ERROR_MSG_HARD(msg, ...)        FBK_ERROR_MSG(msg, ##__VA_ARGS__);
-#define FBK_ASSERT_MSG(exp, msg, ...)       if(!(exp)) {FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__);}
+#define FBK_ASSERT_MSG(exp, msg, ...)       if(FBK_ASSERT_CHECK(exp)) {FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__);}
 #define FBK_FATAL_MSG_CODE(code, msg, ...)              FBK_ERROR_MSG_HARD(msg, ##__VA_ARGS__);
 #endif
 
