@@ -215,8 +215,8 @@ static void * worker_manager_thread_f(void * arg)
   {
     wait_for_analysis_start(&analysis_data->analysis_state);
 
-    fbk_mutex_lock(&analysis_data->job_queue.lock);
     fbk_mutex_lock(&analysis_data->analysis_state.lock);
+    fbk_mutex_lock(&analysis_data->job_queue.lock);
 
     if(true == analysis_data->job_queue.queue_cleared)
     {
@@ -264,8 +264,8 @@ static void * worker_manager_thread_f(void * arg)
       }
       fbk_mutex_unlock(&node->lock);
     }
-    fbk_mutex_unlock(&analysis_data->analysis_state.lock);
     fbk_mutex_unlock(&analysis_data->job_queue.lock);
+    fbk_mutex_unlock(&analysis_data->analysis_state.lock);
   }
 
   FBK_NO_RETURN
