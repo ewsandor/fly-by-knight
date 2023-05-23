@@ -543,10 +543,10 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
                                             nodes_per_second,
                                             best_line->tbhits);
 
+  ftk_game_s game = best_line->game;
   while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
   {
     char move_output[FTK_SAN_MOVE_STRING_SIZE] = "@@@@";
-    ftk_game_s game = best_line->game;
     ftk_move_to_san_string(&game, &best_line_node->move, move_output);
     FBK_ASSERT_MSG(FTK_SUCCESS == ftk_move_forward(&game, &best_line_node->move), "Failed to apply move.");
 
