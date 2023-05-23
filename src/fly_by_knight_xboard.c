@@ -502,12 +502,12 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
       if((best_line->analysis_data.best_child_depth % 2) == 0)
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                  100000+best_line->analysis_data.best_child_depth);
+                  (100000+(1+best_line->analysis_data.best_child_depth)));
       }
       else
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                  -(100000+best_line->analysis_data.best_child_depth));
+                 -(100000+(1+best_line->analysis_data.best_child_depth)));
       }
     }
     else
