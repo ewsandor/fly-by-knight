@@ -290,7 +290,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
   }
-  else
+  else if(strncmp("result", input, 6) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Received result '%s'.", input);
+  }
+   else
   {
     unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
