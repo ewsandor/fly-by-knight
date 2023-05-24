@@ -303,6 +303,7 @@ void * picker_thread_f(void * arg)
         fbk_move_tree_node_s *best_node = fbk_get_best_move(pick_data->fbk->move_tree.current);
         if(best_node != NULL)
         {
+          best_line.game = pick_data->fbk->game;
           fbk_mutex_lock(&best_node->lock);
           move = best_node->move;
           best_line.analysis_data = best_node->analysis_data;

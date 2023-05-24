@@ -28,6 +28,8 @@ struct fbk_picker_best_line_node_struct
 
 typedef struct
 {
+  /* Reference game for best line */
+  ftk_game_s                          game;
   /* Score information */
   fbk_move_tree_node_analysis_data_s  analysis_data;
   /* Number of child node from best line root */

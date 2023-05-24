@@ -290,7 +290,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
   }
-  else
+  else if(strncmp("result", input, 6) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Received result '%s'.", input);
+  }
+   else
   {
     unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
@@ -495,15 +499,20 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
   {
     if(FTK_END_DEFINITIVE(best_line->analysis_data.best_child_result))
     {
+      /* Xboard specifies 'Mate scores should be indicated as 100000 + N for "mate in N moves", and -100000 - N for "mated in N moves".'.  
+         Divide by 2 to convert ply into full-moves.  
+         Add '1' to ply to start count from 1 instead of 0.
+         Add another '1' to round up for attackers move so 1-half move is a mate-in-1 
+            (ply will always be odd (after first+1), but 1/2->0 even though player gets 1 move)*/
       if((best_line->analysis_data.best_child_depth % 2) == 0)
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                  100000+best_line->analysis_data.best_child_depth);
+                  (100000+((2+best_line->analysis_data.best_child_depth)/2)));
       }
       else
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                  -(100000+best_line->analysis_data.best_child_depth));
+                 -(100000+((2+best_line->analysis_data.best_child_depth)/2)));
       }
     }
     else
@@ -543,10 +552,12 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
                                             nodes_per_second,
                                             best_line->tbhits);
 
+  ftk_game_s game = best_line->game;
   while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
   {
-    char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
-    ftk_move_to_xboard_string(&best_line_node->move, move_output);
+    char move_output[FTK_SAN_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_san_string(&game, &best_line_node->move, move_output);
+    FBK_ASSERT_MSG(FTK_SUCCESS == ftk_move_forward(&game, &best_line_node->move), "Failed to apply move.");
 
     thinking_output_buffer_length += snprintf(&thinking_output_buffer[thinking_output_buffer_length], 
                                               (THINKING_OUTPUT_BUFFER_SIZE-thinking_output_buffer_length), 
