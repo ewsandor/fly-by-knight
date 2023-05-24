@@ -499,15 +499,20 @@ void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * 
   {
     if(FTK_END_DEFINITIVE(best_line->analysis_data.best_child_result))
     {
+      /* Xboard specifies 'Mate scores should be indicated as 100000 + N for "mate in N moves", and -100000 - N for "mated in N moves".'.  
+         Divide by 2 to convert ply into full-moves.  
+         Add '1' to ply to start count from 1 instead of 0.
+         Add another '1' to round up for attackers move so 1-half move is a mate-in-1 
+            (ply will always be odd (after first+1), but 1/2->0 even though player gets 1 move)*/
       if((best_line->analysis_data.best_child_depth % 2) == 0)
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                  (100000+(1+best_line->analysis_data.best_child_depth)));
+                  (100000+((2+best_line->analysis_data.best_child_depth)/2)));
       }
       else
       {
         snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
-                 -(100000+(1+best_line->analysis_data.best_child_depth)));
+                 -(100000+((2+best_line->analysis_data.best_child_depth)/2)));
       }
     }
     else
