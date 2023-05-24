@@ -59,7 +59,7 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex);
  * 
  * @param fbk 
  */
-void fbk_begin_standard_game(fbk_instance_s * fbk);
+void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis);
 
 /**
  * @brief Commits move to game and updates move tree
@@ -77,5 +77,14 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move);
  * @return false if cannot undo move
  */
 bool fbk_undo_move(fbk_instance_s * fbk);
+
+/**
+ * @brief Get the time spent on the current move in ms
+ * 
+ * @param fbk 
+ * 
+ * @return Time in ms
+*/
+fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk);
 
 #endif //_FLY_BY_KNIGHT_H_

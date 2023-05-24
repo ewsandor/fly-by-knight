@@ -36,10 +36,16 @@ void fbk_set_debug_level(fbk_debug_level_e new_debug_level);
  */
 fbk_debug_level_e fbk_get_debug_level();
 
+#ifdef __GNUC__
+#define FBK_DEBUG_CHECK(level) __builtin_expect((level <= fbk_get_debug_level()), false)
+#else
+#define FBK_DEBUG_CHECK(level) (level <= fbk_get_debug_level())
+#endif
+
 /**
  * @brief Log debug message to STDOUT and logfile if current logging level is set
  * 
  */
-#define FBK_DEBUG_MSG(level, msg, ...) if(level <= fbk_get_debug_level()){printf("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__); FBK_LOG_MSG("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__);}
+#define FBK_DEBUG_MSG(level, msg, ...) if(FBK_DEBUG_CHECK(level)){printf("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__); FBK_LOG_MSG("# [DEBUG] <%u> FBK: " msg "\n", level, ##__VA_ARGS__);}
 
 #endif //_FLY_BY_KNIGHT_DEBUG_H_

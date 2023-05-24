@@ -144,16 +144,16 @@ fbk_move_tree_node_s * fbk_get_move_tree_node_for_move(fbk_move_tree_node_s * cu
 }
 
 #define ZLIB_CHUNK_SIZE        (FBK_MOVE_TREE_MAX_NODE_COUNT*sizeof(fbk_move_tree_node_s))
-#define ZLIB_COMPRESSION_LEVEL Z_DEFAULT_COMPRESSION
+#define ZLIB_COMPRESSION_LEVEL Z_BEST_SPEED
 /* deflate memory usage (bytes) = (1 << (windowBits+2)) + (1 << (memLevel+9)) + 6 KB */
 /* From zlib manual:
     The windowBits parameter is the base two logarithm of the window size (the size of the history buffer). It should be in the range 8..15 for this version of the library. Larger values of this parameter result in better compression at the expense of memory usage. The default value is 15 if deflateInit is used instead.
     For the current implementation of deflate(), a windowBits value of 8 (a window size of 256 bytes) is not supported. As a result, a request for 8 will result in 9 (a 512-byte window). In that case, providing 8 to inflateInit2() will result in an error when the zlib header with 9 is checked against the initialization of inflate(). The remedy is to not use 8 with deflateInit2() with this initialization, or at least in that case use 9 with inflateInit2(). */
 #define ZLIB_WINDOW_BITS       15
-#define ZLIB_MEM_LEVEL         (ZLIB_WINDOW_BITS-7)
+#define ZLIB_MEM_LEVEL          8
 bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
-  bool ret_val = true;
+  bool ret_val = false;
 
 #ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
@@ -164,6 +164,8 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
   if((node->child_count > 0) && (node->child != NULL))
   {
+    FBK_ASSERT_MSG(node->child[0].child == NULL, "Compressing node, but child nodes are not compressed");
+    ret_val = true;
     for(fbk_move_tree_node_count_t i = 0; i < node->child_count; i++)
     {
       /* Invalidate child parent node as it may not be valid after decompressed (e.g. parent was also compressed) */
@@ -227,7 +229,7 @@ bool fbk_compress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
 bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 {
-  bool ret_val = true;
+  bool ret_val = false;
 
 #ifdef FBK_ZLIB_COMPRESSION
   FBK_ASSERT_MSG(node != NULL, "Null node passed");
@@ -238,6 +240,7 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
 
   if((node->child_compressed_size > 0) && (node->child_compressed != NULL))
   {
+    ret_val = true;
     FBK_ASSERT_MSG(node->child == NULL, "Both child and child compressed set.");
 
     unsigned int have;
@@ -270,7 +273,7 @@ bool fbk_decompress_move_tree_node(fbk_move_tree_node_s * node, bool locked)
         }
         default:
         {
-          FBK_FATAL_MSG("Node inflation error %u", ret);
+          FBK_FATAL_MSG("Node inflation error %d", ret);
           break;
         }
       }

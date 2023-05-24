@@ -33,7 +33,7 @@ void fbk_init_xboard_protocol(fbk_instance_s *fbk)
   memset(&fbk->protocol_data, 0, sizeof(fbk_protocol_data_u));
 
   fbk->protocol_data.xboard.version = 1;
-  fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL; 
+  fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE; 
 }
 
 /**
@@ -56,7 +56,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature sigint=0\n"
                  "feature sigterm=0\n"
                  "feature reuse=1\n"
-                 "feature analyze=0\n"
+                 "feature analyze=1\n"
                  "feature myname=\"" FLY_BY_KNIGHT_NAME_VER "\"\n"
                  "feature variants=\"normal\"\n"
                  "feature colors=0\n"
@@ -158,11 +158,17 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   else if(strcmp("force", input) == 0)
   {
     fbk_stop_analysis(true);
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_FORCE;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
-    fbk->protocol_data.xboard.ponder  = false;
+  }
+  else if(strcmp("analyze", input) == 0)
+  {
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
+    fbk->protocol_data.xboard.play_as = FTK_COLOR_NONE;
   }
   else if(strcmp("go", input) == 0)
   {
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_NORMAL;
     fbk->protocol_data.xboard.play_as = fbk->game.turn;
   }
   else if(strcmp("playother", input) == 0)
@@ -184,19 +190,23 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }*/
   else if(strcmp("?", input) == 0)
   {
-    //Force decision maker
+    const fbk_picker_trigger_s trigger = 
+    {
+      .type = FBK_PICKER_TRIGGER_FORCED,
+    };
+    fbk_trigger_picker(&trigger);
   }
-    else if(strcmp("random", input) == 0)
+  else if(strcmp("random", input) == 0)
   {
     fbk->config.random = !fbk->config.random;
   }
   else if(strcmp("post", input) == 0)
   {
-    fbk->config.analysis_output = true;
+    fbk->config.thinking_output = true;
   }
   else if(strcmp("nopost", input) == 0)
   {
-    fbk->config.analysis_output = false;
+    fbk->config.thinking_output = false;
   }
   else if(strcmp("easy", input) == 0)
   {
@@ -237,10 +247,10 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   }
   else if(strcmp("new", input) == 0)
   {
-    fbk_begin_standard_game(fbk);
+    fbk_begin_standard_game(fbk, false);
 
+    fbk->protocol_data.xboard.mode    = FBK_XBOARD_MODE_WAITING;
     fbk->protocol_data.xboard.play_as = FTK_COLOR_BLACK;
-    fbk->config.max_search_depth      = FBK_DEFAULT_MAX_SEARCH_DEPTH;
   }
   else if(strncmp("ping", input, 4) == 0)
   {
@@ -258,7 +268,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     if(input_length > 9)
     {
-      fbk_begin_standard_game(fbk);
+      fbk_begin_standard_game(fbk, true);
       ftk_result = ftk_create_game_from_fen_string(&fbk->game, &input[9]);
       FBK_ASSERT_MSG(FTK_SUCCESS == ftk_result, "Failed to parse FEN string: %s (%u)", &input[9], ftk_result);
     }
@@ -280,7 +290,11 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
     FBK_ASSERT_MSG(true == fbk_undo_move(fbk), "Failed to undo move");
   }
-  else
+  else if(strncmp("result", input, 6) == 0)
+  {
+    FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Received result '%s'.", input);
+  }
+   else
   {
     unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
@@ -315,6 +329,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
 
           if(FTK_MOVE_VALID(move))
           {
+            fbk_stop_analysis(true);
             FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
           }
           else
@@ -345,7 +360,7 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   if(strcmp(".", input) == 0)
   {
     FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Exiting xboard edit mode");
-    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_NORMAL;
+    fbk->protocol_data.xboard.mode = FBK_XBOARD_MODE_FORCE;
     ftk_update_board_masks(&fbk->game);
   }
   else if(strcmp("c", input) == 0)
@@ -405,17 +420,153 @@ bool fbk_process_xboard_input_edit_mode(fbk_instance_s *fbk, char * input, size_
   return input_handled;
 }
 
-void manage_xboard_analysis(fbk_instance_s * fbk)
+bool manage_xboard_analysis(fbk_instance_s * fbk)
 {
+  bool ret_val = false;
+
   if( (FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode) &&
       ((fbk->game.turn == fbk->protocol_data.xboard.play_as) || fbk->protocol_data.xboard.ponder))
   {
     fbk_start_analysis(&fbk->game, fbk->move_tree.current);
+    ret_val = true;
   }
   else
   {
     fbk_stop_analysis(false);
   }
+
+  return ret_val;
+}
+
+void xboard_pick_callback(ftk_game_end_e game_result, ftk_move_s move, void * user_data)
+{
+  FBK_ASSERT_MSG(user_data != NULL,"NULL user data pointer passed");
+  fbk_instance_s *fbk = (fbk_instance_s *) user_data;
+
+  if(FTK_MOVE_VALID(move))
+  {
+    fbk->protocol_data.xboard.result_reported = false;
+
+    /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
+
+    /* Null move by default */
+    char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_xboard_string(&move, move_output);
+
+    FBK_OUTPUT_MSG("move %s\n", move_output);
+  }
+  
+  if((FTK_END_NOT_OVER != game_result) && (false == fbk->protocol_data.xboard.result_reported))
+  {
+    if(FTK_END_DEFINITIVE(game_result))
+    {
+      if(FTK_COLOR_BLACK == fbk->game.turn)
+      {
+        FBK_OUTPUT_MSG("1-0 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
+      }
+      else
+      {
+        FBK_OUTPUT_MSG("0-1 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
+      }
+    }
+    else
+    {
+      FBK_ASSERT_MSG(FTK_END_DRAW(game_result), "Unexpected game result %u", game_result);
+      FBK_OUTPUT_MSG("1/2-1/2 {%s}\n", ftk_game_end_string(game_result, fbk->game.turn));
+    }
+
+    fbk->protocol_data.xboard.result_reported = true;
+  }
+
+  manage_xboard_analysis(fbk);
+}
+
+#define THINKING_OUTPUT_BUFFER_SIZE 1024
+#define SCORE_OUTPUT_BUFFER_SIZE           1024
+
+void xboard_best_line_callback(const fbk_picker_best_line_s * best_line, void * user_data)
+{
+  FBK_UNUSED(user_data);
+
+  const fbk_picker_best_line_node_s * best_line_node = best_line->first_move;
+
+  char thinking_output_buffer[THINKING_OUTPUT_BUFFER_SIZE] = {'\0'};
+  size_t thinking_output_buffer_length = 0;
+
+  char score_output_buffer[SCORE_OUTPUT_BUFFER_SIZE] = {'\0'};
+
+  if(best_line->analysis_data.evaluated)
+  {
+    if(FTK_END_DEFINITIVE(best_line->analysis_data.best_child_result))
+    {
+      /* Xboard specifies 'Mate scores should be indicated as 100000 + N for "mate in N moves", and -100000 - N for "mated in N moves".'.  
+         Divide by 2 to convert ply into full-moves.  
+         Add '1' to ply to start count from 1 instead of 0.
+         Add another '1' to round up for attackers move so 1-half move is a mate-in-1 
+            (ply will always be odd (after first+1), but 1/2->0 even though player gets 1 move)*/
+      if((best_line->analysis_data.best_child_depth % 2) == 0)
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                  (100000+((2+best_line->analysis_data.best_child_depth)/2)));
+      }
+      else
+      {
+        snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                 -(100000+((2+best_line->analysis_data.best_child_depth)/2)));
+      }
+    }
+    else
+    {
+      fbk_score_t score = 0;
+      if(best_line->analysis_data.best_child_index < best_line->child_count)
+      {
+        score = best_line->analysis_data.best_child_score/10;
+      }
+      else
+      {
+        score = best_line->analysis_data.base_score/10;
+      }
+
+      if(best_line->first_move->move.turn == FTK_COLOR_BLACK)
+      {
+        score *= -1;
+      }
+
+      snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "%ld",
+                score);
+    }
+  }
+  else
+  {
+    snprintf(score_output_buffer, SCORE_OUTPUT_BUFFER_SIZE, "0");
+  }
+
+  uint_fast64_t nodes_per_second = (best_line->search_time > 0)?((best_line->searched_node_count*1000)/best_line->search_time):0;
+
+  thinking_output_buffer_length += snprintf(thinking_output_buffer, THINKING_OUTPUT_BUFFER_SIZE, "%lu %s %lu %lu %lu %lu %lu\t",
+                                            best_line->analysis_data.best_child_depth+1,
+                                            score_output_buffer,
+                                            best_line->search_time/10,
+                                            best_line->searched_node_count,
+                                            best_line->analysis_data.max_depth+1,
+                                            nodes_per_second,
+                                            best_line->tbhits);
+
+  ftk_game_s game = best_line->game;
+  while((best_line_node != NULL) && (thinking_output_buffer_length < THINKING_OUTPUT_BUFFER_SIZE))
+  {
+    char move_output[FTK_SAN_MOVE_STRING_SIZE] = "@@@@";
+    ftk_move_to_san_string(&game, &best_line_node->move, move_output);
+    FBK_ASSERT_MSG(FTK_SUCCESS == ftk_move_forward(&game, &best_line_node->move), "Failed to apply move.");
+
+    thinking_output_buffer_length += snprintf(&thinking_output_buffer[thinking_output_buffer_length], 
+                                              (THINKING_OUTPUT_BUFFER_SIZE-thinking_output_buffer_length), 
+                                              " %s", move_output);
+
+    best_line_node = best_line_node->next_move;
+  }
+
+  FBK_OUTPUT_MSG("%s\n", thinking_output_buffer);
 }
 
 /**
@@ -430,12 +581,14 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
 {
   bool input_handled = true;
   size_t input_length = strlen(input);
-  ftk_game_end_e game_result;
 
   FBK_ASSERT_MSG(fbk != NULL, "NULL fbk pointer passed.");
   FBK_ASSERT_MSG(input != NULL, "NULL input pointer passed.");
 
-  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
+  if((FBK_XBOARD_MODE_NORMAL  == fbk->protocol_data.xboard.mode) ||
+     (FBK_XBOARD_MODE_FORCE   == fbk->protocol_data.xboard.mode) ||
+     (FBK_XBOARD_MODE_WAITING == fbk->protocol_data.xboard.mode) )
+
   {
     input_handled = fbk_process_xboard_input_normal_mode(fbk, input, input_length);
   }
@@ -448,67 +601,24 @@ bool fbk_process_xboard_input(fbk_instance_s *fbk, char * input)
     FBK_FATAL_MSG("Unsupported xboard mode %u", fbk->protocol_data.xboard.mode);
   }
 
+  if(FBK_XBOARD_MODE_NORMAL == fbk->protocol_data.xboard.mode)
+  {
+    fbk_picker_client_config_s picker_config = {0};
+
+    picker_config.play_as                 = fbk->protocol_data.xboard.play_as;
+    picker_config.pick_callback           = xboard_pick_callback;
+    picker_config.pick_user_data_ptr      = (void*) fbk;
+    picker_config.best_line_callback      = xboard_best_line_callback;
+    picker_config.best_line_user_data_ptr = (void*) fbk;
+
+    fbk_start_picker(&picker_config);
+  }
+  else
+  {
+    fbk_stop_picker();
+  }
+
   manage_xboard_analysis(fbk);
-
-  game_result = ftk_check_for_game_end(&fbk->game);
-  if(FTK_END_NOT_OVER == game_result)
-  {
-    fbk->protocol_data.xboard.result_reported = false;
-
-    if(FBK_XBOARD_MODE_NORMAL ==fbk->protocol_data.xboard.mode)
-    {
-      /* Temporary logic to return simple best move - Replace with periodic decision logic based on analysis depth and clocks */
-      if(fbk->protocol_data.xboard.play_as == fbk->game.turn)
-      {
-        ftk_move_s move;
-        /* Null move by default */
-        char move_output[FTK_MOVE_STRING_SIZE] = "@@@@";
-
-        move = fbk_get_best_move(fbk);
-
-        if(FTK_MOVE_VALID(move))
-        {
-          /* Commit move */
-          FBK_ASSERT_MSG(true == fbk_commit_move(fbk, &move), "Failed to commit move (%u->%u)", move.source, move.target);
-          ftk_move_to_xboard_string(&move, move_output);
-        }
-
-        FBK_OUTPUT_MSG("move %s\n", move_output);
-
-        manage_xboard_analysis(fbk);
-      }
-    }
-  }
-  else if(false == fbk->protocol_data.xboard.result_reported)
-  {
-    if(FTK_END_DEFINITIVE(game_result))
-    {
-      if(FTK_COLOR_BLACK == fbk->game.turn)
-      {
-        FBK_OUTPUT_MSG("1-0 {White mates}\n");
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("0-1 {Black mates}\n");
-      }
-    }
-    else
-    {
-      FBK_ASSERT_MSG(FTK_END_DRAW(game_result), "Unexpected game result %u", game_result);
-
-      if(FTK_END_DRAW_STALEMATE == game_result)
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Stalemate}\n");
-      }
-      else
-      {
-        FBK_OUTPUT_MSG("1/2-1/2 {Rule %u}\n", game_result);
-      }
-    }
-
-    fbk->protocol_data.xboard.result_reported = true;
-  }
-
 
   return input_handled;
 }

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdint.h>
 
+#include <farewell_to_king_hash.h>
 #include <farewell_to_king_types.h>
 
 /**
@@ -36,18 +37,30 @@ typedef unsigned int fbk_thread_index_t;
 typedef int_fast32_t fbk_score_t;
 
 /**
+ * @brief Count of nodes
+*/
+typedef uint_fast32_t fbk_node_count_t;
+
+/**
+ * @brief Time in count of milliseconds
+*/
+typedef int_fast64_t fbk_time_ms_t;
+
+/**
  * @brief Type for analysis depth
  * 
  */
 typedef uint_fast16_t fbk_depth_t;
 #define FBK_DEFAULT_MAX_SEARCH_DEPTH 0
+#define FBK_MAX_DEPTH                ((1<<16)-1)
 
 /**
  * @brief Type for analysis breadth
  * 
  */
 typedef uint8_t fbk_breadth_t;
-#define FBK_DEFAULT_MAX_SEARCH_BREADTH 0
+#define FBK_MAX_ANALYSIS_BREADTH     255
+#define FBK_DEFAULT_ANALYSIS_BREADTH   4
 
 #define FBK_MOVE_TREE_MAX_NODE_COUNT ((1<<8)-1)
 /**
@@ -62,12 +75,15 @@ typedef struct
   bool                       evaluated;
   /* Score considering this node alone */
   fbk_score_t                base_score;
+  ftk_game_end_e             result;
   /* Min and Max child analysis depth */
   fbk_depth_t                min_depth;
   fbk_depth_t                max_depth;
   /* Child node with best analysis */
-  fbk_score_t                best_child_score;
   fbk_move_tree_node_count_t best_child_index;
+  ftk_game_end_e             best_child_result;
+  fbk_score_t                best_child_score;
+  fbk_depth_t                best_child_depth;
 
 } fbk_move_tree_node_analysis_data_s;
 
@@ -83,6 +99,10 @@ struct fbk_move_tree_node_struct{
 
   /* Move represented by this node, invalid if root node*/
   ftk_move_s                          move;
+  /* True if this position has been hashed and key is valid */
+  bool                                hashed;
+  /* Hash key of current position */
+  ftk_zobrist_hash_key_t              key;
 
   /* Analysis data for this node */
   fbk_move_tree_node_analysis_data_s  analysis_data;
@@ -102,6 +122,9 @@ struct fbk_move_tree_node_struct{
 typedef struct fbk_move_tree_struct fbk_move_tree_s;
 struct fbk_move_tree_struct
 {
+  /* True if the move tree has been initialized */
+  bool                  initialized;
+
   /* Root node of tree */
   fbk_move_tree_node_s  root;
 
@@ -117,15 +140,22 @@ struct fbk_move_tree_struct
 typedef enum 
 {
   FBK_PROTOCOL_UNDEFINED,
+  #ifdef FBK_UCI_PROTOCOL_SUPPORT
   FBK_PROTOCOL_UCI,
+  #endif
+  #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
   FBK_PROTOCOL_XBOARD
+  #endif
 } fbk_protocol_e;
 
+#ifdef FBK_XBOARD_PROTOCOL_SUPPORT
 typedef uint8_t xboard_version_t;
 
 typedef enum
 {
   FBK_XBOARD_MODE_NORMAL,
+  FBK_XBOARD_MODE_FORCE,
+  FBK_XBOARD_MODE_WAITING,
   FBK_XBOARD_MODE_EDIT,
 } fbk_xboard_mode_e;
 
@@ -150,11 +180,15 @@ typedef struct
   bool             result_reported;
 
 } fbk_xboard_data_s;
+#endif
 
 typedef union
 {
+  char              unused;
+  #ifdef FBK_XBOARD_PROTOCOL_SUPPORT
   /* Data specific to xboard */
   fbk_xboard_data_s xboard;
+  #endif
 
 } fbk_protocol_data_u;
 
@@ -174,11 +208,11 @@ typedef struct
   /* Include radom factor for move decision */
   bool                random;
 
-  /* Maximum analysis depth, 0 for no limit */
-  fbk_depth_t         max_search_depth;
+  /* Target analysis breadth, FBK_MAX_ANALYSIS_BREADTH for no limit */
+  fbk_breadth_t       analysis_breadth;
 
   /* Output current analysis details */
-  bool                analysis_output;
+  bool                thinking_output;
 
   /* Current opponent type */
   fbk_opponent_type_e opponent_type;
@@ -203,8 +237,13 @@ typedef struct
   /* Engine configuration */
   fbk_engine_config_s config;
 
+  /* Game state lock */
+  fbk_mutex_t         game_lock;
   /* Game state */
   ftk_game_s          game;
+  
+  /* Time of last move or new game */
+  struct timespec     last_move_time;
 
   /* Move tree for current game */
   fbk_move_tree_s     move_tree;

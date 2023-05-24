@@ -6,12 +6,7 @@ https://git.sandorlaboratories.com/edward/fly-by-knight
 
 ## Overview
 
-**REWRITE IN PROGRESS**
-
-Fly by Knight is an amateur chess engine currently implementing the xboard chess protocol.  This chess engine leverages my Farewell to King C chess library.
-
-Versions 0.x.x supported only the xboard chess engine protocol.
-Versions 1.x.x+ is is a rewrite and is designed to support the xboard protocol with UCI in mind.  UCI protocol support may be added later after xboard is stable.
+Fly by Knight is an amateur chess engine currently implementing the xboard chess protocol with the UCI protocol in mind.  This chess engine leverages my Farewell to King C chess library.
 
 ## Usage
 
