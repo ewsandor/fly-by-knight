@@ -223,6 +223,49 @@ typedef struct
 } fbk_engine_config_s;
 
 /**
+ * @brief Enum indicating the current clock status
+ * 
+ */
+typedef enum
+{
+  FBK_CLOCK_NOT_CONFIGURED,
+  FBK_CLOCK_STARTED,
+  FBK_CLOCK_PAUSED,
+
+} fbk_clock_status_e;
+
+/**
+ * @brief Clock state for individual player
+ * 
+ */
+typedef struct
+{
+  /* Timestamp of the last remaining time update */
+  struct timespec last_update;
+  /* Time remaining in milliseconds */
+  fbk_time_ms_t   ms_remaining;
+} fbk_player_clock_s;
+
+/**
+ * @brief Maintains game clock state
+ * 
+ */
+typedef struct
+{
+  /* Overall clock status */
+  fbk_clock_status_e status;
+
+  /* Time of last move or new game */
+  struct timespec     last_move_time;
+
+  /* Player clock states */
+  fbk_player_clock_s white_clock;
+  fbk_player_clock_s black_clock;
+
+} fbk_clock_state_s;
+
+
+/**
  * @brief Main structure for Fly by Knight
  * 
  */
@@ -241,9 +284,8 @@ typedef struct
   fbk_mutex_t         game_lock;
   /* Game state */
   ftk_game_s          game;
-  
-  /* Time of last move or new game */
-  struct timespec     last_move_time;
+  /* Overall game clock state */
+  fbk_clock_state_s   game_clock;
 
   /* Move tree for current game */
   fbk_move_tree_s     move_tree;
