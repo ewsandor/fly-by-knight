@@ -47,6 +47,12 @@ typedef uint_fast32_t fbk_node_count_t;
 typedef int_fast64_t fbk_time_ms_t;
 
 /**
+ * @brief Structure representing clock time
+ * 
+ */
+typedef struct timespec fbk_clock_time_s;
+
+/**
  * @brief Type for analysis depth
  * 
  */
@@ -241,9 +247,9 @@ typedef enum
 typedef struct
 {
   /* Timestamp of the last remaining time update */
-  struct timespec last_update;
+  fbk_clock_time_s last_update;
   /* Time remaining in milliseconds */
-  fbk_time_ms_t   ms_remaining;
+  fbk_time_ms_t    ms_remaining;
 } fbk_player_clock_s;
 
 /**
@@ -256,7 +262,7 @@ typedef struct
   fbk_clock_status_e status;
 
   /* Time of last move or new game */
-  struct timespec     last_move_time;
+  fbk_clock_time_s     last_move_time;
 
   /* Player clock states */
   fbk_player_clock_s white_clock;

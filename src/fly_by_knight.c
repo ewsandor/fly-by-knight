@@ -132,6 +132,13 @@ bool fbk_mutex_unlock(fbk_mutex_t *mutex)
   return ret_val;
 }
 
+void fbk_get_clock_time(fbk_clock_time_s *clock_time)
+{
+  FBK_ASSERT_MSG(clock_time != NULL, "NULL clock_time passed.");
+  clock_gettime(CLOCK_MONOTONIC, clock_time);
+}
+
+
 /**
  * @brief Begins a new standard game.  Resets move tree and setups up game
  * 
@@ -163,7 +170,7 @@ void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis)
 
   /* Reset the analysis counter and clock*/
   reset_game_analyzed_nodes();
-  clock_gettime(CLOCK_MONOTONIC, &fbk->game_clock.last_move_time);
+  fbk_get_clock_time(&fbk->game_clock.last_move_time);
 }
 
 /**
@@ -201,7 +208,7 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
 
   /* Reset the analysis counter and clock */
   reset_analyzed_nodes();
-  clock_gettime(CLOCK_MONOTONIC, &fbk->game_clock.last_move_time);
+  fbk_get_clock_time(&fbk->game_clock.last_move_time);
 
   const fbk_picker_trigger_s trigger = 
   {
@@ -250,7 +257,7 @@ bool fbk_undo_move(fbk_instance_s * fbk)
 
   /* Reset the analysis counter and clock */
   reset_analyzed_nodes();
-  clock_gettime(CLOCK_MONOTONIC, &fbk->game_clock.last_move_time);
+  fbk_get_clock_time(&fbk->game_clock.last_move_time);
 
   return ret_val;
 }
@@ -269,7 +276,7 @@ static inline fbk_time_ms_t timespec_diff(struct timespec *time_a, struct timesp
 fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk)
 {
   struct timespec now;
-  clock_gettime(CLOCK_MONOTONIC, &now);
+  fbk_get_clock_time(&now);
 
   return timespec_diff(&now, &fbk->game_clock.last_move_time);
 }

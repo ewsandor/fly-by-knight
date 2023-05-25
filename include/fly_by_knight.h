@@ -79,6 +79,14 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move);
 bool fbk_undo_move(fbk_instance_s * fbk);
 
 /**
+ * @brief Get time based on realtime clock (not wall-clock)
+ * 
+ * @param clock_time Output structure for clock_time
+ * 
+*/
+void fbk_get_clock_time(fbk_clock_time_s *clock_time);
+
+/**
  * @brief Get the time spent on the current move in ms
  * 
  * @param fbk 
