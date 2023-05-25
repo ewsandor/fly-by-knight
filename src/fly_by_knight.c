@@ -273,6 +273,20 @@ static inline fbk_time_ms_t timespec_diff(struct timespec *time_a, struct timesp
   return (time_a_ms - time_b_ms);
 }
 
+void fbk_configure_game_clock(fbk_instance_s * fbk, fbk_game_clock_config_s config)
+{
+  fbk_mutex_lock(&fbk->game_lock);
+
+  fbk->game_clock.config = config;
+
+  fbk->game_clock.white_clock.ms_remaining = fbk->game_clock.config.initial_time;
+  fbk->game_clock.black_clock.ms_remaining = fbk->game_clock.config.initial_time;
+
+  fbk->game_clock.status = FBK_CLOCK_PAUSED;
+
+  fbk_mutex_unlock(&fbk->game_lock);
+}
+
 fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk)
 {
   struct timespec now;

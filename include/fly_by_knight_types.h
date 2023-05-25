@@ -241,6 +241,15 @@ typedef enum
 } fbk_clock_status_e;
 
 /**
+ * @brief Configuration for game clocks
+ * 
+ */
+typedef struct
+{
+  fbk_time_ms_t initial_time;
+} fbk_game_clock_config_s;
+
+/**
  * @brief Clock state for individual player
  * 
  */
@@ -260,6 +269,9 @@ typedef struct
 {
   /* Overall clock status */
   fbk_clock_status_e status;
+
+  /* Overall clock configuration */
+  fbk_game_clock_config_s config;
 
   /* Time of last move or new game */
   fbk_clock_time_s     last_move_time;

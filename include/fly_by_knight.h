@@ -87,6 +87,14 @@ bool fbk_undo_move(fbk_instance_s * fbk);
 void fbk_get_clock_time(fbk_clock_time_s *clock_time);
 
 /**
+ * @brief Initializes game clocks (game clock is not started)
+ * 
+ * @param fbk    Fly by Knight instance
+ * @param config Configuration to apply
+ */
+void fbk_configure_game_clock(fbk_instance_s * fbk, fbk_game_clock_config_s config);
+
+/**
  * @brief Get the time spent on the current move in ms
  * 
  * @param fbk 
