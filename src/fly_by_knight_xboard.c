@@ -51,7 +51,7 @@ void fbk_xboard_config_features(fbk_instance_s *fbk)
                  "feature playother=1\n"
                  "feature san=0\n"
                  "feature usermove=0\n"
-                 "feature time=0\n"
+                 "feature time=1\n"
                  "feature draw=0\n"
                  "feature sigint=0\n"
                  "feature sigterm=0\n"
