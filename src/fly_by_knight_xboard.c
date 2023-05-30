@@ -106,7 +106,47 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   bool input_handled = true;
   ftk_result_e ftk_result;
 
-  if(strncmp("protover", input, 8) == 0)
+  /* Parse time-critical commands first */
+  if((strncmp("time ", input, 4) == 0) || (strncmp("otim ", input, 4) == 0))
+  {
+    fbk_clock_time_s timestamp = {0};
+    fbk_get_clock_time(&timestamp);
+
+    if((input_length > 5) && (input[4] == ' '))
+    {
+      ftk_color_e color_to_set = FTK_COLOR_WHITE;
+
+      /* If engine is playing black, use black as engine color.  Else, use white (playing white, don't care, unknown, etc) */
+      const ftk_color_e engine_color = ((fbk->protocol_data.xboard.play_as == FTK_COLOR_BLACK)?FTK_COLOR_BLACK:FTK_COLOR_WHITE);
+
+      if(strncmp("time", input, 4) == 0)
+      {
+        /* Set engine's clock, i.e. If engine is playing black, set black's clock.*/
+        color_to_set = ((engine_color == FTK_COLOR_WHITE)?FTK_COLOR_WHITE:FTK_COLOR_BLACK);
+      }
+      else
+      {
+        /* Set opponent's clock, i.e. If engine is playing white, set black's clock.*/
+        color_to_set = ((engine_color == FTK_COLOR_WHITE)?FTK_COLOR_BLACK:FTK_COLOR_WHITE);
+      }
+
+      fbk_time_ms_t time_remaining = strtoll(&input[5], NULL, 10);
+
+      /*Placeholder string*/
+      const char * color_string = ((color_to_set == FTK_COLOR_WHITE)?"WHITE":"BLACK");
+      FBK_OUTPUT_MSG("# %ldms remaining for %s\n", time_remaining, color_string);
+      /* TODO: set clock for appropriate player */
+    }
+    else
+    {
+      FBK_OUTPUT_MSG("Error (too few parameters): %s\n", input);
+    }
+  }
+  else if(strncmp("level", input, 5) == 0)
+  {
+    /* TODO: parse clock config and initialize clock */
+  }
+  else if(strncmp("protover", input, 8) == 0)
   {
     xboard_version_t version;
     if(input_length >= 10)
@@ -294,7 +334,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
   {
     FBK_DEBUG_MSG(FBK_DEBUG_HIGH, "Received result '%s'.", input);
   }
-   else
+  else
   {
     unsigned int i, move_string_idx = 0;
     char move_string[FTK_MOVE_STRING_SIZE] = {0};
