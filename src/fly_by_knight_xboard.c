@@ -130,11 +130,9 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
         color_to_set = ((engine_color == FTK_COLOR_WHITE)?FTK_COLOR_BLACK:FTK_COLOR_WHITE);
       }
 
-      fbk_time_ms_t time_remaining = strtoll(&input[5], NULL, 10);
+      fbk_time_ms_t time_remaining = strtoll(&input[5], NULL, 10)*10;
 
-      /*Placeholder string*/
-      const char * color_string = ((color_to_set == FTK_COLOR_WHITE)?"WHITE":"BLACK");
-      FBK_OUTPUT_MSG("# %ldms remaining for %s\n", time_remaining, color_string);
+      FBK_DEBUG_MSG(FBK_DEBUG_LOW, "%ldms remaining for %s", time_remaining, ((color_to_set == FTK_COLOR_WHITE)?"WHITE":"BLACK"));
       /* TODO: set clock for appropriate player */
     }
     else
