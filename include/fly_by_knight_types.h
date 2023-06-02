@@ -255,6 +255,8 @@ typedef struct
  */
 typedef struct
 {
+  /* True if the clock has been set to some initial value */
+  bool             set;
   /* Timestamp of the last remaining time update */
   fbk_clock_time_s last_update;
   /* Time remaining in milliseconds */

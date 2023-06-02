@@ -287,6 +287,27 @@ void fbk_configure_game_clock(fbk_instance_s * fbk, fbk_game_clock_config_s conf
   fbk_mutex_unlock(&fbk->game_lock);
 }
 
+void fbk_slam_game_clock(fbk_instance_s * fbk, ftk_color_e player, fbk_time_ms_t time_remaining, const fbk_clock_time_s * ref_time)
+{
+  FBK_ASSERT_MSG(fbk != NULL, "Null FBK pointer");
+  FBK_ASSERT_MSG((player == FTK_COLOR_WHITE) || (player == FTK_COLOR_BLACK), "Invalid player");
+
+  fbk_player_clock_s *player_clock = ((player == FTK_COLOR_WHITE)?&fbk->game_clock.white_clock:&fbk->game_clock.black_clock);
+
+  player_clock->ms_remaining = time_remaining;
+
+  if(ref_time != NULL)
+  {
+    player_clock->last_update = *ref_time;
+  }
+  else
+  {
+    fbk_get_clock_time(&player_clock->last_update);
+  }
+
+  player_clock->set = true;
+}
+
 fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk)
 {
   struct timespec now;

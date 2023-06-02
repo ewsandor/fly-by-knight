@@ -133,7 +133,7 @@ bool fbk_process_xboard_input_normal_mode(fbk_instance_s *fbk, char * input, siz
       fbk_time_ms_t time_remaining = strtoll(&input[5], NULL, 10)*10;
 
       FBK_DEBUG_MSG(FBK_DEBUG_LOW, "%ldms remaining for %s", time_remaining, ((color_to_set == FTK_COLOR_WHITE)?"WHITE":"BLACK"));
-      /* TODO: set clock for appropriate player */
+      fbk_slam_game_clock(fbk, color_to_set, time_remaining, &timestamp);
     }
     else
     {
