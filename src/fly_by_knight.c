@@ -322,7 +322,8 @@ fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk)
  */
 typedef struct 
 {
-  unsigned int worker_threads;
+  unsigned int  worker_threads;
+  fbk_time_ms_t max_ms_per_move;
 } fbk_arguments_s;
 
 /**
@@ -347,6 +348,7 @@ void init(fbk_instance_s * fbk, const fbk_arguments_s * arguments)
   setbuf(stdout, NULL);
 
   fbk_mutex_init(&fbk->game_lock);
+  fbk->game_clock.max_ms_per_move = arguments->max_ms_per_move;
   fbk_begin_standard_game(fbk, true);
 
   FBK_ASSERT_MSG(fbk_init_analysis_lut(), "Failed to initialize analysis look-up tables");
@@ -380,11 +382,12 @@ void display_help(bool user_requested, bool exit_fbk)
   fprintf(output_stream,
           "Usage: flybyknight [OPTION]...\n"
           "Chess engine following the xboard protocol with the UCI protocol in mind.\n"
-          "  -d#,        --debug=#       start with debug logging level [0(disabled) - 9(maximum)]\n"
-          "  -h,         --help          display this help and exit\n"
-          "  -j#,        --jobs=#        start with given number of worker threads\n"
-          "  -l [path],  --log=[path]    log output to file at given 'path'\n"
-          "  -v,         --version       display complete version information\n");
+          "  -d#,        --debug=#           start with debug logging level [0(disabled) - 9(maximum)]\n"
+          "  -h,         --help              display this help and exit\n"
+          "  -j#,        --jobs=#            start with given number of worker threads\n"
+          "  -l [path],  --log=[path]        log output to file at given 'path'\n"
+          "  -m [time],  --move-time=[time]  configure the maximum amount of time the engine should take to select a move in milliseconds\n"
+          "  -v,         --version           display complete version information\n");
   
   if(exit_fbk)
   {
@@ -436,6 +439,7 @@ void fbk_set_random_number_seed(unsigned int seed)
   srand(seed);
 } 
 
+#define DEFAULT_MAXIMUM_TIME_PER_MOVE_MS (10*1000)
 /**
  * @brief Parses arguments passed with command
  * 
@@ -457,21 +461,23 @@ void parse_arguments(int argc, char *argv[], fbk_arguments_s *arguments)
   FBK_ASSERT_MSG(arguments != NULL, "Empty arguments structure passed");
 
   memset(arguments, 0, sizeof(fbk_arguments_s));
-  arguments->worker_threads = 1;
+  arguments->worker_threads  = 1; /* Default to single thread */
+  arguments->max_ms_per_move = DEFAULT_MAXIMUM_TIME_PER_MOVE_MS;
 
   int option;
   int option_index = 0;
   static struct option long_options[] = {
-      {"debug",   required_argument, 0,  'd' },
-      {"jobs",    required_argument, 0,  'j' },
-      {"log",     required_argument, 0,  'l' },
-      {"help",    no_argument,       0,  'h' },
-      {"version", no_argument,       0,  'v' },
-      {0,         0,                 0,   0  }
+      {"debug",    required_argument, 0,  'd' },
+      {"jobs",     required_argument, 0,  'j' },
+      {"log",      required_argument, 0,  'l' },
+      {"move-time", required_argument, 0, 'm' },
+      {"help",     no_argument,       0,  'h' },
+      {"version",  no_argument,       0,  'v' },
+      {0,          0,                 0,   0  }
   };
 
   bool argument_error = false;
-  while(!argument_error && ((option = getopt_long(argc, argv, "d:j:l:hv", long_options, &option_index)) != -1))
+  while(!argument_error && ((option = getopt_long(argc, argv, "d:j:l:m:hv", long_options, &option_index)) != -1))
   {
     switch(option)
     {
@@ -501,6 +507,16 @@ void parse_arguments(int argc, char *argv[], fbk_arguments_s *arguments)
       case 'l':
       {
         fbk_open_log_file(optarg);
+        break;
+      }
+      case 'm':
+      {
+        arguments->max_ms_per_move = atoi(optarg);
+        if(arguments->max_ms_per_move < 0)
+        {
+          FBK_ERROR_MSG("Max time per move cannot be negative %ld.", arguments->max_ms_per_move);
+          argument_error = true;
+        }
         break;
       }
       case 'h':

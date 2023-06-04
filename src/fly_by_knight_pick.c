@@ -350,7 +350,7 @@ void * picker_thread_f(void * arg)
             /* Analyzed 250,000 moves and best line depth 6 */
             commit_move = true;
           }
-          else if(fbk_get_move_time_ms(pick_data->fbk) > 10*1000)
+          else if(fbk_get_move_time_ms(pick_data->fbk) > pick_data->fbk->game_clock.max_ms_per_move)
           {
             /* Max 10s per move */
             commit_move = true;

@@ -270,17 +270,22 @@ typedef struct
 typedef struct
 {
   /* Overall clock status */
-  fbk_clock_status_e status;
+  fbk_clock_status_e      status;
 
   /* Overall clock configuration */
   fbk_game_clock_config_s config;
 
   /* Time of last move or new game */
-  fbk_clock_time_s     last_move_time;
+  fbk_clock_time_s        last_move_time;
+
+  /* Max time engine should take to move */
+  fbk_time_ms_t           max_ms_per_move;
+  /* Time remaining at start of player's turn */
+  fbk_time_ms_t           time_at_move_start;
 
   /* Player clock states */
-  fbk_player_clock_s white_clock;
-  fbk_player_clock_s black_clock;
+  fbk_player_clock_s      white_clock;
+  fbk_player_clock_s      black_clock;
 
 } fbk_clock_state_s;
 
