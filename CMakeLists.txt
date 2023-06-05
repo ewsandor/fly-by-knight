@@ -24,6 +24,7 @@ add_executable(flybyknight  src/fly_by_knight.c
                             src/fly_by_knight_analysis.c
                             src/fly_by_knight_analysis_worker.c
                             src/fly_by_knight_debug.c
+                            src/fly_by_knight_game_clock.c
                             src/fly_by_knight_hash.c
                             src/fly_by_knight_io.c
                             src/fly_by_knight_move_tree.c

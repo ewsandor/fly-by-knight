@@ -15,6 +15,7 @@
 #include "fly_by_knight_analysis_worker.h"
 #include "fly_by_knight_debug.h"
 #include "fly_by_knight_error.h"
+#include "fly_by_knight_game_clock.h"
 #include "fly_by_knight_pick.h"
 #include "fly_by_knight_version.h"
 #include "fly_by_knight_xboard.h"
