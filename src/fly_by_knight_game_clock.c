@@ -88,6 +88,7 @@ fbk_time_ms_t fbk_get_target_move_time_ms(fbk_instance_s * fbk)
       const fbk_time_ms_t clock_based_target = ((fbk->game_clock.time_at_move_start)*(EXPECTED_MOVES_PER_GAME - fbk->game.full_move - 1))/EXPECTED_MOVES_PER_GAME;
 
       target_move_time = FBK_MIN(target_move_time, clock_based_target);
+
     }
     else
     {
