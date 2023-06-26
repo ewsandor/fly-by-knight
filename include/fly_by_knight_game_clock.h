@@ -47,4 +47,13 @@ void fbk_slam_game_clock(fbk_instance_s * fbk, ftk_color_e player, fbk_time_ms_t
 */
 fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk);
 
+/**
+ * @brief Get the target time the engine should spend thinking on current move (does not consider board position)
+ * 
+ * @param fbk 
+ * 
+ * @return Time in ms
+*/
+fbk_time_ms_t fbk_get_target_move_time_ms(fbk_instance_s * fbk);
+
 #endif /* __FLY_BY_KNIGHT_GAME_CLOCK_H__ */

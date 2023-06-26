@@ -250,9 +250,9 @@ void * picker_thread_f(void * arg)
   sev.sigev_notify_attributes = NULL;
   FBK_ASSERT_MSG(0 == timer_create(CLOCK_REALTIME, &sev, &pick_timer), "Failed to create pick timer.");
 
-  its.it_interval.tv_sec  = 5;
+  its.it_interval.tv_sec  = 1;
   its.it_interval.tv_nsec = 0;
-  its.it_value.tv_sec     = 5;
+  its.it_value.tv_sec     = 1;
   its.it_value.tv_nsec    = 0;
   FBK_ASSERT_MSG(0 == timer_settime(pick_timer, 0, &its, NULL), "Failed to start pick timer.");
 
@@ -351,7 +351,7 @@ void * picker_thread_f(void * arg)
             /* Analyzed 250,000 moves and best line depth 6 */
             commit_move = true;
           }
-          else if(fbk_get_move_time_ms(pick_data->fbk) > pick_data->fbk->game_clock.max_ms_per_move)
+          else if(fbk_get_move_time_ms(pick_data->fbk) > fbk_get_target_move_time_ms(pick_data->fbk))
           {
             /* Max 10s per move */
             commit_move = true;

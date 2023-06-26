@@ -15,6 +15,11 @@
 /* Acknowledge variable is unused */
 #define FBK_UNUSED(x) {(void)(x);}
 
+/* Simple utility to get minimum value */
+#define FBK_MIN(x,y) (((x)<(y))?(x):(y))
+/* Simple utility to get maximum value */
+#define FBK_MAX(x,y) (((x)>(y))?(x):(y))
+
 /**
  * @brief Exits Fly by Knight cleanly and return code to calling process
  * 
