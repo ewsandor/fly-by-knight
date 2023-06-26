@@ -88,7 +88,6 @@ fbk_time_ms_t fbk_get_target_move_time_ms(fbk_instance_s * fbk)
       const fbk_time_ms_t clock_based_target = ((fbk->game_clock.time_at_move_start)*(EXPECTED_MOVES_PER_GAME - fbk->game.full_move - 1))/EXPECTED_MOVES_PER_GAME;
 
       target_move_time = FBK_MIN(target_move_time, clock_based_target);
-
     }
     else
     {
@@ -98,4 +97,37 @@ fbk_time_ms_t fbk_get_target_move_time_ms(fbk_instance_s * fbk)
   }
 
   return target_move_time;
+}
+
+bool fbk_tap_clock(fbk_instance_s * fbk, const fbk_clock_time_s * ref_time)
+{
+  bool ret_val = true;
+
+  fbk_clock_time_s sanitized_ref_time = {0};
+
+  if(ref_time != NULL)
+  {
+    sanitized_ref_time = *ref_time;
+  }
+  else
+  {
+    fbk_get_clock_time(&sanitized_ref_time);
+  }
+
+  fbk->game_clock.last_move_time = sanitized_ref_time;
+
+  if(FBK_CLOCK_STARTED == fbk->game_clock.status)
+  { 
+    fbk_player_clock_s *current_player_clock = ((fbk->game_clock.current_turn == FTK_COLOR_WHITE)?&fbk->game_clock.white_clock:&fbk->game_clock.black_clock);
+    fbk_player_clock_s *  other_player_clock = ((fbk->game_clock.current_turn == FTK_COLOR_WHITE)?&fbk->game_clock.black_clock:&fbk->game_clock.white_clock);
+
+    FBK_UNUSED(current_player_clock);
+    FBK_UNUSED(  other_player_clock);
+  }
+  else
+  {
+    ret_val = false;
+  }
+
+  return ret_val;
 }

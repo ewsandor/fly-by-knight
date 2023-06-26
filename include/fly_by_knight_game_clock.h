@@ -56,4 +56,14 @@ fbk_time_ms_t fbk_get_move_time_ms(fbk_instance_s * fbk);
 */
 fbk_time_ms_t fbk_get_target_move_time_ms(fbk_instance_s * fbk);
 
+/**
+ * @brief Stops current player's clock and starts other player's clock
+ *  
+ * @param fbk 
+ * @param ref_time Optional reference time.  Will be generated if NULL is passed
+ * 
+ * @return True if successful, False if clocks are not configured and started
+*/
+bool fbk_tap_clock(fbk_instance_s * fbk, const fbk_clock_time_s * ref_time);
+
 #endif /* __FLY_BY_KNIGHT_GAME_CLOCK_H__ */

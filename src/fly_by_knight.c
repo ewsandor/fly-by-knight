@@ -175,6 +175,10 @@ void fbk_begin_standard_game(fbk_instance_s * fbk, bool flush_analysis)
  */
 bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
 {
+  /* Immediately take reference time stamp */
+  fbk_clock_time_s ref_time = {0};
+  fbk_get_clock_time(&ref_time);
+
   bool ret_val = true;
   fbk_move_tree_node_s *node;
 
@@ -200,9 +204,14 @@ bool fbk_commit_move(fbk_instance_s * fbk, ftk_move_s * move)
   }
   fbk_mutex_unlock(&fbk->game_lock);
 
-  /* Reset the analysis counter and clock */
+  /* Reset the analysis counter and tap clock */
   reset_analyzed_nodes();
-  fbk_get_clock_time(&fbk->game_clock.last_move_time);
+  if(fbk_tap_clock(fbk, &ref_time))
+  {
+    /* If clock is running, sanitize clock and game state are in sync */
+    FBK_ASSERT_MSG(fbk->game.turn == fbk->game_clock.current_turn, "Game (%u) and game clock (%u) turns out of sync.", 
+                   fbk->game.turn,   fbk->game_clock.current_turn);
+  }
 
   const fbk_picker_trigger_s trigger = 
   {

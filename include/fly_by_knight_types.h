@@ -278,6 +278,8 @@ typedef struct
   /* Time of last move or new game */
   fbk_clock_time_s        last_move_time;
 
+  /* Current player's turn the clock is running for */
+  ftk_color_e             current_turn;
   /* Max time engine should take to move */
   fbk_time_ms_t           max_ms_per_move;
   /* Time remaining at start of player's turn */
